@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Local Lead Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--greek:"Cinzel","Palatino Linotype",Palatino,Georgia,serif;--gl:#ead59a;--ink:#16202b;--muted:#64707d;--line:#e6eaef;--gold:#c59a3d;--gold2:#f3e3b0;--blue:#eef5fb;--blue2:#b9d4ea;--bg:#f4f6f9}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;width:100%;min-height:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+main{position:relative;display:flex;flex-direction:column;width:100%;min-height:100vh;padding:52px clamp(18px,6vw,80px) 46px;background:radial-gradient(1100px 520px at 50% -8%,#e7f1fa,transparent 70%),radial-gradient(900px 420px at 50% 108%,#fbf3dc,transparent 70%),#fff;border-top:4px solid transparent;border-image:linear-gradient(90deg,#c59a3d,#f6e8b8 50%,#c59a3d) 1}
+.inner{flex:1;display:flex;flex-direction:column;justify-content:center;width:100%;max-width:1280px;margin:0 auto;padding-bottom:24px}
+.foot{text-align:center;margin:12px 0 0}
+main::before,main::after{content:"";position:absolute;left:0;right:0;height:16px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='16' viewBox='0 0 24 16'%3E%3Cpath d='M0 14H24M3 14V3H21V11H9V7H15' fill='none' stroke='%23e3c880' stroke-width='1.4'/%3E%3C/svg%3E") repeat-x}
+main::before{top:0}
+main::after{bottom:0}
+.brand{position:absolute;top:28px;right:clamp(18px,6vw,80px);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.brand b{font-weight:600;letter-spacing:.2em;background:linear-gradient(90deg,#9a7424,#e9cf7e,#9a7424);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:.9rem}
+h1{font-family:var(--greek);font-size:clamp(1.8rem,4vw,3.1rem);font-weight:600;letter-spacing:.16em;text-transform:uppercase;text-align:center;margin:14px 0 10px}
+.key{height:12px;margin:0 auto 16px;max-width:520px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='12' viewBox='0 0 16 12'%3E%3Cpath d='M0 11H16M2 11V2H14V8H6V5H10' fill='none' stroke='%23c59a3d' stroke-width='1.3'/%3E%3C/svg%3E") repeat-x}
+p.sub{margin:0 auto 34px;max-width:780px;font-size:clamp(1rem,1.5vw,1.2rem);color:var(--muted);text-align:center}
+form{display:flex;flex-wrap:wrap;gap:18px;margin:0 auto 18px;width:100%;max-width:1200px;padding:28px;background:var(--blue);border:1px solid var(--gl);border-radius:18px;box-shadow:0 0 0 5px #fff,0 0 0 6px var(--gl),0 12px 32px rgba(22,32,43,.08)}
+label{font-family:var(--greek);display:flex;flex-direction:column;font-size:.76rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);flex:1 1 220px}
+input{font:inherit;font-size:1rem;font-weight:400;letter-spacing:0;text-transform:none;color:var(--ink);padding:15px 16px;border:1px solid var(--blue2);border-radius:10px;margin-top:8px;background:#fff;transition:border-color .2s,box-shadow .2s}
+input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold2)}
+button{font:inherit;font-family:var(--greek);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:.9rem;padding:16px 32px;border-radius:10px;border:1px solid var(--gold);background:#16202b;color:#fff;cursor:pointer;align-self:flex-end;box-shadow:0 0 0 2px #fff,0 0 0 3px var(--gl);transition:background .2s,color .2s,transform .1s}
+button:hover{background:linear-gradient(135deg,#d9b863,#f6e8b8);color:#16202b}
+button:active{transform:translateY(1px)}
+button.alt{background:#fff;color:#16202b}
+button:disabled{opacity:.5;cursor:wait}
+button:focus-visible,a:focus-visible{outline:3px solid var(--blue2);outline-offset:2px}
+#status{min-height:1.5em;color:var(--muted);margin:10px 0;text-align:center}
+#status.err{color:#b3261e}
+.wrap{overflow-x:auto;border:1px solid var(--gl);border-radius:12px;margin:8px 6px;box-shadow:0 0 0 4px #fff,0 0 0 5px var(--gl),0 6px 20px rgba(22,32,43,.07)}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{text-align:left;padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:nth-child(even){background:#fafbfd}
+tbody tr:hover{background:var(--blue)}
+th{font-family:var(--greek);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--blue);border-bottom:2px solid var(--gold)}
+.bar{display:flex;gap:10px;margin:16px 0;justify-content:center}
+.bar[hidden]{display:none}
+a{color:#7a5c14}
+small{color:var(--muted)}
+#gamebox{position:fixed;inset:0;z-index:50;display:flex;background:linear-gradient(180deg,#121830,#0b1020)}
+#gamebox[hidden]{display:none}
+.gcard{display:flex;flex-direction:column;width:100%;height:100%;padding:12px 16px 14px;text-align:center;border-top:3px solid #c59a3d}
+.gcard::before{content:"";flex:none;height:16px;margin:0 0 6px;opacity:.85;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='16' viewBox='0 0 24 16'%3E%3Cpath d='M0 14H24M3 14V3H21V11H9V7H15' fill='none' stroke='%23c59a3d' stroke-width='1.4'/%3E%3C/svg%3E") repeat-x center}
+.gt{font-family:var(--greek);margin:0;color:#f3e3b0;letter-spacing:.22em;text-transform:uppercase;font-size:.85rem;font-weight:600}
+.gs{margin:4px 0 12px;color:#aab3c5;font-size:.78rem}
+#gstage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+#game{display:block;background:#000;border-radius:4px;touch-action:none;box-shadow:0 0 0 2px #0b1020,0 0 0 3px #f3e3b0,0 0 0 5px #0b1020,0 0 0 6px rgba(197,154,61,.85),0 0 40px rgba(197,154,61,.2)}
+#scare{position:fixed;inset:0;width:100%;height:100%;z-index:60;pointer-events:none}
+#scare[hidden]{display:none}
+@media(max-width:700px){table,tbody,tr,td{display:block;width:100%}thead{display:none}tbody tr{padding:12px 14px;border-bottom:1px solid var(--line)}td{padding:2px 0;border:0}td:empty{display:none}td:nth-child(1){font-weight:600;font-size:1.05rem}td:nth-child(2)::before{content:"Phone: ";color:var(--muted)}td:nth-child(3)::before{content:"Address: ";color:var(--muted)}td:nth-child(4)::before{content:"Last checked: ";color:var(--muted)}td:nth-child(5){padding-top:4px}}
+@media(max-width:560px){.brand{position:static;text-align:right;margin-bottom:6px}main{padding:30px 16px 40px}h1{letter-spacing:.1em}form{padding:18px;gap:14px}.gs{font-size:.7rem;margin:2px 0 8px}.gcard{padding:8px 8px 10px}.gcard::before{height:12px;margin-bottom:2px;background-size:18px 12px}.foot{font-size:.9rem}}
+</style></head>
+<body><main>
+<div class="brand">Founded by <b>KleOs</b></div>
+<div class="inner">
+<h1>Local lead finder</h1>
+<div class="key"></div>
+<p class="sub">Small local businesses that have a phone number and no website. Free. Each search shows only leads you haven't seen before.</p>
+<form id="f">
+  <label>Business type<input id="type" list="types" placeholder="mechanics" required></label>
+  <label>City and state<input id="city" placeholder="El Paso, TX" required></label>
+  <label style="flex:0 0 110px">How many<input id="count" type="number" min="1" max="50" value="10"></label>
+  <button id="go" type="submit">Find leads</button>
+</form>
+<datalist id="types"></datalist>
+<div id="status" role="status"></div>
+<div id="gamebox" hidden><div class="gcard"><p class="gt">Finding your leads</p><p class="gs">This can take up to 5 minutes. Play while you wait: arrow keys on a computer, drag your finger on a phone or tablet.</p><div id="gstage"><canvas id="game"></canvas></div></div></div>
+<canvas id="scare" hidden></canvas>
+<div id="out"></div>
+<div class="bar" id="bar" hidden>
+  <button class="alt" id="csv" type="button">Download spreadsheet (CSV)</button>
+</div>
+</div>
+<p class="foot"><small>Data from OpenStreetMap contributors. Some listings may be out of date or have a website the map doesn't know about, so check the Google Maps link before you call.
+<br><button class="alt" id="reset" type="button" style="padding:4px 10px;margin-top:8px;font-size:.8rem">Clear my history of shown leads</button></small></p>
+</main>
+<script>
+const OVERPASS=["https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter","https://overpass.openstreetmap.fr/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
+const C=[
+ [["mechanic","auto repair","car repair","auto shop","garage"],["shop=car_repair"]],
+ [["auto body"],["shop=car_repair;name~body|collision|paint"]],
+ [["tire","tire shop"],["shop=tyres"]],
+ [["car wash"],["amenity=car_wash"]],
+ [["auto parts"],["shop=car_parts"]],
+ [["used car"],["shop=car"]],
+ [["barber","barbershop"],["hairdressing=barber","shop=hairdresser;name~barber"]],
+ [["salon","hair salon"],["shop=hairdresser","shop=beauty"]],
+ [["nail salon"],["shop=beauty;name~nail"]],
+ [["restaurant"],["amenity=restaurant"]],
+ [["cafe","coffee shop"],["amenity=cafe"]],
+ [["bakery"],["shop=bakery"]],
+ [["plumber"],["craft=plumber"]],
+ [["electrician"],["craft=electrician"]],
+ [["hvac","ac repair"],["craft=hvac"]],
+ [["roofer","roofing"],["craft=roofer"]],
+ [["painter"],["craft=painter"]],
+ [["handyman"],["craft=handyman"]],
+ [["carpenter"],["craft=carpenter"]],
+ [["contractor"],["craft=builder"]],
+ [["landscaper","lawn care","landscaping"],["craft=gardener"]],
+ [["locksmith"],["craft=locksmith","shop=locksmith"]],
+ [["dentist"],["amenity=dentist"]],
+ [["vet"],["amenity=veterinary"]],
+ [["gym"],["leisure=fitness_centre"]],
+ [["laundromat"],["shop=laundry"]],
+ [["tailor"],["craft=tailor"]],
+ [["florist"],["shop=florist"]],
+ [["pet grooming"],["shop=pet_grooming"]],
+ [["photographer"],["craft=photographer"]]
+];
+const FAKE=["facebook.com","instagram.com","yelp.com","linktr.ee","business.site","tiktok.com","x.com","twitter.com","yellowpages.com","fb.com"];
+const CHAINS=["autozone","o'reilly","oreilly","napa ","pep boys","jiffy lube","valvoline","midas","meineke","firestone","goodyear","discount tire","walmart","costco","les schwab","mavis","take 5","christian brothers","ntb","monro","tire kingdom","advance auto","carmax","toyota","chevrolet","honda ","nissan ","hyundai","lexus","bmw ","mercedes","mcdonald","subway","starbucks","supercuts","sport clips"];
+let leads=[], lastCity="";
+
+function filtersFor(subject){
+  const s=subject.toLowerCase().trim();
+  const tries=[s,s.replace(/ies$/,"y"),s.replace(/(es|s)$/,""),s.replace(/s$/,"")];
+  for(const t of tries){const hit=C.find(c=>c[0].includes(t)); if(hit) return hit[1].map(alt=>alt.split(";").map(p=>{
+    const i=p.search(/[=~]/), k=p.slice(0,i), op=p[i], v=p.slice(i+1);
+    return op==="="?`["${k}"="${v}"]`:`["${k}"~"${v}",i]`;}).join(""));}
+  return null;
+}
+function hasRealSite(tags){
+  const url=(tags.website||tags["contact:website"]||tags.url||tags["contact:url"]||"").trim().toLowerCase();
+  if(!url) return false;
+  let host; try{host=new URL(url.includes("//")?url:"//"+url,"https://x").hostname}catch(e){return true}
+  return !FAKE.some(d=>host===d||host.endsWith("."+d));
+}
+function isChain(tags){
+  if(tags.brand||tags["brand:wikidata"]||tags["brand:wikipedia"]) return true;
+  const n=(tags.name||"").toLowerCase()+" ";
+  return CHAINS.some(c=>n.includes(c));
+}
+const phoneOf=t=>t.phone||t["contact:phone"]||"";
+const addrOf=t=>[[t["addr:housenumber"],t["addr:street"]].filter(Boolean).join(" "),t["addr:city"],t["addr:postcode"]].filter(Boolean).join(", ");
+function keysOf(t){
+  const phone=phoneOf(t).replace(/\D/g,"")||null;
+  const clean=x=>(x||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  return {phone, na:clean(t.name)+"|"+clean((t["addr:housenumber"]||"")+(t["addr:street"]||""))};
+}
+let mem={ids:[],phones:[],na:[]};
+function loadSeen(){try{const s=JSON.parse(localStorage.getItem("leadsSeen"));if(s)mem=s}catch(e){} return {ids:new Set(mem.ids),phones:new Set(mem.phones),na:new Set(mem.na)};}
+function saveSeen(s){mem={ids:[...s.ids],phones:[...s.phones],na:[...s.na]};try{localStorage.setItem("leadsSeen",JSON.stringify(mem))}catch(e){}}
+function collect(elements,seen){
+  const out=[],batch=new Set();
+  for(const el of elements){
+    const t=el.tags||{}; if(!t.name||isChain(t)||hasRealSite(t)||!phoneOf(t)) continue;
+    const id=el.type+"/"+el.id, k=keysOf(t);
+    if(seen.ids.has(id)||seen.na.has(k.na)||(k.phone&&seen.phones.has(k.phone))||batch.has(k.na)||(k.phone&&batch.has(k.phone))) continue;
+    batch.add(k.na); if(k.phone) batch.add(k.phone);
+    out.push({id,k,name:t.name,phone:phoneOf(t),address:addrOf(t),verified:t.check_date||t["survey:date"]||""});
+  }
+  for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}
+  out.sort((a,b)=>(b.verified?1:0)-(a.verified?1:0)||b.verified.localeCompare(a.verified));
+  return out;
+}
+async function geocode(city){
+  const q=encodeURIComponent(city), NF="Couldn't find that city. Try the format: El Paso, Texas";
+  let j=null;
+  try{const r=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q="+q,{referrerPolicy:"no-referrer"}); if(r.ok) j=await r.json();}catch(e){}
+  if(j&&j.length){
+    const g=j[0];
+    if(g.osm_type==="relation") return {head:`area(${3600000000+Number(g.osm_id)})->.a;`,clause:"(area.a)",name:g.display_name};
+    const [s,n,w,e]=g.boundingbox; return {head:"",clause:`(${s},${w},${n},${e})`,name:g.display_name};
+  }
+  if(j) throw new Error(NF);
+  /* backup map lookup if the first one is blocked or down */
+  try{
+    const r=await fetch("https://photon.komoot.io/api/?limit=1&osm_tag=place&q="+q,{referrerPolicy:"no-referrer"});
+    const f=((await r.json()).features||[])[0]; if(!f) throw new Error(NF);
+    const p=f.properties||{}, nm=[p.name,p.state,p.country].filter(Boolean).join(", ")||city;
+    if(p.osm_type==="R") return {head:`area(${3600000000+Number(p.osm_id)})->.a;`,clause:"(area.a)",name:nm};
+    const c=f.geometry.coordinates, x=p.extent||[c[0]-.1,c[1]+.1,c[0]+.1,c[1]-.1];
+    return {head:"",clause:`(${x[3]},${x[0]},${x[1]},${x[2]})`,name:nm};
+  }catch(e){
+    throw new Error(e instanceof TypeError?"Couldn't reach the free map lookup. Check your internet, then try again in a minute.":e.message);
+  }
+}
+async function overpass(query,say){
+  const t0=Date.now();
+  for(let round=0;round<3;round++){
+    for(const url of OVERPASS){
+      if(Date.now()-t0>300000) throw new Error("This took longer than 5 minutes. Try again in a few minutes.");
+      const host=url.split("/")[2]; say("Asking the free map server ("+host+")...");
+      try{
+        const ctl=new AbortController(), timer=setTimeout(()=>ctl.abort(),100000);
+        const r=await fetch(url,{method:"POST",body:"data="+encodeURIComponent(query),headers:{"Content-Type":"application/x-www-form-urlencoded"},referrerPolicy:"no-referrer",signal:ctl.signal});
+        clearTimeout(timer);
+        if(r.ok){const j=await r.json(); if(j.remark&&/error|timed out|out of memory|too busy/i.test(j.remark)){say("That server was overloaded, trying another...");continue;} return j.elements||[];}
+      }catch(e){}
+    }
+    if(round<2){say("Servers are busy. Waiting "+20*(round+1)+" seconds and trying again...");await new Promise(r=>setTimeout(r,20000*(round+1)));}
+  }
+  throw new Error("The free map servers are all busy right now. Try again in 10-15 minutes.");
+}
+const BR='[!"brand"][!"brand:wikidata"]', SOC="facebook[.]com|fb[.]com|instagram[.]com|yelp[.]com|linktr[.]ee|business[.]site|tiktok[.]com|twitter[.]com|x[.]com|yellowpages[.]com";
+const SITEV=['[!"website"][!"contact:website"][!"url"][!"contact:url"]',`["website"~"${SOC}",i]`,`["contact:website"~"${SOC}",i]`];
+function buildQuery(place,alts,lim){
+  const lines=[]; for(const a of alts) for(const pk of ["phone","contact:phone"]) for(const sv of SITEV) lines.push(`  nwr${a}["${pk}"]${sv}${BR}${place.clause};`);
+  return `[out:json][timeout:90];\n${place.head}\n(\n${lines.join("\n")}\n);\nout tags ${lim};`;
+}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+function createGame(W,H){
+  const cols=Math.max(10,Math.round((W-24)/36)),rows=7,bw=(W-24)/cols,bh=12,top=56,py=H-26,BASE=3.2,MAXS=BASE*2.4,
+    colors=["#ef476f","#f78c40","#f9c74f","#90be6d","#43aa8b","#4d9de0","#9b7ede"];
+  const g={W,H,score:0,lives:3,px:W/2,pw:Math.round(Math.min(100,60+(W-360)*.1)),over:false,ready:false,round:1,phase:"play",t:0,broken:0,frame:0,slowUntil:0};
+  const newBoard=()=>{
+    g.alive=Array(rows*cols).fill(1); g.kind=Array(rows*cols).fill(0); g.left=rows*cols;
+    const idx=[...Array(rows*cols).keys()].sort(()=>Math.random()-.5);
+    [1,1,2,2,3,3].forEach((k,i)=>{g.kind[idx[i]]=k;});   // 1 clock, 2 bomb, 3 three balls
+  };
+  const serve=()=>{const a=Math.random()-.5; g.balls=[{x:W/2,y:H-60,vx:Math.sin(a),vy:-Math.cos(a)}];};
+  g.speed=()=>Math.min(MAXS,BASE*(1+0.08*Math.floor(g.broken/3)))*(1+.1*(g.round-1))*(g.frame<g.slowUntil?0.5:1);
+  const kill=i=>{g.alive[i]=0;g.kind[i]=0;g.left--;g.broken++;g.score+=rows-Math.floor(i/cols);};
+  g.hit=i=>{
+    if(!g.alive[i]) return; const k=g.kind[i]; kill(i);
+    if(k===1) g.slowUntil=g.frame+420;
+    if(k===2){const r=Math.floor(i/cols),c=i%cols,n=[];
+      for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const rr=r+dr,cc=c+dc;
+        if((dr||dc)&&rr>=0&&rr<rows&&cc>=0&&cc<cols&&g.alive[rr*cols+cc]) n.push(rr*cols+cc);}
+      n.sort(()=>Math.random()-.5).slice(0,3).forEach(kill);}
+    if(k===3&&g.balls.length){const b=g.balls[0];
+      [0.5,-0.5].forEach(s=>{if(g.balls.length<3) g.balls.push({x:b.x,y:b.y,vx:b.vx*Math.cos(s)-b.vy*Math.sin(s),vy:b.vx*Math.sin(s)+b.vy*Math.cos(s)});});}
+  };
+  newBoard(); serve();
+  g.step=()=>{
+    if(g.over) return; g.frame++;
+    if(g.phase!=="play"){g.t++;
+      if(g.phase==="win"&&g.t>=210){g.phase="warn";g.t=0;rumble();}
+      else if(g.phase==="warn"&&g.t>=160){g.phase="play";g.round++;g.broken=0;g.slowUntil=0;newBoard();serve();}
+      return;}
+    const sp=g.speed();
+    for(const b of g.balls.slice()){
+      const m=Math.hypot(b.vx,b.vy)||1; b.vx*=sp/m; b.vy*=sp/m; b.x+=b.vx; b.y+=b.vy;
+      if(b.x<13){b.x=13;b.vx=Math.abs(b.vx);} if(b.x>W-13){b.x=W-13;b.vx=-Math.abs(b.vx);}
+      if(b.y<32){b.y=32;b.vy=Math.abs(b.vy);}
+      const c=Math.floor((b.x-12)/bw), r=Math.floor((b.y-top)/bh);
+      if(r>=0&&r<rows&&c>=0&&c<cols&&g.alive[r*cols+c]){b.vy=-b.vy; g.hit(r*cols+c);}
+      if(b.vy>0&&b.y>=py-4&&b.y<=py+8&&Math.abs(b.x-g.px)<=g.pw/2+3){
+        const s=Math.hypot(b.vx,b.vy), a=Math.max(-1,Math.min(1,(b.x-g.px)/(g.pw/2)+Math.random()*0.3-0.15));
+        b.vx=s*Math.sin(a); b.vy=-s*Math.cos(a); b.y=py-4;
+      }
+    }
+    g.balls=g.balls.filter(b=>b.y<=H);
+    if(g.left<=0){g.phase="win";g.t=0;g.balls=[];}
+    else if(!g.balls.length){g.lives--; if(g.lives<=0) g.over=true; else serve();}
+  };
+  g.draw=ctx=>{
+    const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#0b1020");bg.addColorStop(1,"#1a2040");
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    ctx.fillStyle="#2b3563";ctx.fillRect(0,0,W,14);ctx.fillRect(0,0,8,H);ctx.fillRect(W-8,0,8,H);
+    ctx.fillStyle="#c59a3d";ctx.fillRect(0,14,W,1.5);
+    ctx.strokeStyle="rgba(243,227,176,.55)";ctx.lineWidth=1;ctx.strokeRect(8.5,15.5,W-17,H-16);
+    g.alive.forEach((a,i)=>{if(!a) return;
+      const r=Math.floor(i/cols),c=i%cols,x=12+c*bw,y=top+r*bh,k=g.kind[i];
+      ctx.fillStyle=colors[r];rr(ctx,x+1,y+1,bw-2,bh-2,3);ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,.28)";ctx.fillRect(x+4,y+2,bw-8,2);
+      if(!k) return; const cx=x+bw/2,cy=y+bh/2; ctx.fillStyle="#fff";ctx.strokeStyle="#fff";ctx.lineWidth=1.2;
+      if(k===1){ctx.beginPath();ctx.arc(cx,cy,3.6,0,7);ctx.stroke();ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy-2.6);ctx.moveTo(cx,cy);ctx.lineTo(cx+2,cy+.6);ctx.stroke();}
+      if(k===2){ctx.fillStyle="#111";ctx.beginPath();ctx.arc(cx,cy+.8,3.4,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(cx+1.5,cy-2);ctx.lineTo(cx+3.5,cy-4);ctx.stroke();}
+      if(k===3){[-4.5,0,4.5].forEach(d=>{ctx.beginPath();ctx.arc(cx+d,cy,1.5,0,7);ctx.fill();});}
+    });
+    const pg=ctx.createLinearGradient(0,py,0,py+8);pg.addColorStop(0,"#6bb8ff");pg.addColorStop(1,"#2a6fd4");
+    ctx.fillStyle=pg;rr(ctx,g.px-g.pw/2,py,g.pw,8,4);ctx.fill();
+    ctx.fillStyle="#fff";ctx.shadowColor="#9fd0ff";ctx.shadowBlur=8;
+    g.balls.forEach(b=>{ctx.beginPath();ctx.arc(b.x,b.y,3.5,0,7);ctx.fill();}); ctx.shadowBlur=0;
+    ctx.font="bold 18px system-ui,sans-serif";ctx.fillStyle="#fff";ctx.fillText(String(g.score).padStart(3,"0"),16,38);
+    ctx.font="12px system-ui,sans-serif";ctx.fillText("balls: "+g.lives,W-90,38);if(g.round>1)ctx.fillText("round "+g.round,W-90,26);
+    if(g.frame<g.slowUntil){ctx.fillStyle="#f3e3b0";ctx.fillText("SLOW",W/2-14,38);}
+    if(g.phase==="win"){ctx.fillStyle="rgba(5,8,16,.72)";ctx.fillRect(0,0,W,H);
+      ctx.textAlign="center";ctx.fillStyle="#f3e3b0";ctx.font="bold 24px Cinzel,Georgia,serif";ctx.fillText("Good job, you won!",W/2,Math.min(H*.2,110));
+      ctx.fillStyle="#cfd6e4";ctx.font="14px system-ui,sans-serif";ctx.fillText("Medusa is defeated... or is she?",W/2,Math.min(H*.2,110)+24);
+      deadMedusa(ctx,W/2,Math.min(H*.58,H/2+40),Math.min(W,H)*.3,g.t);ctx.textAlign="left";}
+    if(g.phase==="warn"){const sh=g.t%4<2?2:-2;ctx.fillStyle="rgba(60,0,0,.78)";ctx.fillRect(0,0,W,H);
+      ctx.textAlign="center";ctx.fillStyle="#ff3b3b";ctx.font="bold 28px Cinzel,Georgia,serif";ctx.fillText("She's still alive...",W/2+sh,H/2-6);
+      ctx.fillStyle="#f3e3b0";ctx.font="bold 18px system-ui,sans-serif";ctx.fillText("Round "+(g.round+1),W/2,H/2+26);ctx.textAlign="left";}
+    if(g.over&&g.ready){ctx.fillStyle="rgba(5,8,16,.7)";ctx.fillRect(0,0,W,H);
+      ctx.fillStyle="#fff";ctx.font="bold 22px system-ui,sans-serif";ctx.textAlign="center";ctx.fillText("You lost",W/2,H/2-8);
+      ctx.fillStyle="#f3e3b0";ctx.font="15px system-ui,sans-serif";ctx.fillText("Click to try again",W/2,H/2+20);ctx.textAlign="left";}
+  };
+  return g;
+}
+
+function rumble(){
+  if(!ac) return;
+  try{const n=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();
+    o.type="sawtooth";o.frequency.setValueAtTime(70,n);o.frequency.exponentialRampToValueAtTime(30,n+1);
+    g.gain.setValueAtTime(.4,n);g.gain.exponentialRampToValueAtTime(.001,n+1.1);
+    o.connect(g);g.connect(ac.destination);o.start(n);o.stop(n+1.1);}catch(e){}
+}
+function deadMedusa(c,cx,cy,s,f){
+  c.save();c.translate(cx,cy);c.lineCap="round";
+  const r=s*.55;
+  for(let i=0;i<10;i++){
+    const a=Math.PI*(1.08+.84*i/9),ca=Math.cos(a),sa=Math.sin(a),ex=ca*r*1.45,ey=r*(.55+(i%2)*.3)+Math.sin(f*.05+i)*r*.02,q=s*.025;
+    c.beginPath();c.moveTo(ca*r*.9,sa*r*.9);c.quadraticCurveTo(ca*r*1.75,sa*r*1.45,ex,ey);
+    c.strokeStyle="#1d5a22";c.lineWidth=s*.11;c.stroke();c.strokeStyle="#6fc25a";c.lineWidth=s*.065;c.stroke();
+    c.strokeStyle="#102a12";c.lineWidth=s*.012;c.beginPath();c.moveTo(ex-q,ey-q);c.lineTo(ex+q,ey+q);c.moveTo(ex+q,ey-q);c.lineTo(ex-q,ey+q);c.stroke();
+  }
+  const fg=c.createRadialGradient(-r*.2,-r*.3,r*.1,0,0,r*1.1);fg.addColorStop(0,"#b6e57a");fg.addColorStop(1,"#5ea43f");
+  c.fillStyle=fg;c.strokeStyle="#1d3d1a";c.lineWidth=s*.03;c.beginPath();c.arc(0,0,r,0,7);c.fill();c.stroke();
+  c.strokeStyle="#7a1010";c.lineWidth=s*.035;const e=r*.36,ey2=-r*.12,k=r*.16;
+  [-1,1].forEach(sx=>{c.beginPath();c.moveTo(sx*e-k,ey2-k);c.lineTo(sx*e+k,ey2+k);c.moveTo(sx*e+k,ey2-k);c.lineTo(sx*e-k,ey2+k);c.stroke();});
+  c.fillStyle="rgba(255,120,150,.45)";[-1,1].forEach(sx=>{c.beginPath();c.ellipse(sx*r*.62,r*.2,r*.13,r*.08,0,0,7);c.fill();});
+  c.strokeStyle="#1d3d1a";c.lineWidth=s*.03;c.beginPath();c.moveTo(-r*.3,r*.42);c.quadraticCurveTo(0,r*.3,r*.3,r*.42);c.stroke();
+  c.fillStyle="#ff7a9a";c.lineWidth=s*.02;rr(c,r*.04,r*.38,r*.2,r*.28,r*.09);c.fill();c.stroke();
+  c.strokeStyle="#f3e3b0";c.lineWidth=s*.035;c.beginPath();c.ellipse(0,-r*1.2+Math.sin(f*.08)*r*.03,r*.45,r*.12,0,0,7);c.stroke();
+  c.restore();
+}
+/* ---------- Jumpscare: Medusa face + scream ---------- */
+let ac=null;
+function audio(){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")ac.resume();}catch(e){}}
+function scream(){
+  if(!ac) return;
+  try{
+    const n=ac.currentTime,d=1.7,m=ac.createGain(),ws=ac.createWaveShaper(),cv=new Float32Array(256);
+    for(let i=0;i<256;i++){cv[i]=Math.tanh((i/128-1)*6);} ws.curve=cv;
+    m.gain.setValueAtTime(0,n);m.gain.linearRampToValueAtTime(.85,n+.03);m.gain.exponentialRampToValueAtTime(.001,n+d);
+    m.connect(ws);ws.connect(ac.destination);
+    [[620,1500],[930,2100],[310,760]].forEach(([a,b],i)=>{
+      const o=ac.createOscillator(),l=ac.createOscillator(),lg=ac.createGain();
+      o.type=i===2?"square":"sawtooth";
+      o.frequency.setValueAtTime(a,n);o.frequency.exponentialRampToValueAtTime(b,n+.5);o.frequency.exponentialRampToValueAtTime(a*1.2,n+d);
+      l.frequency.value=22+i*5;lg.gain.value=60;l.connect(lg);lg.connect(o.frequency);
+      l.start(n);l.stop(n+d);o.connect(m);o.start(n);o.stop(n+d);
+    });
+    const buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),data=buf.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+    const ns=ac.createBufferSource(),bp=ac.createBiquadFilter(),ng=ac.createGain();
+    ns.buffer=buf;bp.type="bandpass";bp.frequency.value=2500;bp.Q.value=.7;ng.gain.value=.5;
+    ns.connect(bp);bp.connect(ng);ng.connect(m);ns.start(n);
+    const boom=ac.createOscillator(),bg=ac.createGain();
+    boom.frequency.setValueAtTime(90,n);boom.frequency.exponentialRampToValueAtTime(35,n+.6);
+    bg.gain.setValueAtTime(1,n);bg.gain.exponentialRampToValueAtTime(.001,n+.6);
+    boom.connect(bg);bg.connect(ac.destination);boom.start(n);boom.stop(n+.6);
+  }catch(e){}
+}
+function medusa(c,w,h,t,f){
+  c.fillStyle="#000";c.fillRect(0,0,w,h);
+  if(f%6<3){c.fillStyle="rgba(130,0,0,.55)";c.fillRect(0,0,w,h);}
+  const s=Math.max(Math.min(w,h)*.5,Math.min(w*.7,h*.45))*Math.min(1,.3+t*4)*(1+t*.2);
+  c.save();c.translate(w/2+(Math.random()-.5)*16,h/2+s*.2+(Math.random()-.5)*16);
+  c.lineCap="round";c.lineJoin="round";
+  for(let i=0;i<18;i++){
+    const a=Math.PI*(1.04+.92*i/17),ca=Math.cos(a),sa=Math.sin(a);let x=0,y=0;
+    c.beginPath();c.moveTo(ca*s*.6,sa*s*.75);
+    for(let k=1;k<=16;k++){const d=k/16,wv=Math.sin(f*.3+i*1.7+k*.7)*s*.07*d,r=.6+.85*d;
+      x=ca*s*r-sa*wv;y=sa*s*(r+.1*d)+ca*wv;c.lineTo(x,y);}
+    c.strokeStyle="#1d5a22";c.lineWidth=s*.075;c.stroke();
+    c.strokeStyle="#5fae48";c.lineWidth=s*.03;c.stroke();
+    c.fillStyle="#2f7a2a";c.beginPath();c.arc(x,y,s*.05,0,7);c.fill();
+    c.fillStyle="#ff2a2a";c.beginPath();c.arc(x-s*.015,y-s*.01,s*.01,0,7);c.arc(x+s*.015,y-s*.01,s*.01,0,7);c.fill();
+    c.strokeStyle="#ff2a2a";c.lineWidth=s*.008;c.beginPath();c.moveTo(x,y-s*.05);c.lineTo(x+ca*s*.06,y+sa*s*.06);c.stroke();
+  }
+  const fg=c.createRadialGradient(0,-s*.15,s*.05,0,0,s*.8);
+  fg.addColorStop(0,"#9ad45f");fg.addColorStop(.55,"#3a7a2e");fg.addColorStop(1,"#0d240f");
+  c.fillStyle=fg;c.beginPath();c.ellipse(0,0,s*.55,s*.7,0,0,7);c.fill();
+  [-1,1].forEach(sx=>{
+    const x=sx*s*.24,y=-s*.12;
+    c.shadowColor="#ffcc00";c.shadowBlur=s*.12;
+    const eg=c.createRadialGradient(x,y,0,x,y,s*.17);eg.addColorStop(0,"#fffbb0");eg.addColorStop(.6,"#ffcc00");eg.addColorStop(1,"#ff3b00");
+    c.fillStyle=eg;c.beginPath();c.moveTo(x-s*.17,y);c.quadraticCurveTo(x,y-s*.17,x+s*.17,y);c.quadraticCurveTo(x,y+s*.12,x-s*.17,y);c.fill();
+    c.shadowBlur=0;c.fillStyle="#000";c.beginPath();c.ellipse(x,y,s*.022,s*.095,0,0,7);c.fill();
+    c.strokeStyle="#0a1a0b";c.lineWidth=s*.04;c.beginPath();c.moveTo(x+sx*s*.2,y-s*.2);c.lineTo(x-sx*s*.17,y-s*.05);c.stroke();
+  });
+  c.fillStyle="#0d240f";[-1,1].forEach(sx=>{c.beginPath();c.ellipse(sx*s*.05,s*.13,s*.025,s*.04,0,0,7);c.fill();});
+  const my=s*.4,mh=s*(.12+.04*Math.sin(f*.8));
+  c.fillStyle="#1a0000";c.beginPath();c.ellipse(0,my,s*.3,mh,0,0,7);c.fill();
+  c.fillStyle="#fff";
+  for(let i=-3;i<=3;i++){const x=i*s*.075,ty=my-mh*Math.sqrt(Math.max(0,1-(x/(s*.3))**2)),by=my+(my-ty);
+    c.beginPath();c.moveTo(x-s*.03,ty);c.lineTo(x+s*.03,ty);c.lineTo(x,ty+s*(i%2?.07:.11));c.fill();
+    if(i%2===0){c.beginPath();c.moveTo(x-s*.025,by);c.lineTo(x+s*.025,by);c.lineTo(x,by-s*.07);c.fill();}}
+  c.restore();
+}
+
+let raf=0,keyDown=null,keyUp=null;
+function showGame(on){
+  document.getElementById("gamebox").hidden=!on;
+  const sc=document.getElementById("scare"); sc.hidden=true; window.onresize=null;
+  cancelAnimationFrame(raf);
+  if(keyDown){document.removeEventListener("keydown",keyDown);document.removeEventListener("keyup",keyUp);keyDown=keyUp=null;}
+  if(!on) return;
+  audio();
+  const cv=document.getElementById("game"),st=document.getElementById("gstage"),sr=st.getBoundingClientRect(),asp=sr.width/Math.max(1,sr.height);
+  let GW=360,GH=420;
+  if(asp>=360/420){GW=Math.round(Math.max(360,Math.min(760,420*asp)));}else{GH=Math.round(Math.max(420,Math.min(720,360/asp)));}
+  const fit=()=>{const r=st.getBoundingClientRect(),k=Math.min(r.width/GW,r.height/GH),q=Math.min(3,k*(devicePixelRatio||1));
+    cv.style.width=Math.floor(GW*k)+"px";cv.style.height=Math.floor(GH*k)+"px";cv.width=Math.round(GW*q);cv.height=Math.round(GH*q);};
+  fit(); window.onresize=fit;
+  const ctx=cv.getContext("2d"),sx=sc.getContext("2d"),keys={},SCARE=100; let game=createGame(GW,GH),scare=0;
+  const clamp=x=>Math.max(game.pw/2,Math.min(GW-game.pw/2,x));
+  const move=x=>{const r=cv.getBoundingClientRect();game.px=clamp((x-r.left)*GW/r.width);};
+  const restart=()=>{game=createGame(GW,GH);scare=0;sc.hidden=true;};
+  cv.ontouchstart=cv.ontouchmove=e=>{e.preventDefault();audio();if(game.over&&game.ready){if(e.type==="touchstart")restart();return;}move(e.touches[0].clientX);};
+  cv.onclick=()=>{if(game.over&&game.ready)restart();};
+  keyDown=e=>{if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();keys[e.key]=1;}
+    if(e.key==="Enter"&&game.over&&game.ready)restart();};
+  keyUp=e=>{keys[e.key]=0;};
+  document.addEventListener("keydown",keyDown);document.addEventListener("keyup",keyUp);
+  const loop=()=>{const d=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0); if(d) game.px=clamp(game.px+d*7);
+    game.step();
+    if(game.over&&!game.ready){
+      if(scare===0){sc.width=innerWidth;sc.height=innerHeight;sc.hidden=false;audio();scream();}
+      scare++; medusa(sx,sc.width,sc.height,scare/SCARE,scare);
+      if(scare>=SCARE){game.ready=true;sc.hidden=true;}
+    }
+    ctx.setTransform(cv.width/GW,0,0,cv.height/GH,0,0);game.draw(ctx);raf=requestAnimationFrame(loop);}; loop();
+}
+function render(){
+  const out=document.getElementById("out"); out.textContent="";
+  if(!leads.length){document.getElementById("bar").hidden=true;return;}
+  const wrap=document.createElement("div"); wrap.className="wrap";
+  const tb=document.createElement("table");
+  const head=tb.createTHead().insertRow();
+  ["Business","Phone","Address","Last checked on map","Verify"].forEach(h=>{const th=document.createElement("th");th.textContent=h;head.appendChild(th);});
+  const body=tb.createTBody();
+  for(const l of leads){
+    const tr=body.insertRow();
+    tr.insertCell().textContent=l.name;
+    const p=tr.insertCell(), a=document.createElement("a"); a.textContent=l.phone; a.href="tel:"+l.phone.replace(/[^\d+]/g,""); p.appendChild(a);
+    tr.insertCell().textContent=l.address||"no address listed";
+    tr.insertCell().textContent=l.verified||"";
+    const v=tr.insertCell(), g=document.createElement("a"); g.textContent="Check on Google Maps"; g.target="_blank"; g.rel="noopener";
+    g.href="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(l.name+" "+lastCity); v.appendChild(g);
+  }
+  wrap.appendChild(tb); out.appendChild(wrap); document.getElementById("bar").hidden=false;
+}
+function toCSV(){
+  const q=x=>'"'+String(x).replace(/"/g,'""')+'"';
+  return ["Business,Phone,Address,Last checked,Google Maps link"].concat(leads.map(l=>[l.name,l.phone,l.address,l.verified,
+    "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(l.name+" "+lastCity)].map(q).join(","))).join("\n");
+}
+function init(){
+  const $=id=>document.getElementById(id), say=(m,err)=>{$("status").textContent=m;$("status").className=err?"err":"";};
+  $("types").innerHTML=""; C.forEach(c=>{const o=document.createElement("option");o.value=c[0][0];$("types").appendChild(o);});
+  $("f").addEventListener("submit",async ev=>{
+    ev.preventDefault(); const type=$("type").value, city=$("city").value, count=Math.max(1,Math.min(50,+$("count").value||10));
+    const alts=filtersFor(type);
+    if(!alts){say("I don't know \""+type+"\" yet. Try: mechanic, plumber, barber, bakery, restaurant, roofer, electrician, salon, dentist, gym, florist...",true);return;}
+    $("go").disabled=true; leads=[]; render(); showGame(true);
+    try{
+      say("Finding "+city+"..."); const place=await geocode(city); lastCity=city;
+      const seen=loadSeen(), lim=Math.min(500,seen.ids.size+count*3+10);
+      const els=await overpass(buildQuery(place,alts,lim),say);
+      const all=collect(els,seen); leads=all.slice(0,count);
+      leads.forEach(l=>{seen.ids.add(l.id);seen.na.add(l.k.na);if(l.k.phone)seen.phones.add(l.k.phone);}); saveSeen(seen);
+      render();
+      say((leads.length?`${leads.length} new leads. About ${all.length-leads.length} more unused leads remain for this search.`:(els.length?`No new leads. ${els.length} businesses of this type were found, but none are left that have a phone and no website. Try another type or city.`:`The map returned nothing for this search, which usually means the server hiccuped. Press Find leads again.`))+" (Searched: "+place.name+")");
+    }catch(e){say(e.message||"Something went wrong. Try again.",true);}
+    $("go").disabled=false; showGame(false);
+  });
+  $("csv").addEventListener("click",()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([toCSV()],{type:"text/csv"}));a.download="leads.csv";a.click();});
+  $("reset").addEventListener("click",()=>{if(confirm("Forget every lead shown so far? They could appear again.")){mem={ids:[],phones:[],na:[]};try{localStorage.removeItem("leadsSeen")}catch(e){} say("History cleared.");}});
+}
+init();
+</script></body></html>
