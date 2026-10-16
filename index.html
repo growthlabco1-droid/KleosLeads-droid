@@ -211,7 +211,7 @@ function fitFont(c,txt,tpl,max,start){let s=start;c.font=tpl.replace("%",s);whil
 function createGame(W,H){
   const cols=Math.max(10,Math.round((W-24)/36)),rows=7,bw=(W-24)/cols,bh=12,top=56,py=H-26,BASE=3.2,MAXS=BASE*1.6,
     colors=["#ef476f","#f78c40","#f9c74f","#90be6d","#43aa8b","#4d9de0","#9b7ede"];
-  const g={W,H,score:0,lives:3,px:W/2,pw:Math.round(Math.min(100,60+(W-360)*.1)),over:false,ready:false,round:1,phase:"play",t:0,broken:0,frame:0,slowUntil:0,nextBolt:6,bolts:[]};
+  const g={W,H,score:0,lives:3,px:W/2,pw:Math.round(Math.min(100,60+(W-360)*.1)),over:false,ready:false,round:1,phase:"play",t:0,broken:0,frame:0,slowUntil:0,nextBolt:6,bolts:[],strikeIn:0};
   const newBoard=()=>{
     g.alive=Array(rows*cols).fill(1); g.kind=Array(rows*cols).fill(0); g.left=rows*cols;
     const idx=[...Array(rows*cols).keys()].sort(()=>Math.random()-.5);
@@ -221,7 +221,7 @@ function createGame(W,H){
   g.speed=()=>Math.min(MAXS,BASE*(1+0.04*Math.floor(g.broken/3)))*(1+.1*(g.round-1))*(g.frame<g.slowUntil?0.5:1);
   const kill=i=>{g.alive[i]=0;g.kind[i]=0;g.left--;g.broken++;g.score+=rows-Math.floor(i/cols);};
   g.hit=i=>{
-    if(!g.alive[i]) return; const k=g.kind[i]; kill(i);
+    if(!g.alive[i]) return; const k=g.kind[i]; kill(i); ping(Math.floor(i/cols));
     if(k===1) g.slowUntil=g.frame+420;
     if(k===2){const r=Math.floor(i/cols),c=i%cols,n=[];
       for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const rr=r+dr,cc=c+dc;
@@ -238,15 +238,15 @@ function createGame(W,H){
     e.sort(()=>Math.random()-.5).slice(0,3).forEach(i=>{
       const r=Math.floor(i/cols),c=i%cols; g.alive[i]=1; g.kind[i]=0; g.left++;
       g.bolts.push({x:12+c*bw+bw/2,y:top+r*bh+bh/2,t:24});});
-    if(e.length) zap();
+    if(e.length){zap();thunder(.35,.3);}
   };
   newBoard(); serve();
   g.canRestart=()=>(g.over&&g.ready)||(g.phase==="win"&&g.round>=2&&g.t>=150);
   g.step=()=>{
     if(g.over) return; g.frame++;
     if(g.phase!=="play"){g.t++;
-      if(g.phase==="win"&&g.round<2&&g.t>=210){g.phase="warn";g.t=0;rumble();}
-      else if(g.phase==="warn"&&g.t>=160){g.phase="play";g.round++;g.broken=0;g.slowUntil=0;g.nextBolt=6;g.bolts=[];newBoard();serve();}
+      if(g.phase==="win"&&g.round<2&&g.t>=210){g.phase="warn";g.t=0;rumble();laugh();}
+      else if(g.phase==="warn"&&g.t>=160){g.phase="play";g.round++;g.broken=0;g.slowUntil=0;g.nextBolt=6;g.bolts=[];g.strikeIn=0;newBoard();serve();}
       return;}
     g.bolts.forEach(b=>b.t--); g.bolts=g.bolts.filter(b=>b.t>0);
     const sp=g.speed();
@@ -262,7 +262,8 @@ function createGame(W,H){
       }
     }
     g.balls=g.balls.filter(b=>b.y<=H);
-    if(g.round===2&&g.left>0&&g.broken>=g.nextBolt){g.nextBolt=g.broken-g.broken%6+6;strike();}
+    if(g.round===2&&!g.strikeIn&&g.left>0&&g.broken>=g.nextBolt){g.nextBolt=g.broken-g.broken%6+6;g.strikeIn=45;roar();}
+    if(g.strikeIn>0&&--g.strikeIn===0&&g.left>0) strike();
     if(g.left<=0){g.phase="win";g.t=0;g.balls=[];victory();}
     else if(!g.balls.length){g.lives--; if(g.lives<=0) g.over=true; else serve();}
   };
@@ -343,6 +344,54 @@ function zap(){
     g.gain.setValueAtTime(.35,n);g.gain.exponentialRampToValueAtTime(.001,n+d);
     s.connect(hp);hp.connect(g);g.connect(ac.destination);s.start(n);}catch(e){}
 }
+/* ---------- Game sound effects ---------- */
+function ping(r){
+  if(!ac) return;
+  try{const n=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();
+    o.type="sine";o.frequency.setValueAtTime(880+(6-r)*70,n);
+    g.gain.setValueAtTime(.12,n);g.gain.exponentialRampToValueAtTime(.001,n+.15);
+    o.connect(g);g.connect(ac.destination);o.start(n);o.stop(n+.16);}catch(e){}
+}
+/* Medusa level start: slithering hiss */
+function slither(){
+  if(!ac) return;
+  try{const n=ac.currentTime,d=2,buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),data=buf.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+    const s=ac.createBufferSource(),bp=ac.createBiquadFilter(),am=ac.createGain(),lf=ac.createOscillator(),lg=ac.createGain(),g=ac.createGain();
+    s.buffer=buf;bp.type="bandpass";bp.Q.value=2.5;
+    bp.frequency.setValueAtTime(3500,n);bp.frequency.linearRampToValueAtTime(6000,n+1);bp.frequency.linearRampToValueAtTime(3000,n+d);
+    am.gain.value=.5;lf.frequency.value=9;lg.gain.value=.4;lf.connect(lg);lg.connect(am.gain);
+    g.gain.setValueAtTime(0,n);g.gain.linearRampToValueAtTime(.35,n+.3);g.gain.linearRampToValueAtTime(.35,n+1.3);g.gain.linearRampToValueAtTime(0,n+d);
+    s.connect(bp);bp.connect(am);am.connect(g);g.connect(ac.destination);s.start(n);lf.start(n);lf.stop(n+d);}catch(e){}
+}
+/* Zeus lightning warning: a roar before the strike */
+function roar(){
+  if(!ac) return;
+  try{const n=ac.currentTime,d=.8,o=ac.createOscillator(),o2=ac.createOscillator(),l=ac.createOscillator(),lg=ac.createGain(),lp=ac.createBiquadFilter(),g=ac.createGain();
+    o.type="sawtooth";o2.type="square";
+    o.frequency.setValueAtTime(70,n);o.frequency.exponentialRampToValueAtTime(190,n+.25);o.frequency.exponentialRampToValueAtTime(55,n+d);
+    o2.frequency.setValueAtTime(35,n);o2.frequency.exponentialRampToValueAtTime(95,n+.25);o2.frequency.exponentialRampToValueAtTime(28,n+d);
+    l.frequency.value=32;lg.gain.value=25;l.connect(lg);lg.connect(o.frequency);
+    lp.type="lowpass";lp.frequency.setValueAtTime(500,n);lp.frequency.linearRampToValueAtTime(1600,n+.25);lp.frequency.linearRampToValueAtTime(300,n+d);
+    g.gain.setValueAtTime(0,n);g.gain.linearRampToValueAtTime(.5,n+.08);g.gain.setValueAtTime(.5,n+.45);g.gain.exponentialRampToValueAtTime(.001,n+d);
+    o.connect(lp);o2.connect(lp);lp.connect(g);g.connect(ac.destination);
+    [o,o2,l].forEach(x=>{x.start(n);x.stop(n+d);});}catch(e){}
+}
+/* "A new opponent has emerged": deep evil laugh */
+function laugh(){
+  if(!ac) return;
+  try{const n=ac.currentTime+.1;
+    [[0,92,.3],[.42,86,.3],[.84,80,.3],[1.26,74,.32],[1.68,68,.9]].forEach(([t,f,d])=>{
+      const o=ac.createOscillator(),o2=ac.createOscillator(),lp=ac.createBiquadFilter(),pk=ac.createBiquadFilter(),g=ac.createGain(),v=ac.createOscillator(),vg=ac.createGain();
+      o.type="sawtooth";o2.type="square";
+      o.frequency.setValueAtTime(f*1.3,n+t);o.frequency.exponentialRampToValueAtTime(f,n+t+d*.7);
+      o2.frequency.setValueAtTime(f*.65,n+t);o2.frequency.exponentialRampToValueAtTime(f*.5,n+t+d*.7);
+      v.frequency.value=7;vg.gain.value=3;v.connect(vg);vg.connect(o.frequency);
+      lp.type="lowpass";lp.frequency.value=700;pk.type="peaking";pk.frequency.value=450;pk.gain.value=12;pk.Q.value=3;
+      g.gain.setValueAtTime(0,n+t);g.gain.linearRampToValueAtTime(.55,n+t+.04);g.gain.setValueAtTime(.55,n+t+d*.5);g.gain.exponentialRampToValueAtTime(.001,n+t+d);
+      o.connect(lp);o2.connect(lp);lp.connect(pk);pk.connect(g);g.connect(ac.destination);
+      [o,o2,v].forEach(x=>{x.start(n+t);x.stop(n+t+d+.05);});});}catch(e){}
+}
 /* defeated Medusa / Zeus: the exact same drawings as the jumpscares, just dead */
 function deadMedusa(c,W,H,top,f){
   const s=Math.max(30,Math.min((W-20)/3,(H-top-24)/2.3));
@@ -381,12 +430,12 @@ function scream(){
   }catch(e){}
 }
 /* Zeus jumpscare sound: loud bang of thunder with a rolling rumble */
-function thunder(){
+function thunder(vol,delay){
   if(!ac) return;
   try{
-    const n=ac.currentTime,d=2.4,m=ac.createGain(),ws=ac.createWaveShaper(),cv=new Float32Array(256);
+    const n=ac.currentTime+(delay||0),d=2.4,m=ac.createGain(),ws=ac.createWaveShaper(),cv=new Float32Array(256);
     for(let i=0;i<256;i++){cv[i]=Math.tanh((i/128-1)*4);} ws.curve=cv;
-    m.gain.value=1;m.connect(ws);ws.connect(ac.destination);
+    m.gain.value=vol||1;m.connect(ws);ws.connect(ac.destination);
     const buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),data=buf.getChannelData(0);
     for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
     const ns=ac.createBufferSource(),lp=ac.createBiquadFilter(),ng=ac.createGain();
@@ -549,13 +598,14 @@ function showGame(on,endless){
   const ctx=cv.getContext("2d"),sx=sc.getContext("2d"),keys={},SCARE=100; let game=createGame(GW,GH),scare=0;
   const clamp=x=>Math.max(game.pw/2,Math.min(GW-game.pw/2,x));
   const move=x=>{const r=cv.getBoundingClientRect();game.px=clamp((x-r.left)*GW/r.width);};
-  const restart=()=>{game=createGame(GW,GH);scare=0;sc.hidden=true;};
+  const restart=()=>{game=createGame(GW,GH);scare=0;sc.hidden=true;slither();};
   cv.ontouchstart=cv.ontouchmove=e=>{e.preventDefault();audio();if(game.canRestart()){if(e.type==="touchstart")restart();return;}move(e.touches[0].clientX);};
   cv.onclick=()=>{if(game.canRestart())restart();};
   keyDown=e=>{if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();keys[e.key]=1;}
     if(e.key==="Enter"&&game.canRestart())restart();};
   keyUp=e=>{keys[e.key]=0;};
   document.addEventListener("keydown",keyDown);document.addEventListener("keyup",keyUp);
+  slither();
   const loop=()=>{const d=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0); if(d) game.px=clamp(game.px+d*7);
     game.step();
     if(game.over&&!game.ready){
