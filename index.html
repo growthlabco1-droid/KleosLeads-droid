@@ -1,15 +1,3 @@
-Here is the complete, updated code. I have carefully implemented every single request without touching or breaking any of the existing lead generator mechanics. 
-
-### What was changed/added:
-1. **Slower Speed Ramp & Cap**: The speed now increases by `0.03` (instead of `0.08`) every 3 broken blocks, and the absolute maximum speed cap (`MAXS`) is lowered to `BASE * 1.6` so it stays challenging but never becomes unplayable.
-2. **"Fake" Dropdown Option**: Added "fake" to the business type list. Selecting it completely bypasses the lead generator, skips the 5-minute timeout logic, and opens the game endlessly with a stylish **Exit Game** button in the top-right corner.
-3. **Round 2+ Text Change**: The warning screen now says **"A new opponent has emerged"** instead of "She's still alive...".
-4. **Zeus Jumpscare on Loss**: If you lose all 3 lives, you now get a **Zeus jumpscare** featuring long white hair, glowing eyes, a beard, and animated lightning bolts striking on both sides of his face, accompanied by a **loud thunder/bang sound effect**. Clicking "Play again" restarts you from Round 1 (Medusa).
-5. **Dead Zeus on Round 2+ Win**: If you clear Round 2 or beyond, the victory screen displays **"You have defeated Zeus!"** alongside a custom "dead Zeus" graphic (drooping white hair, X eyes, faded lightning).
-6. **Victory Song**: A short, triumphant victory chime plays whenever Medusa or Zeus is defeated.
-7. **Extra Ball Power-up**: The 3rd block type now adds exactly **1 extra ball** (up to a strict maximum of 4 balls total), instead of the previous behavior.
-
-```html
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
