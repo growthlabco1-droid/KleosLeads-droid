@@ -209,7 +209,7 @@ function buildQuery(place,alts,lim){
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 function fitFont(c,txt,tpl,max,start){let s=start;c.font=tpl.replace("%",s);while(s>11&&c.measureText(txt).width>max){s--;c.font=tpl.replace("%",s);}return c.font;}
 function createGame(W,H){
-  const cols=Math.max(10,Math.round((W-24)/36)),rows=7,bw=(W-24)/cols,bh=12,top=56,py=H-26,BASE=4.7,MAXS=8.1,
+  const cols=Math.max(10,Math.round((W-24)/36)),rows=7,bw=(W-24)/cols,bh=12,top=56,py=H-26,BASE=4.7,MAXS=8.0,
     colors=["#ef476f","#f78c40","#f9c74f","#90be6d","#43aa8b","#4d9de0","#9b7ede"];
   const g={W,H,score:0,lives:3,px:W/2,pw:Math.round(Math.min(100,60+(W-360)*.1)),over:false,ready:false,round:1,phase:"play",t:0,broken:0,frame:0,slowUntil:0,nextBolt:7,bolts:[],strikeIn:0};
   const newBoard=()=>{
@@ -218,7 +218,7 @@ function createGame(W,H){
     [1,1,2,2,3,3,4,4,5,5].forEach((k,i)=>{g.kind[idx[i]]=k;});   // 1 clock, 2 bomb, 3 three balls, 4 extra ball, 5 extra life
   };
   const serve=()=>{const a=Math.random()-.5; g.balls=[{x:W/2,y:H-60,vx:Math.sin(a),vy:-Math.cos(a)}];};
-  g.speed=()=>Math.min(MAXS*(g.round>1?1.06:1),BASE*(g.round>1?1.04:1)*(1+0.05*Math.floor(g.broken/3)))*(g.frame<g.slowUntil?0.5:1);
+  g.speed=()=>Math.min(MAXS*(g.round>1?1.05:1),BASE*(g.round>1?1.04:1)*(1+0.03*Math.floor(g.broken/3)))*(g.frame<g.slowUntil?0.5:1);
   const kill=i=>{g.alive[i]=0;g.kind[i]=0;g.left--;g.broken++;g.score+=rows-Math.floor(i/cols);};
   g.hit=i=>{
     if(!g.alive[i]) return; const k=g.kind[i]; kill(i); ping(Math.floor(i/cols));
