@@ -302,12 +302,14 @@ function createGame(W,H){
     g.bs=3;g.bt=0;g.btime=0;g.lives=3;g.php=3;
     g.enraged=false;g.rage=0;g.bclock=0;g.nextLaugh=20;g.laughUntil=0;
     g.alive.fill(0);g.kind.fill(0);g.left=0;g.bolts=[];g.arc=null;g.arcs=[];
-    g.bb=[];g.pu=null;g.mult=1;g.pm=-1;g.bhits=0;g.nb=80;g.hurt=0;g.carry=0;g.shotN=0;
+    g.bb=[];g.pu=null;g.pu2=null;g.mult=1;g.pm=-1;g.bhits=0;g.nb=80;g.hurt=0;g.carry=0;g.shotN=0;
     g.bz={x:W/2,y:22+7*g.u,hp:15,flash:0};
     g.px=W/2;serveStuck();zap();laugh(0,true);thunder(.25,.1);bossMusic(true);
   };
   /* random power-up brick: 0 arrow (2 hits in 1), 1 laser (3 hits in 1), 2 sword (4 hits in 1) */
   const spawnPU=()=>{g.pu={x:40+Math.random()*(W-80),y:Math.round(H*.3+Math.random()*H*.18),t:Math.floor(Math.random()*3)};};
+  /* Zeus extra power-up: every 3 hits on Zeus a heart brick appears; the ball hitting it gives +1 life and +1 ball */
+  const spawnLife=()=>{let x=40+Math.random()*(W-80);if(g.pu&&Math.abs(x-g.pu.x)<50)x=g.pu.x>W/2?g.pu.x-80:g.pu.x+80;g.pu2={x:Math.max(30,Math.min(W-30,x)),y:Math.round(H*.5+Math.random()*H*.1)};};
   const bossStep=()=>{
     g.bt++;g.btime++;
     const z=g.bz,u=g.u,hw=7*u;
@@ -334,14 +336,20 @@ function createGame(W,H){
         z.hp-=dmg;z.flash=14;g.bhits++;g.score+=10*dmg;zap();
         b.vy=Math.abs(b.vy);b.vx+=(Math.random()-.5)*.8;b.y=z.y+hw+4;
         if(g.pm>=0){g.pm=-1;g.mult=1;}
-        if(z.hp<=0){g.bs=0;g.phase="win";g.t=0;g.balls=[];g.bb=[];g.pu=null;bossMusic(false);victory();return;}
+        if(z.hp<=0){g.bs=0;g.phase="win";g.t=0;g.balls=[];g.bb=[];g.pu=null;g.pu2=null;bossMusic(false);victory();return;}
         if(g.bhits%4===0) spawnPU();
+        if(g.bhits%3===0) spawnLife();
       }
       if(b.y<22){b.y=22;b.vy=Math.abs(b.vy);}
       const p=g.pu;
       if(p&&Math.abs(b.x-p.x)<=21&&Math.abs(b.y-p.y)<=11){
         if(Math.abs(b.x-p.x)/21>Math.abs(b.y-p.y)/11) b.vx=(b.x>p.x?1:-1)*Math.abs(b.vx); else b.vy=(b.y>p.y?1:-1)*Math.abs(b.vy);
         g.pm=p.t;g.mult=[2,3,4][p.t];g.pu=null;ping(0);
+      }
+      const p2=g.pu2;
+      if(p2&&Math.abs(b.x-p2.x)<=21&&Math.abs(b.y-p2.y)<=11){
+        if(Math.abs(b.x-p2.x)/21>Math.abs(b.y-p2.y)/11) b.vx=(b.x>p2.x?1:-1)*Math.abs(b.vx); else b.vy=(b.y>p2.y?1:-1)*Math.abs(b.vy);
+        g.php++;g.lives++;g.pu2=null;ping(1);
       }
       if(b.vy>0&&b.y>=py-4&&b.y<=py+8&&Math.abs(b.x-g.px)<=g.pw/2+3){
         const s=Math.hypot(b.vx,b.vy), a=Math.max(-1,Math.min(1,(b.x-g.px)/(g.pw/2)+Math.random()*0.3-0.15));
@@ -676,6 +684,12 @@ function createGame(W,H){
       if(p.t===2){ctx.moveTo(p.x-9,p.y+5);ctx.lineTo(p.x+3,p.y-5);ctx.moveTo(p.x-6,p.y);ctx.lineTo(p.x-2,p.y+4);}
       ctx.stroke();
       ctx.font="bold 9px system-ui,sans-serif";ctx.textAlign="right";ctx.fillText("x"+[2,3,4][p.t],p.x+16,p.y+3);ctx.textAlign="left";
+    }
+    const p2=g.pu2;
+    if(p2){
+      ctx.fillStyle="#3ddc84";rr(ctx,p2.x-18,p2.y-8,36,16,3);ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,.3)";ctx.fillRect(p2.x-14,p2.y-6,28,2);
+      ctx.fillStyle="#111";ctx.font="bold 10px system-ui,sans-serif";ctx.textAlign="center";ctx.fillText("\u2665 +1 ball",p2.x,p2.y+3);ctx.textAlign="left";
     }
     const pg=ctx.createLinearGradient(0,py,0,py+8);pg.addColorStop(0,"#6bb8ff");pg.addColorStop(1,"#2a6fd4");
     ctx.fillStyle=pg;rr(ctx,g.px-g.pw/2,py,g.pw,8,4);ctx.fill();
