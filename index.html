@@ -1040,18 +1040,19 @@ function createGame(W,H){
   };
   const initFight=()=>{
     g.bs=5;g.php=11;g.inv=0;g.rg=0;g.pxp=g.cx;g.py=0;g.pvy=0;g.pk=0;g.pd=1;g.pw2=0;g.swing=0;g.hitd=0;g.sp0=false;g.chg=0;g.fire=null;g.pflash=0;
-    g.z={x:290,y:0,vy:0,rush:0,rt:0,sh:0,nx:35-D.shieldEvery,hp:35,fl:0,d:-1,w:0,cd:90,st:0,t2:0,q:0,hits:0,ag:1};g.zb=[];g.zd=[];g.parts=[];bossMusic(true);
+    g.z={x:290,y:0,vy:0,rush:0,rt:0,sh:0,shH:0,shC:D.shieldFirst,nx:0,hp:15,fl:0,d:-1,w:0,cd:90,st:0,t2:0,q:0,hits:0,ag:1};g.zb=[];g.zd=[];g.parts=[];bossMusic(true);
   };
   /* DAMAGE TABLE (hearts you lose). Change these numbers to tune the fight. inv = frames you are safe after a hit. enrageAt = his hearts left when he goes berserk. */
-  const D={stream:1,melee:1,splash:1,inv:60,enrageAt:12,block:.5,knock:40,shieldEvery:5,shieldTime:300};
+  const D={stream:1,melee:1,splash:1,inv:60,enrageAt:5,block:.5,knock:40,shieldTime:300,shieldGap:1800,shieldFirst:600,shieldHits:2};   /* shield: up for 5 s (300 frames), at most once every 30 s (1800 frames, first one after 10 s), breaks after 2 hits */
   const hurtP=n=>{if(g.inv>0)return;g.php-=n||1;g.inv=D.inv;g.pflash=40;thunder(.25,0);if(g.php<=0){g.over=true;g.bs=0;bossMusic(false);}};
   const hitZ=n=>{const z=g.z;z.hp-=n;z.fl=14;z.hits++;g.score+=10*n;zap();puff(z.x,GYF-40,6,WC,4);
-    if(z.hp>0&&z.hp<=z.nx){z.nx=Math.floor((z.hp-1)/D.shieldEvery)*D.shieldEvery;z.sh=D.shieldTime;underYell(1.4);}
     if(z.hits%8===0) z.q=1;
     if(z.hp<=0){g.bs=0;g.phase="win";g.t=0;g.hidePad=true;g.parts=[];g.zb=[];g.zd=[];g.fire=null;bossMusic(false);victory();}};
+  /* a hit on the water shield (sword or fire): no damage, and after 2 hits it breaks */
+  const shHit=()=>{const z=g.z;z.shH++;if(z.shH>=D.shieldHits){z.sh=0;puff(z.x,GYF-z.y-40,22,["#ffffff","#cdefff","#7fd8ff"],8);zap();thunder(.2,0);}};
   const fightStep=()=>{
     const K=window.GK||{},z=g.z;g.bt++;
-    z.ag=1+(1-z.hp/35)*.8;
+    z.ag=1+(1-z.hp/15)*.8;
     if(z.fl>0)z.fl--; if(g.pflash>0)g.pflash--; if(g.inv>0)g.inv--;
     if(!z.en&&z.hp<=D.enrageAt){z.en=1;underYell(2.2);}
     /* player: left/right walk, down crouch, up jump, space sword (7 hits charges fire, next space shoots it for 4x damage) */
@@ -1068,17 +1069,19 @@ function createGame(W,H){
     if(g.swing>0){g.swing--;
       if(g.swing===27&&!g.hitd&&Math.abs(z.x-g.pxp)<=48&&Math.abs(g.py-z.y)<40){g.hitd=1;
         /* he blocks with the trident while he is not attacking: sparks, no damage, and he slides back */
-        if(z.sh>0||(z.st===0&&Math.random()<D.block)){puff(z.x-z.d*8,GYF-z.y-40,8,["#ffffff","#cdefff","#7fd8ff"],5);ping(1);z.x=Math.max(40,Math.min(W-30,z.x-z.d*10));}
+        if(z.sh>0||(z.st===0&&Math.random()<D.block)){puff(z.x-z.d*8,GYF-z.y-40,8,["#ffffff","#cdefff","#7fd8ff"],5);ping(1);if(z.sh>0)shHit();z.x=Math.max(40,Math.min(W-30,z.x-z.d*10));}
         else{g.chg=Math.min(7,g.chg+1);hitZ(1);if(g.bs!==5)return;
         /* he reacts: steps back, sometimes hops, and often hits back fast */
         z.x=Math.max(40,Math.min(W-30,z.x-z.d*D.knock));if(z.y===0&&Math.random()<.5) z.vy=6;
         if(z.st===0&&Math.random()<.4) z.cd=Math.min(z.cd,10);}}}
     if(g.fire){const f=g.fire;f.x+=f.vx;f.y+=(z.y+34-f.y)*.05;
       for(let i=0;i<2;i++) g.parts.push({x:f.x-Math.sign(f.vx)*6+(Math.random()-.5)*6,y:GYF-f.y+(Math.random()-.5)*8,vx:-Math.sign(f.vx)*.6,vy:-.3,l:16,c:["#ff4d00","#ff9b1a","#ffe066"][i%3],gr:-.02});
-      if(Math.abs(f.x-z.x)<=20&&f.y>=z.y-6&&f.y<=z.y+76){g.fire=null;puff(z.x,GYF-z.y-40,14,["#ff7a1a","#ffe066","#ff4d00"],7);if(z.sh<=0){hitZ(4);if(g.bs!==5)return;}}else if(f.x<8||f.x>W-8) g.fire=null;}
+      if(Math.abs(f.x-z.x)<=20&&f.y>=z.y-6&&f.y<=z.y+76){g.fire=null;puff(z.x,GYF-z.y-40,14,["#ff7a1a","#ffe066","#ff4d00"],7);if(z.sh<=0){hitZ(4);if(g.bs!==5)return;}else shHit();}else if(f.x<8||f.x>W-8) g.fire=null;}
     if(++g.rg>=5400){g.rg=0;if(g.php<11)g.php++;}   /* one heart back every 1 min 30 s */
     /* Poseidon: keeps his distance and throws water from the trident, melee up close, splash after every 8 hits */
     const dist=Math.abs(g.pxp-z.x);z.d=g.pxp>z.x?1:-1;z.cd-=z.ag;
+    if(z.shC>0)z.shC--;
+    if(z.shC<=0&&z.sh<=0){z.sh=D.shieldTime;z.shH=0;z.shC=D.shieldGap;underYell(1.4);}   /* the shield comes up at most once every 30 s */
     if(z.sh>0){z.sh--;z.cd-=.15;}   /* while the shield is up he attacks faster */
     if(z.y>0||z.vy>0){z.vy-=.5;z.y=Math.max(0,z.y+z.vy);if(z.y===0)z.vy=0;}
     if(z.st===0){
@@ -1107,14 +1110,14 @@ function createGame(W,H){
     if(g.bt%3===0) g.parts.push({x:z.x+(Math.random()-.5)*34,y:GYF-z.y-Math.random()*66,vx:0,vy:-.5,l:30,c:"rgba(120,220,255,.6)",gr:0});
   };
   const fightDraw=ctx=>{
-    const z=g.z,r=1-z.hp/35;
+    const z=g.z,r=1-z.hp/15;
     ctx.fillStyle="#04101c";ctx.fillRect(0,0,W,H);
     ctx.fillStyle="#2a2118";ctx.fillRect(8,GYF,W-16,H-GYF-5);ctx.fillStyle="#5c4630";ctx.fillRect(8,GYF,W-16,2);
     ctx.strokeStyle="rgba(243,227,176,.4)";ctx.lineWidth=1;ctx.strokeRect(8.5,15.5,W-17,H-16);
     if(g.pflash>0){ctx.fillStyle="rgba(255,60,60,"+Math.min(.4,g.pflash/90)+")";ctx.fillRect(0,0,W,H);}
-    ctx.fillStyle="#2a0d0d";ctx.fillRect(16,6,W-32,6);ctx.fillStyle="#d12f2f";ctx.fillRect(16,6,(W-32)*Math.max(0,z.hp)/35,6);
+    ctx.fillStyle="#2a0d0d";ctx.fillRect(16,6,W-32,6);ctx.fillStyle="#d12f2f";ctx.fillRect(16,6,(W-32)*Math.max(0,z.hp)/15,6);
     if(z.st===1){ctx.strokeStyle="rgba(120,220,255,.8)";ctx.lineWidth=2;ctx.beginPath();ctx.arc(z.x,GYF-40,(45-z.t2)*1.2,0,7);ctx.stroke();}
-    if(z.sh>0){const q=.5+.5*Math.sin(g.bt*.2);ctx.fillStyle="rgba(120,220,255,"+(.12+.08*q)+")";ctx.strokeStyle="rgba(190,245,255,"+(.6+.3*q)+")";ctx.lineWidth=2;ctx.beginPath();ctx.arc(z.x,GYF-z.y-36,54,0,7);ctx.fill();ctx.stroke();ctx.font="11px system-ui,sans-serif";ctx.fillStyle="#bfeaff";ctx.textAlign="center";ctx.fillText("WATER SHIELD - survive until it breaks",W/2,28);ctx.textAlign="left";}
+    if(z.sh>0){const q=.5+.5*Math.sin(g.bt*.2);ctx.fillStyle="rgba(120,220,255,"+(.12+.08*q)+")";ctx.strokeStyle="rgba(190,245,255,"+(.6+.3*q)+")";ctx.lineWidth=2;ctx.beginPath();ctx.arc(z.x,GYF-z.y-36,54,0,7);ctx.fill();ctx.stroke();ctx.font="11px system-ui,sans-serif";ctx.fillStyle="#bfeaff";ctx.textAlign="center";ctx.fillText("WATER SHIELD - hit it twice to break it",W/2,28);ctx.textAlign="left";}
     const sa=z.st===2?-.15:z.st===3?-1.2+(1-z.t2/22)*1.6:-1.2;
     man(ctx,z.x,GYF-z.y,5,{d:z.d,w:z.w,col:z.fl>0?"#ff3030":mix(r,[14,70,90],[190,25,25]),skin:z.fl>0?"#ff5a4a":mix(r,[80,140,150],[230,80,70]),wp:"t",a:sa,crown:1,mon:1,ec:mix(r,[56,240,255],[255,40,30]),t:g.bt});
     const pa=g.swing>0?-1.4+(1-g.swing/(g.hitd&&g.chg===0&&g.swing<=16?16:36))*2.2:-.9;
@@ -1967,8 +1970,8 @@ function showGame(on,endless){
   const move=x=>{if(game.frozen>0)return;const r=cv.getBoundingClientRect();game.px=clamp((x-r.left)*GW/r.width);};
   const restart=()=>{
     /* checkpoint: every two levels passed (reaching round 3) becomes your spawn point. Die twice there and you go back to the very beginning.
-       Winning, dying before any checkpoint, or dying in a mini game (Zeus / Poseidon fights) keeps the old behaviour: back to the beginning. */
-    const won=game.phase==="win"&&!game.over,mini=mb===3||mb===5||mb===6;
+       Winning, dying before any checkpoint, or dying in the Zeus fight keeps the old behaviour: back to the beginning. Dying in the Poseidon fight uses the checkpoint like a normal death. */
+    const won=game.phase==="win"&&!game.over,mini=mb===3||mb===6;
     if(won||mini||ckR<3){ckR=1;ckD=0;}else{ckD++;if(ckD>=2){ckR=1;ckD=0;}}
     game=createGame(GW,GH);if(ckR>=3)game.startAt(ckR);mb=0;scare=0;hscare=0;sc.hidden=true;hzAmbient(false);slither();};
   cv.ontouchstart=cv.ontouchmove=e=>{e.preventDefault();audio();if(game.canRestart()){if(e.type==="touchstart")restart();return;}if(game.bs===6){const r=cv.getBoundingClientRect(),t0=e.touches[0];game.tpt={x:(t0.clientX-r.left)*GW/r.width,y:(t0.clientY-r.top)*GH/r.height};if(e.type==="touchstart")game.tapE=1;}move(e.touches[0].clientX);};cv.ontouchend=cv.ontouchcancel=()=>{game.tpt=null;};
