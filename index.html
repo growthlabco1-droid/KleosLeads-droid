@@ -443,6 +443,8 @@ function createGame(W,H){
     ctx.restore();
   };
   g.canRestart=()=>(g.over&&g.ready)||(g.phase==="win"&&g.round>=4&&g.t>=150);
+  /* checkpoint spawn: begin at the intro of round r (3 = Poseidon). Uses the normal warn -> play transition so the level is set up exactly like a normal run */
+  g.startAt=r=>{if(r<3)return;g.round=r-1;g.phase="warn";g.t=0;g.alive.fill(0);g.kind.fill(0);g.left=0;g.balls=[];g.hidePad=false;rumble();if(r===3)bubbles(true);};
   g.step=()=>{
     if(g.over) return; g.frame++;
     if(g.phase!=="play"){g.t++;
@@ -1960,10 +1962,15 @@ function showGame(on,endless){
   const fit=()=>{const r=st.getBoundingClientRect(),k=Math.min(r.width/GW,r.height/GH),q=Math.min(3,k*(devicePixelRatio||1));
     cv.style.width=Math.floor(GW*k)+"px";cv.style.height=Math.floor(GH*k)+"px";cv.width=Math.round(GW*q);cv.height=Math.round(GH*q);};
   fit(); window.onresize=fit;
-  const ctx=cv.getContext("2d"),sx=sc.getContext("2d"),keys=window.GK={},SCARE=100; let game=createGame(GW,GH),scare=0,hscare=0;
+  const ctx=cv.getContext("2d"),sx=sc.getContext("2d"),keys=window.GK={},SCARE=100; let game=createGame(GW,GH),scare=0,hscare=0,ckR=1,ckD=0,mb=0;   /* ckR: checkpoint round (1 = none), ckD: deaths since that checkpoint, mb: game mode at the last step (3 Zeus fight, 5 Poseidon fight, 6 horror = mini games) */
   const clamp=x=>Math.max(game.pw/2,Math.min(GW-game.pw/2,x));
   const move=x=>{if(game.frozen>0)return;const r=cv.getBoundingClientRect();game.px=clamp((x-r.left)*GW/r.width);};
-  const restart=()=>{game=createGame(GW,GH);scare=0;hscare=0;sc.hidden=true;hzAmbient(false);slither();};
+  const restart=()=>{
+    /* checkpoint: every two levels passed (reaching round 3) becomes your spawn point. Die twice there and you go back to the very beginning.
+       Winning, dying before any checkpoint, or dying in a mini game (Zeus / Poseidon fights) keeps the old behaviour: back to the beginning. */
+    const won=game.phase==="win"&&!game.over,mini=mb===3||mb===5||mb===6;
+    if(won||mini||ckR<3){ckR=1;ckD=0;}else{ckD++;if(ckD>=2){ckR=1;ckD=0;}}
+    game=createGame(GW,GH);if(ckR>=3)game.startAt(ckR);mb=0;scare=0;hscare=0;sc.hidden=true;hzAmbient(false);slither();};
   cv.ontouchstart=cv.ontouchmove=e=>{e.preventDefault();audio();if(game.canRestart()){if(e.type==="touchstart")restart();return;}if(game.bs===6){const r=cv.getBoundingClientRect(),t0=e.touches[0];game.tpt={x:(t0.clientX-r.left)*GW/r.width,y:(t0.clientY-r.top)*GH/r.height};if(e.type==="touchstart")game.tapE=1;}move(e.touches[0].clientX);};cv.ontouchend=cv.ontouchcancel=()=>{game.tpt=null;};
   cv.onclick=()=>{if(game.canRestart())restart();};
   keyDown=e=>{if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," ","e","E"].includes(e.key)){e.preventDefault();keys[e.key]=1;}
@@ -1976,7 +1983,9 @@ function showGame(on,endless){
   const STEP=1000/60; let last=performance.now(),acc=0;
   const tick=()=>{
     const d=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0); if(d&&!(game.frozen>0)) game.px=clamp(game.px+d*7);
+    if(!game.over)mb=game.bs;
     game.step();
+    if(game.round>=3&&ckR<3){ckR=3;ckD=0;}
     if(game.hzDead&&game.hzDead()){   /* caught in the horror level: Hades burning skull + loud noise, then restart the mini-game */
       if(hscare===0){sc.width=innerWidth;sc.height=innerHeight;sc.hidden=false;audio();hadesRoar();thunder(.9,0);}
       hscare++;
