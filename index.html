@@ -209,7 +209,7 @@ function buildQuery(place,alts,lim){
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 function fitFont(c,txt,tpl,max,start){let s=start;c.font=tpl.replace("%",s);while(s>11&&c.measureText(txt).width>max){s--;c.font=tpl.replace("%",s);}return c.font;}
 function createGame(W,H){
-  const cols=Math.max(10,Math.round((W-24)/36)),rows=7,bw=(W-24)/cols,bh=12,top=56,py=H-26,BASE=4.7,MAXS=7.0,
+  const cols=Math.max(10,Math.round((W-24)/36)),rows=7,bw=(W-24)/cols,bh=12,top=56,py=H-26,BASE=4.7,MAXS=6.9,
     colors=["#ef476f","#f78c40","#f9c74f","#90be6d","#43aa8b","#4d9de0","#9b7ede"];
   const g={W,H,score:0,lives:3,px:W/2,pw:Math.round(Math.min(100,60+(W-360)*.1)),over:false,ready:false,round:1,phase:"play",t:0,broken:0,frame:0,slowUntil:0,nextBolt:7,bolts:[],strikeIn:0,
     bs:0,bt:0,u:Math.min(6,Math.max(3,Math.floor(W/80))),pm:-1,mult:1,php:3,bz:null,bb:[],pu:null,pz:null,carry:0,cx0:0,btime:0,bhits:0,nb:0,hurt:0,shotN:0,enraged:false,rage:0,bclock:0,nextLaugh:20,laughUntil:0,
