@@ -229,7 +229,7 @@ function createGame(W,H){
      speed up slowly (+1.2% for every 4 bricks broken) and stop at a gentle cap, so they stay playable. */
   g.speed=()=>{
     const slow=g.frame<g.slowUntil?0.5:1;
-    if(g.round===1) return Math.min(MAXS,BASE*(1+0.03*Math.floor(g.broken/3)))*slow;
+    if(g.round===1) return Math.min(6.8,BASE*(1+0.03*Math.floor(g.broken/3)))*slow;
     return Math.min(6,BASE*(1+.02*(g.round-1))*(1+.012*Math.floor(g.broken/4)))*slow*(g.heat?1.3:1);
   };
   const dropSnake=i=>{g.snakes.push({x:12+(i%cols)*bw+bw/2,y:top+Math.floor(i/cols)*bh+bh/2,bad:Math.random()<.4,ph:Math.random()*6});};
@@ -480,7 +480,7 @@ function createGame(W,H){
     }
     g.tick++; if(g.frozen>0) g.frozen--;
     /* serpent laser: one beam every second for 5 seconds */
-    if(g.laser>0){if(g.laser%60===0) g.shots.push({x:g.px,y:py-6}); g.laser--;}
+    if(g.laser>0){if(g.laser%60===0){const o=g.pw*.3;[-1,1].forEach(q=>g.shots.push({x:Math.max(14,Math.min(W-14,g.px+q*o)),y:py-6}));}   /* serpent laser: 2 beams side by side */ g.laser--;}
     g.shots.forEach(s=>{s.y-=8;const c=Math.floor((s.x-12)/bw),r=Math.floor((s.y-top)/bh);
       if(r>=0&&r<rows&&c>=0&&c<cols&&g.alive[r*cols+c]){g.hit(r*cols+c);s.y=-9;}});
     g.shots=g.shots.filter(s=>s.y>0);
@@ -1039,24 +1039,24 @@ function createGame(W,H){
     if(t>=670) initFight();
   };
   const initFight=()=>{
-    g.bs=5;g.php=D.hearts;g.pch=D.chances;g.inv=0;g.rg=0;g.pxp=g.cx;g.py=0;g.pvy=0;g.pk=0;g.pd=1;g.pw2=0;g.swing=0;g.hitd=0;g.sp0=false;g.chg=0;g.stone=0;g.fire=null;g.pflash=0;
+    g.bs=5;g.php=D.hearts;g.pch=g.fch||D.chances;g.inv=0;g.rg=0;g.pxp=g.cx;g.py=0;g.pvy=0;g.pk=0;g.pd=1;g.pw2=0;g.swing=0;g.hitd=0;g.sp0=false;g.chg=0;g.stone=0;g.fire=null;g.pflash=0;
     g.z=newZ();g.zb=[];g.zd=[];g.parts=[];bossMusic(true);
   };
-  const newZ=()=>({x:290,y:0,vy:0,rush:0,rt:0,sh:0,shH:0,shC:D.shieldFirst,kn:0,nx:0,hp:15,fl:0,d:-1,w:0,cd:90,st:0,t2:0,q:0,hits:0,ag:1});
+  const newZ=()=>({x:290,y:0,vy:0,rush:0,rt:0,sh:0,shH:0,shC:D.shieldFirst,kn:0,nx:0,hp:13,mx:13,fl:0,d:-1,w:0,cd:90,st:0,t2:0,q:0,hits:0,ag:1});
   /* three chances in this fight only: when your hearts run out you start the fight again (Poseidon back to full), until the chances are gone */
   const retryFight=()=>{g.php=D.hearts;g.inv=90;g.rg=0;g.pxp=g.cx;g.py=0;g.pvy=0;g.pk=0;g.pd=1;g.pw2=0;g.swing=0;g.hitd=0;g.sp0=false;g.chg=0;g.stone=0;g.fire=null;g.pflash=0;
     g.z=newZ();g.zb=[];g.zd=[];g.parts=[];thunder(.4,0);rumble();};
   /* DAMAGE TABLE (hearts you lose). Change these numbers to tune the fight. inv = frames you are safe after a hit. enrageAt = his hearts left when he goes berserk. */
-  const D={stream:1,melee:1,splash:1,inv:60,enrageAt:5,block:.5,knock:40,shieldTime:300,shieldGap:1800,shieldFirst:600,shieldHits:2,hearts:12,chances:3};   /* shield: up for 5 s (300 frames), at most once every 30 s (1800 frames, first one after 10 s), breaks after 2 hits */
+  const D={stream:1,melee:1,splash:1,inv:60,enrageAt:5,block:.5,knock:40,shieldTime:300,shieldGap:1800,shieldFirst:600,shieldHits:2,hearts:12,chances:3,meleeWind:34};   /* meleeWind: frames of wind-up before his melee lands. You walk about 2.4 px/frame, so walking away at once gets you out of his reach */   /* shield: up for 5 s (300 frames), at most once every 30 s (1800 frames, first one after 10 s), breaks after 2 hits */
   const hurtP=n=>{if(g.inv>0)return;g.php-=n||1;g.inv=D.inv;g.pflash=40;thunder(.25,0);if(g.php<=0){if(--g.pch>0)retryFight();else{g.over=true;g.bs=0;bossMusic(false);}}};
   const hitZ=n=>{const z=g.z;z.hp-=n;z.fl=14;z.hits++;g.score+=10*n;zap();puff(z.x,GYF-40,6,WC,4);
-    if(z.hits%8===0) z.q=1;
+    if(z.hits%3===0) z.q=1;
     if(z.hp<=0){g.bs=0;g.phase="win";g.t=0;g.hidePad=true;g.parts=[];g.zb=[];g.zd=[];g.fire=null;bossMusic(false);victory();}};
   /* a hit on the water shield (sword or fire): no damage, and after 2 hits it breaks */
   const shHit=()=>{const z=g.z;z.shH++;if(z.shH>=D.shieldHits){z.sh=0;puff(z.x,GYF-z.y-40,22,["#ffffff","#cdefff","#7fd8ff"],8);zap();thunder(.2,0);}};
   const fightStep=()=>{
     const K=window.GK||{},z=g.z;g.bt++;
-    z.ag=1+(1-z.hp/15)*.8;
+    z.ag=1+(1-z.hp/z.mx)*.8;
     if(z.fl>0)z.fl--; if(g.pflash>0)g.pflash--; if(g.inv>0)g.inv--; if(g.stone>0)g.stone--;
     if(!z.en&&z.hp<=D.enrageAt){z.en=1;underYell(2.2);}
     /* player: left/right walk, down crouch, up jump, space sword (7 hits charges fire, next space shoots it for 4x damage) */
@@ -1072,8 +1072,8 @@ function createGame(W,H){
     if(g.swing>0){g.swing--;
       if(g.swing===27&&!g.hitd&&Math.abs(z.x-g.pxp)<=48&&Math.abs(g.py-z.y)<40){g.hitd=1;
         /* he blocks with the trident while he is not attacking: sparks, no damage, and he slides back */
-        if(z.sh>0||(z.st===0&&Math.random()<D.block)){puff(z.x-z.d*8,GYF-z.y-40,8,["#ffffff","#cdefff","#7fd8ff"],5);ping(1);if(z.sh>0)shHit();z.x=Math.max(40,Math.min(W-30,z.x-z.d*10));}
-        else{const dm=g.stone>0?2:1;   /* fire stone: 2x damage */
+        if(z.sh>0){puff(z.x-z.d*8,GYF-z.y-40,8,["#ffffff","#cdefff","#7fd8ff"],5);ping(1);if(z.sh>0)shHit();z.x=Math.max(40,Math.min(W-30,z.x-z.d*10));}
+        else{const dm=g.stone>0?3:1;   /* sword hit = 1 damage, fire sword = 3 */
         if(g.stone<=0&&++g.chg>=4){g.chg=0;g.stone=240;zap();puff(g.pxp+g.pd*27,GYF-g.py-27,12,["#ff7a1a","#ffe066","#ff4d00"],6);}   /* every 4 hits: fire stone for 4 seconds */
         hitZ(dm);if(g.bs!==5)return;
         /* he reacts: sometimes hops and often hits back fast. He only steps back once for every 4 damage he takes (he moved too much before) */
@@ -1097,7 +1097,7 @@ function createGame(W,H){
       if(z.y===0&&Math.random()<(m?.006:.002)*z.ag) z.vy=7;
       if(z.cd<=0){
         if(z.q){z.q=0;z.st=1;z.t2=45;z.cd=150;underYell(1.3);}
-        else if(dist<56){z.st=3;z.t2=22;z.cd=110;z.rush=Math.random()<.5?1:0;z.rt=0;underYell(.6);}
+        else if(dist<56){z.st=3;z.t2=D.meleeWind;z.cd=110;z.rush=Math.random()<.5?1:0;z.rt=0;underYell(.6);}
         else if(!z.rush){z.st=2;z.t2=28;z.cd=150;z.rush=Math.random()<.5?1:0;z.rt=0;underYell(.7);}
       }
     }else if(--z.t2<=0){
@@ -1119,15 +1119,15 @@ function createGame(W,H){
     if(g.bt%3===0) g.parts.push({x:z.x+(Math.random()-.5)*34,y:GYF-z.y-Math.random()*66,vx:0,vy:-.5,l:30,c:"rgba(120,220,255,.6)",gr:0});
   };
   const fightDraw=ctx=>{
-    const z=g.z,r=1-z.hp/15;
+    const z=g.z,r=1-z.hp/z.mx;
     ctx.fillStyle="#04101c";ctx.fillRect(0,0,W,H);
     ctx.fillStyle="#2a2118";ctx.fillRect(8,GYF,W-16,H-GYF-5);ctx.fillStyle="#5c4630";ctx.fillRect(8,GYF,W-16,2);
     ctx.strokeStyle="rgba(243,227,176,.4)";ctx.lineWidth=1;ctx.strokeRect(8.5,15.5,W-17,H-16);
     if(g.pflash>0){ctx.fillStyle="rgba(255,60,60,"+Math.min(.4,g.pflash/90)+")";ctx.fillRect(0,0,W,H);}
-    ctx.fillStyle="#2a0d0d";ctx.fillRect(16,6,W-32,6);ctx.fillStyle="#d12f2f";ctx.fillRect(16,6,(W-32)*Math.max(0,z.hp)/15,6);
+    ctx.fillStyle="#2a0d0d";ctx.fillRect(16,6,W-32,6);ctx.fillStyle="#d12f2f";ctx.fillRect(16,6,(W-32)*Math.max(0,z.hp)/z.mx,6);
     if(z.st===1){ctx.strokeStyle="rgba(120,220,255,.8)";ctx.lineWidth=2;ctx.beginPath();ctx.arc(z.x,GYF-40,(45-z.t2)*1.2,0,7);ctx.stroke();}
     if(z.sh>0){const q=.5+.5*Math.sin(g.bt*.2);ctx.fillStyle="rgba(120,220,255,"+(.12+.08*q)+")";ctx.strokeStyle="rgba(190,245,255,"+(.6+.3*q)+")";ctx.lineWidth=2;ctx.beginPath();ctx.arc(z.x,GYF-z.y-36,54,0,7);ctx.fill();ctx.stroke();ctx.font="11px system-ui,sans-serif";ctx.fillStyle="#bfeaff";ctx.textAlign="center";ctx.fillText("WATER SHIELD - hit it twice to break it",W/2,28);ctx.textAlign="left";}
-    const sa=z.st===2?-.15:z.st===3?-1.2+(1-z.t2/22)*1.6:-1.2;
+    const sa=z.st===2?-.15:z.st===3?-1.2+(1-z.t2/D.meleeWind)*1.6:-1.2;
     man(ctx,z.x,GYF-z.y,5,{d:z.d,w:z.w,col:z.fl>0?"#ff3030":mix(r,[14,70,90],[190,25,25]),skin:z.fl>0?"#ff5a4a":mix(r,[80,140,150],[230,80,70]),wp:"t",a:sa,crown:1,mon:1,ec:mix(r,[56,240,255],[255,40,30]),t:g.bt});
     const pa=g.swing>0?-1.4+(1-g.swing/36)*2.2:-.9;
     man(ctx,g.pxp,GYF-g.py,3,{d:g.pd,w:g.pw2,k:g.pk,col:g.pflash>0?"#ff6a6a":"#3b6fd6",skin:"#f1c27d",wp:"s",a:pa,fire:g.stone>0});
@@ -1190,8 +1190,9 @@ function man(c,x,gy,u,o){
     c.fillStyle="rgba(120,230,255,.5)";for(let i=0;i<4;i++)c.fillRect(x-1.2*u+i*.8*u,top+(1+i%2*1.5)*u,.3*u,1.2*u);}
   if(o.wp){const hx=x+d*3*u,hy=top+1.5*u,a=o.a||0,len=o.wp==="t"?13:8;
     c.fillStyle=o.col;c.fillRect(Math.min(x,hx),hy,3*u,u);
-    c.fillStyle=o.wp==="t"?"#a8e6ff":o.fire?"#ff9b3a":"#e8f0ff";
-    for(let i=0;i<len;i++) c.fillRect(Math.round(hx+d*Math.cos(a)*i*u),Math.round(hy+Math.sin(a)*i*u),u,u);
+    c.fillStyle=o.wp==="t"?"#a8e6ff":o.fire?"#ff2a1a":"#e8f0ff";
+    const k=o.fire&&o.wp!=="t"?1.5:1;   /* fire sword: red and 1.5x bigger so the player can tell */
+    for(let i=0;i<len;i++) c.fillRect(Math.round(hx+d*Math.cos(a)*i*u*k),Math.round(hy+Math.sin(a)*i*u*k-(k-1)*u/2),u*k,u*k);
     if(o.wp==="t"){const ex=hx+d*Math.cos(a)*len*u,ey=hy+Math.sin(a)*len*u;
       [-2,0,2].forEach(q=>{for(let j=0;j<2;j++) c.fillRect(Math.round(ex-Math.sin(a)*q*u+d*Math.cos(a)*j*u),Math.round(ey+d*Math.cos(a)*q*u+Math.sin(a)*j*u),u,u);});}}
 }
@@ -1975,15 +1976,18 @@ function showGame(on,endless){
   const fit=()=>{const r=st.getBoundingClientRect(),k=Math.min(r.width/GW,r.height/GH),q=Math.min(3,k*(devicePixelRatio||1));
     cv.style.width=Math.floor(GW*k)+"px";cv.style.height=Math.floor(GH*k)+"px";cv.width=Math.round(GW*q);cv.height=Math.round(GH*q);};
   fit(); window.onresize=fit;
-  const ctx=cv.getContext("2d"),sx=sc.getContext("2d"),keys=window.GK={},SCARE=100; let game=createGame(GW,GH),scare=0,hscare=0,ckR=1,ckD=0,mb=0;   /* ckR: checkpoint round (1 = none), ckD: deaths since that checkpoint, mb: game mode at the last step (3 Zeus fight, 5 Poseidon fight, 6 horror = mini games) */
+  const ctx=cv.getContext("2d"),sx=sc.getContext("2d"),keys=window.GK={},SCARE=100; let game=createGame(GW,GH),scare=0,hscare=0,ckR=1,ckD=0,mb=0,pX=0;   /* ckR: checkpoint round (1 = none), ckD: deaths since that checkpoint, mb: game mode at the last step (3 Zeus fight, 5 Poseidon fight, 6 horror = mini games) */
   const clamp=x=>Math.max(game.pw/2,Math.min(GW-game.pw/2,x));
   const move=x=>{if(game.frozen>0)return;const r=cv.getBoundingClientRect();game.px=clamp((x-r.left)*GW/r.width);};
   const restart=()=>{
     /* checkpoint: every two levels passed (reaching round 3) becomes your spawn point. Die twice there and you go back to the very beginning.
-       Winning, dying before any checkpoint, or running out of chances in a mini game fight (Zeus / Poseidon) keeps the old behaviour: back to the beginning. */
-    const won=game.phase==="win"&&!game.over,mini=mb===3||mb===5||mb===6;
-    if(won||mini||ckR<3){ckR=1;ckD=0;}else{ckD++;if(ckD>=2){ckR=1;ckD=0;}}
-    game=createGame(GW,GH);if(ckR>=3)game.startAt(ckR);mb=0;scare=0;hscare=0;sc.hidden=true;hzAmbient(false);slither();};
+       Winning, dying before any checkpoint, or dying in the Zeus fight keeps the old behaviour: back to the beginning. Running out of chances in the Poseidon fight gives one extra try at level 3. */
+    const won=game.phase==="win"&&!game.over,mini=mb===3||mb===6,pose=mb===5;
+    /* pX: the one extra try. Lose all 3 chances in the Poseidon fight and you replay level 3 once more, but with only 1 chance in the fight. Lose that too and it's the very beginning. */
+    if(won||mini||ckR<3){ckR=1;ckD=0;pX=0;}
+    else if(pose){if(!pX){pX=1;ckR=3;ckD=0;}else{ckR=1;ckD=0;pX=0;}}
+    else{ckD++;if(ckD>=2){ckR=1;ckD=0;pX=0;}}
+    game=createGame(GW,GH);if(ckR>=3){game.startAt(ckR);if(pX)game.fch=1;}mb=0;scare=0;hscare=0;sc.hidden=true;hzAmbient(false);slither();};
   cv.ontouchstart=cv.ontouchmove=e=>{e.preventDefault();audio();if(game.canRestart()){if(e.type==="touchstart")restart();return;}if(game.bs===6){const r=cv.getBoundingClientRect(),t0=e.touches[0];game.tpt={x:(t0.clientX-r.left)*GW/r.width,y:(t0.clientY-r.top)*GH/r.height};if(e.type==="touchstart")game.tapE=1;}move(e.touches[0].clientX);};cv.ontouchend=cv.ontouchcancel=()=>{game.tpt=null;};
   cv.onclick=()=>{if(game.canRestart())restart();};
   keyDown=e=>{if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," ","e","E"].includes(e.key)){e.preventDefault();keys[e.key]=1;}
