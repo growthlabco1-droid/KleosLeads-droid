@@ -209,7 +209,7 @@ function buildQuery(place,alts,lim){
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 function fitFont(c,txt,tpl,max,start){let s=start;c.font=tpl.replace("%",s);while(s>11&&c.measureText(txt).width>max){s--;c.font=tpl.replace("%",s);}return c.font;}
 function createGame(W,H){
-  const cols=Math.max(10,Math.round((W-24)/36)),rows=7,bw=(W-24)/cols,bh=12,top=56,py=H-26,BASE=4.7,MAXS=6.9,
+  const cols=Math.max(10,Math.round((W-24)/36)),rows=7,bw=(W-24)/cols,bh=12,top=56,py=H-26,BASE=4.7,MAXS=7.0,
     colors=["#ef476f","#f78c40","#f9c74f","#90be6d","#43aa8b","#4d9de0","#9b7ede"];
   const g={W,H,score:0,lives:3,px:W/2,pw:Math.round(Math.min(100,60+(W-360)*.1)),over:false,ready:false,round:1,phase:"play",t:0,broken:0,frame:0,slowUntil:0,nextBolt:7,bolts:[],strikeIn:0,
     bs:0,bt:0,u:Math.min(6,Math.max(3,Math.floor(W/80))),pm:-1,mult:1,php:3,bz:null,bb:[],pu:null,pz:null,carry:0,cx0:0,btime:0,bhits:0,nb:0,hurt:0,shotN:0,enraged:false,rage:0,bclock:0,nextLaugh:20,laughUntil:0,
@@ -221,7 +221,8 @@ function createGame(W,H){
     [1,1,2,2,3,3,4,4,5,5].forEach((k,i)=>{g.kind[idx[i]]=k;});   // 1 clock, 2 bomb, 3 three balls, 4 extra ball, 5 extra life
     if(g.round===1){idx.slice(14,20).forEach(i=>{g.kind[i]=7;});} // Medusa only: 7 snake brick
     if(g.round===2){g.kind[idx[10]]=8;}
-    if(g.round===3){g.kind[idx[10]]=9;}                           // Zeus only, just one: 8 lightning power-up
+    if(g.round===3){g.kind[idx[10]]=9;}
+    if(g.round===4){g.kind[idx[10]]=10;}   // Hades: pomegranate brick                           // Zeus only, just one: 8 lightning power-up
   };
   const serve=()=>{const a=Math.random()-.5; g.balls=[{x:W/2,y:H-60,vx:Math.sin(a),vy:-Math.cos(a)}];};
   /* Ball speed. Round 1 is the same as before. Rounds 2 and 3 start a little faster than round 1 but
@@ -229,10 +230,10 @@ function createGame(W,H){
   g.speed=()=>{
     const slow=g.frame<g.slowUntil?0.5:1;
     if(g.round===1) return Math.min(MAXS,BASE*(1+0.03*Math.floor(g.broken/3)))*slow;
-    return Math.min(6,BASE*(1+.02*(g.round-1))*(1+.012*Math.floor(g.broken/4)))*slow;
+    return Math.min(6,BASE*(1+.02*(g.round-1))*(1+.012*Math.floor(g.broken/4)))*slow*(g.heat?1.3:1);
   };
   const dropSnake=i=>{g.snakes.push({x:12+(i%cols)*bw+bw/2,y:top+Math.floor(i/cols)*bh+bh/2,bad:Math.random()<.4,ph:Math.random()*6});};
-  const kill=i=>{if(g.kind[i]===7) dropSnake(i);g.alive[i]=0;g.kind[i]=0;g.left--;g.broken++;g.score+=rows-Math.floor(i/cols);};
+  const kill=i=>{if(g.kind[i]===7) dropSnake(i);if(g.round===4&&Math.random()<.18)(g.souls=g.souls||[]).push({x:12+(i%cols)*bw+bw/2,y:top+Math.floor(i/cols)*bh+bh/2,ph:Math.random()*6});g.alive[i]=0;g.kind[i]=0;g.left--;g.broken++;g.score+=rows-Math.floor(i/cols);};
   /* Zeus level lightning power-up: an electric current runs through 15 blocks, one after another */
   const startArc=i=>{
     const path=[],used=new Set([i]);let cur=i;
@@ -264,7 +265,8 @@ function createGame(W,H){
       g.balls.push({x:b.x,y:b.y,vx:b.vx*Math.cos(s)-b.vy*Math.sin(s),vy:b.vx*Math.sin(s)+b.vy*Math.cos(s)});}
     if(k===5) g.lives++;
     if(k===8){g.strikeIn=0;startArc(i);}
-    if(k===9) startCut();   /* Zeus can't attack while the current is running; he starts again right after */
+    if(k===9) startCut();
+    if(k===10) startDark();   /* Zeus can't attack while the current is running; he starts again right after */
   };
   /* Zeus level: lightning strikes empty spots and 2 new blocks appear */
   const strike=()=>{
@@ -432,17 +434,19 @@ function createGame(W,H){
     teeth(1);
     ctx.restore();
   };
-  g.canRestart=()=>(g.over&&g.ready)||(g.phase==="win"&&g.round>=3&&g.t>=150);
+  g.canRestart=()=>(g.over&&g.ready)||(g.phase==="win"&&g.round>=4&&g.t>=150);
   g.step=()=>{
     if(g.over) return; g.frame++;
     if(g.phase!=="play"){g.t++;
-      if(g.phase==="win"&&g.round<3&&g.t>=340){g.phase="warn";g.t=0;rumble();if(g.round===2) bubbles(true); else laugh();}
-      else if(g.phase==="warn"&&g.t>=(g.round===2?230:160)){g.phase="play";g.round++;g.broken=0;g.slowUntil=0;g.nextBolt=7;g.bolts=[];g.strikeIn=0;g.lives=3;g.bs=0;g.snakes=[];g.shots=[];g.laser=0;g.frozen=0;g.gaze=0;g.warn=0;g.gc=0;g.water=0;g.wl=0;g.sc=300;g.sw=0;g.surge=0;g.fs=0;g.ft=0;g.fc=1;g.fy=H+999;g.fj=.9;g.fwarn=0;g.eaten=0;g.arc=null;g.arcs=[];newBoard();serve();}
+      if(g.phase==="warn"&&g.round===3){if(g.t===50) rumble();if(g.t===100){hadesGrowl(2.4,.9);thunder(.35,0);}}
+      if(g.phase==="win"&&g.round<4&&g.t>=340){g.phase="warn";g.t=0;rumble();if(g.round===2) bubbles(true); else laugh();}
+      else if(g.phase==="warn"&&g.t>=(g.round===3?330:g.round===2?230:160)){g.phase="play";g.round++;g.broken=0;g.slowUntil=0;g.nextBolt=7;g.bolts=[];g.strikeIn=0;g.lives=3;g.bs=0;g.snakes=[];g.shots=[];g.laser=0;g.frozen=0;g.gaze=0;g.warn=0;g.gc=0;g.water=0;g.wl=0;g.sc=300;g.sw=0;g.surge=0;g.fs=0;g.ft=0;g.fc=1;g.fy=H+999;g.fj=.9;g.fwarn=0;g.eaten=0;g.arc=null;g.arcs=[];g.hidePad=false;g.lift=0;g.tr=null;g.cutDone=0;g.nextTr=0;g.burn=[];g.embers=[];g.souls=[];g.nextCh=15;g.hc=0;g.heat=0;newBoard();serve();}
       return;}
     if(g.bs===1||g.bs===2){introStep();return;}
     if(g.bs===3){bossStep();return;}
     if(g.bs===4){cutStep();return;}
     if(g.bs===5){fightStep();return;}
+    if(g.bs===6){darkStep();return;}
     g.bolts.forEach(b=>b.t--); g.bolts=g.bolts.filter(b=>b.t>0);
     /* Zeus level lightning power-up: the current jumps from block to block (one block every 3 frames) */
     if(g.arc){const a=g.arc;
@@ -486,6 +490,28 @@ function createGame(W,H){
           if(t.y>=py-g.lift-22&&t.y<=py+8&&Math.abs(t.x-g.px)<=g.pw/2+7){t.got=1;t.vy=-6;g.balls=[];zap();splash();}}
         if(t.y<-40||t.y>H+40) g.tr=null;}
     }
+    /* Hades level: stone slab on lava. Heat wave every 30 s (lava surge lifts + shoves the slab, ball is faster),
+       a chain drags the ball down every 15 bricks, blocks catch fire and spread, embers burn the slab, lost souls give bonuses */
+    if(g.round===4&&g.bs===0){
+      g.hc=(g.hc||0)+1;const w=g.hc%1800,k=g.hc>=1800&&w<240?w/240:-1;
+      g.lift=k>=0?9*Math.abs(Math.sin(k*Math.PI*2)):0;g.heat=k>=0?1:0;
+      if(k>=0){if(w===0){g.tdir=Math.random()<.5?-1:1;rumble();}
+        if(!(g.frozen>0)) g.px=Math.max(g.pw/2,Math.min(W-g.pw/2,g.px+(g.tdir||1)*1.1*Math.sin(k*Math.PI)));}
+      if(!g.nextCh) g.nextCh=15;
+      if(g.broken>=g.nextCh&&g.balls.length&&!g.balls[0].chain){g.nextCh+=15;const b=g.balls[0];b.stone=1;b.chain=1;b.vx=0;b.vy=1;thunder(.25,0);zap();}
+      g.burn=(g.burn||[]).filter(q=>g.alive[q.i]);g.embers=g.embers||[];g.souls=g.souls||[];
+      if(g.hc%600===300&&g.left>0){const a=[];g.alive.forEach((x,i)=>{if(x&&!g.burn.some(q=>q.i===i))a.push(i);});if(a.length)g.burn.push({i:a[Math.floor(Math.random()*a.length)],t:0});}
+      g.burn.slice().forEach(q=>{q.t++;
+        if(q.t===330&&g.burn.length<10){const r=Math.floor(q.i/cols),c=q.i%cols,n=[];
+          [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc,j=nr*cols+nc;if(nr>=0&&nr<rows&&nc>=0&&nc<cols&&g.alive[j]&&!g.burn.some(x=>x.i===j))n.push(j);});
+          if(n.length) g.burn.push({i:n[Math.floor(Math.random()*n.length)],t:0});}
+        if(q.t%200===199) g.embers.push({x:12+(q.i%cols)*bw+bw/2,y:top+Math.floor(q.i/cols)*bh+bh,vy:1.6});});
+      g.embers.forEach(e=>{e.y+=e.vy;if(e.y>=py-4-g.lift&&e.y<=py+10&&Math.abs(e.x-g.px)<=g.pw/2+4){g.frozen=70;zap();e.y=H+9;}});
+      g.embers=g.embers.filter(e=>e.y<H);
+      g.souls.forEach(s=>{s.y+=1.1;s.x+=Math.sin(g.frame*.08+s.ph)*.6;
+        if(s.y>=py-6-g.lift&&s.y<=py+10&&Math.abs(s.x-g.px)<=g.pw/2+8){if(Math.random()<.7) g.slowUntil=g.frame+300; else g.lives++;ping(0);s.y=H+9;}});
+      g.souls=g.souls.filter(s=>s.y<H-6);
+    }
     const sp=g.speed();
     for(const b of g.balls.slice()){
       if(g.round===3&&g.eaten) continue;   /* caught by the sea monster: the ball freezes until it is gone */
@@ -505,8 +531,9 @@ function createGame(W,H){
       }
     }
     g.balls=g.balls.filter(b=>b.y<=H);
-    if(g.bs===4) return;
+    if(g.bs===4||g.bs===6) return;
     if(g.round===3&&g.bs===0&&g.left<=0&&!g.cutDone){startCut();return;}
+    if(g.round===4&&g.bs===0&&g.left<=0&&!g.cutDone){startDark();return;}
     if(g.round===2&&!g.arc&&!g.strikeIn&&g.left>0&&g.broken>=g.nextBolt){g.nextBolt=g.broken-g.broken%7+7;g.strikeIn=45;roar();}
     if(g.strikeIn>0&&--g.strikeIn===0&&g.left>0) strike();
     /* Zeus level: with one brick left the ball freezes and the boss fight begins */
@@ -515,7 +542,7 @@ function createGame(W,H){
     else if(!g.balls.length){g.lives--; if(g.lives<=0) g.over=true; else serve();}
   };
   g.draw=ctx=>{
-    const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#0b1020");bg.addColorStop(1,"#1a2040");
+    const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,g.round>=4?"#1a0404":"#0b1020");bg.addColorStop(1,g.round>=4?"#4a0f05":"#1a2040");
     ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
     ctx.fillStyle="#2b3563";ctx.fillRect(0,0,W,14);ctx.fillRect(0,0,8,H);ctx.fillRect(W-8,0,8,H);
     ctx.fillStyle="#c59a3d";ctx.fillRect(0,14,W,1.5);
@@ -531,6 +558,7 @@ function createGame(W,H){
       if(k===4){ctx.beginPath();ctx.arc(cx-3.2,cy,2.2,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(cx+1.2,cy);ctx.lineTo(cx+5.2,cy);ctx.moveTo(cx+3.2,cy-2);ctx.lineTo(cx+3.2,cy+2);ctx.stroke();}
       if(k===5){ctx.beginPath();ctx.arc(cx-1.8,cy-1,2,0,7);ctx.arc(cx+1.8,cy-1,2,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(cx-3.6,cy-.3);ctx.lineTo(cx+3.6,cy-.3);ctx.lineTo(cx,cy+3.8);ctx.closePath();ctx.fill();}
       if(k===7){ctx.strokeStyle="#fff";ctx.lineWidth=1.2;ctx.beginPath();for(let q=-4;q<=4;q++){const yy=cy+Math.sin(q)*2.4;if(q>-4)ctx.lineTo(cx+q,yy);else ctx.moveTo(cx+q,yy);}ctx.stroke();}
+      if(k===10){ctx.fillStyle="#b3001b";ctx.beginPath();ctx.arc(cx,cy+.5,4.2,0,7);ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=1;ctx.stroke();ctx.fillStyle="#ffd54a";ctx.fillRect(cx-2,cy-5.5,4,2);}
       if(k===9){ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(cx,cy-4.5);ctx.quadraticCurveTo(cx+4.5,cy+.5,cx,cy+4);ctx.quadraticCurveTo(cx-4.5,cy+.5,cx,cy-4.5);ctx.fill();}
       if(k===8){ctx.strokeStyle="#fff59d";ctx.lineWidth=1.6;rr(ctx,x+1,y+1,bw-2,bh-2,3);ctx.stroke();
         ctx.fillStyle="#fff59d";ctx.beginPath();ctx.moveTo(cx+1.5,cy-5);ctx.lineTo(cx-3,cy+.5);ctx.lineTo(cx-.3,cy+.5);ctx.lineTo(cx-1.5,cy+5);ctx.lineTo(cx+3,cy-.5);ctx.lineTo(cx+.3,cy-.5);ctx.closePath();ctx.fill();}
@@ -565,7 +593,7 @@ function createGame(W,H){
       ctx.fillStyle="#000";ctx.fillRect(s.x-2,s.y-1,1.4,1.4);ctx.fillRect(s.x+.8,s.y-1,1.4,1.4);});
     if(g.round===3) drawFish(ctx);
     const pg=ctx.createLinearGradient(0,py,0,py+8);pg.addColorStop(0,"#6bb8ff");pg.addColorStop(1,"#2a6fd4");
-    if(!g.hidePad){const pyy=py-(g.lift||0)+(g.round===3?(g.bob||0):0);ctx.fillStyle=g.frozen>0?"#bfeaff":pg;rr(ctx,g.px-g.pw/2,pyy,g.pw,8,4);ctx.fill();}
+    if(!g.hidePad){const pyy=py-(g.lift||0)+(g.round===3?(g.bob||0):0);ctx.fillStyle=g.frozen>0?(g.round===4?"#ff6a2a":"#bfeaff"):g.round===4?"#7d828d":pg;rr(ctx,g.px-g.pw/2,pyy,g.pw,8,4);ctx.fill();}
     if(g.laser>0){ctx.strokeStyle="#7dff6a";ctx.lineWidth=2;rr(ctx,g.px-g.pw/2-1,py-1,g.pw+2,10,5);ctx.stroke();}
     ctx.shadowColor="#9fd0ff";ctx.shadowBlur=8;
     g.balls.forEach(b=>{ctx.fillStyle=b.stone?"#8a8a8a":"#fff";ctx.beginPath();ctx.arc(b.x,b.y,b.stone?5:3.5,0,7);ctx.fill();
@@ -581,11 +609,12 @@ function createGame(W,H){
       for(let i=0;i<6;i++){const bx=g.px-g.pw/2+((g.frame*.4+i*17)%g.pw),by=wy+1-((g.frame*.3+i*5)%9);ctx.beginPath();ctx.arc(bx,by,1+(i%2),0,7);ctx.stroke();}
       if(g.tr) tridentDraw(ctx,g.tr.x,g.tr.y,g.tr.got);
     }
+    if(g.round===4&&g.bs===0) drawHades(ctx);
     ctx.font="bold 18px system-ui,sans-serif";ctx.fillStyle="#fff";ctx.fillText(String(g.score).padStart(3,"0"),16,38);
     ctx.font="12px system-ui,sans-serif";ctx.fillText("balls: "+g.lives,W-90,38);if(g.round>1)ctx.fillText("round "+g.round,W-90,26);
     if(g.frame<g.slowUntil){ctx.fillStyle="#f3e3b0";ctx.fillText("SLOW",W/2-14,38);}
     if(g.laser>0){ctx.fillStyle="#7dff6a";ctx.fillText("SERPENT LASER",W/2-40,50);}
-    if(g.frozen>0){ctx.fillStyle=g.eaten?"#d9a8ff":"#bfeaff";ctx.fillText(g.eaten?"CAUGHT":"FROZEN",W/2-22,50);}
+    if(g.frozen>0){ctx.fillStyle=g.eaten?"#d9a8ff":"#bfeaff";ctx.fillText(g.round===4?"BURNED":g.eaten?"CAUGHT":"FROZEN",W/2-22,50);}
     if(g.arc&&g.round===2){ctx.fillStyle="#fff59d";ctx.fillText("ZEUS STUNNED",W/2-40,50);}
     if(g.phase==="win"){const R=g.round,ty=Math.min(H*.2,110);
       ctx.fillStyle="rgba(5,8,16,.72)";ctx.fillRect(0,0,W,H);
@@ -594,9 +623,10 @@ function createGame(W,H){
       ctx.font=fitFont(ctx,t1,"bold %px Cinzel,Georgia,serif",W-24,24);ctx.fillText(t1,W/2,ty);
       ctx.fillStyle="#cfd6e4";ctx.font="14px system-ui,sans-serif";ctx.fillText(R>=3?"The sea falls silent.":R===2?"The king of the gods has fallen.":"Medusa is defeated... or is she?",W/2,ty+24);
       (R>=3?deadPoseidon:R===2?deadZeus:deadMedusa)(ctx,W,H,ty+36,g.t);
-      if(R>=3&&g.t>=150){ctx.fillStyle="#f3e3b0";ctx.font="15px system-ui,sans-serif";ctx.fillText("Click to play again",W/2,H-22);}
+      if(R>=4&&g.t>=150){ctx.fillStyle="#f3e3b0";ctx.font="15px system-ui,sans-serif";ctx.fillText("Click to play again",W/2,H-22);}
       ctx.textAlign="left";}
-    if(g.phase==="warn"){const sea=g.round===2,sh=sea?Math.round(Math.sin(g.t*.2)*2):(g.t%4<2?2:-2),t2=sea?"Something lurks in the water":"A new opponent has emerged";ctx.fillStyle=sea?"rgba(0,30,60,.84)":"rgba(60,0,0,.78)";ctx.fillRect(0,0,W,H);
+    if(g.phase==="warn"&&g.round===3) hadesIntro(ctx);
+    if(g.phase==="warn"&&g.round!==3){const sea=g.round===2,sh=sea?Math.round(Math.sin(g.t*.2)*2):(g.t%4<2?2:-2),t2=sea?"Something lurks in the water":"A new opponent has emerged";ctx.fillStyle=sea?"rgba(0,30,60,.84)":"rgba(60,0,0,.78)";ctx.fillRect(0,0,W,H);
       ctx.textAlign="center";ctx.fillStyle=sea?"#6fd6ff":"#ff3b3b";ctx.font=fitFont(ctx,t2,"bold %px Cinzel,Georgia,serif",W-24,28);ctx.fillText(t2,W/2+sh,H/2-6);
       ctx.fillStyle="#f3e3b0";ctx.font="bold 18px system-ui,sans-serif";ctx.fillText("Round "+(g.round+1),W/2,H/2+26);ctx.textAlign="left";}
     if(g.over&&g.ready){ctx.fillStyle="rgba(5,8,16,.7)";ctx.fillRect(0,0,W,H);
@@ -659,6 +689,57 @@ function createGame(W,H){
     if(g.pm>=0){ctx.fillStyle="#f3e3b0";ctx.textAlign="center";ctx.fillText(["ARROW x2","LASER x3","SWORD x4"][g.pm],W/2,H-6);ctx.textAlign="left";}
   };
   const baseDraw=g.draw;
+  /* pomegranate: everything goes black. Placeholder for the horror level: walk with the arrows, a short pixel beam of light follows you */
+  const startDark=()=>{g.cutDone=1;g.bs=6;g.dt=0;g.balls=[];g.burn=[];g.embers=[];g.souls=[];g.hx=W/2;g.hy=H/2;g.ha=-1.57;g.hw=0;thunder(.5,0);rumble();angryRoar();};
+  const darkStep=()=>{
+    g.dt++;const K=window.GK||{};
+    if(g.dt>150){const dx=(K.ArrowRight?1:0)-(K.ArrowLeft?1:0),dy=(K.ArrowDown?1:0)-(K.ArrowUp?1:0);
+      if(dx||dy){g.hx=Math.max(14,Math.min(W-14,g.hx+dx*1.6));g.hy=Math.max(40,Math.min(H-8,g.hy+dy*1.6));g.ha=Math.atan2(dy,dx);g.hw+=.25;}else g.hw=0;}
+  };
+  const darkDraw=ctx=>{
+    const t=g.dt;
+    if(t<150){baseDraw(ctx);drawHades(ctx);if(t>20&&t%14<4){ctx.fillStyle="rgba(0,0,0,.6)";ctx.fillRect(0,0,W,H);}
+      ctx.fillStyle="rgba(0,0,0,"+Math.min(1,t/130)+")";ctx.fillRect(0,0,W,H);return;}
+    ctx.fillStyle="#000";ctx.fillRect(0,0,W,H);
+    const x=g.hx,y=g.hy-24,a=g.ha,L=84+Math.sin(t*.7)*3,sp=.42;
+    ctx.save();ctx.beginPath();ctx.moveTo(x,y);ctx.arc(x,y,L,a-sp,a+sp);ctx.closePath();ctx.clip();
+    for(let tx=0;tx<W;tx+=12)for(let ty=0;ty<H;ty+=12){ctx.fillStyle=((tx+ty)/12)%2?"#2a2623":"#201d1b";ctx.fillRect(tx,ty,12,12);}
+    const gg=ctx.createRadialGradient(x,y,4,x,y,L);gg.addColorStop(0,"rgba(255,230,160,.35)");gg.addColorStop(1,"rgba(0,0,0,.92)");ctx.fillStyle=gg;ctx.fillRect(0,0,W,H);
+    ctx.restore();
+    man(ctx,x,g.hy,3,{d:Math.cos(a)>=0?1:-1,w:g.hw,col:"#2b4a8a",skin:"#c9a070"});
+  };
+  /* Hades round visuals: chains on the walls, burning blocks, chained ball, embers, souls, lava, heat wave */
+  const drawHades=ctx=>{
+    const wy=py+5,lf=g.lift||0,sw=2+lf*.4,t=g.frame;
+    ctx.fillStyle="#8a8f9a";for(let y=18;y<H;y+=10){ctx.fillRect(2,y,4,6);ctx.fillRect(W-6,y,4,6);}
+    (g.burn||[]).forEach(q=>{const r=Math.floor(q.i/cols),c=q.i%cols,x=12+c*bw,y=top+r*bh,k=Math.min(1,q.t/330);
+      ctx.fillStyle="rgba(255,60,0,"+(.25+.4*k)+")";rr(ctx,x+1,y+1,bw-2,bh-2,3);ctx.fill();
+      for(let j=0;j<3;j++){const fx=x+bw*(.2+j*.3),fl=Math.sin(t*.4+j*2+q.i)*2;ctx.fillStyle=j%2?"#ffb347":"#ff6a1a";ctx.beginPath();ctx.moveTo(fx-3,y+2);ctx.lineTo(fx,y-5-fl-k*4);ctx.lineTo(fx+3,y+2);ctx.fill();}});
+    g.balls.forEach(b=>{if(b.chain){ctx.strokeStyle="#9aa0ab";ctx.lineWidth=2.5;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(b.x,15);ctx.lineTo(b.x,b.y-4);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle="#ff4d00";ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(b.x,b.y,6,0,7);ctx.stroke();}});
+    (g.embers||[]).forEach(e=>{ctx.shadowColor="#ff7a1a";ctx.shadowBlur=6;ctx.fillStyle="#ff9b1a";ctx.fillRect(e.x-1.5,e.y-3,3,6);ctx.fillStyle="#ffe066";ctx.fillRect(e.x-.7,e.y-1,1.5,3);ctx.shadowBlur=0;});
+    (g.souls||[]).forEach(s=>{ctx.fillStyle="rgba(190,230,255,.75)";ctx.shadowColor="#bfeaff";ctx.shadowBlur=8;ctx.beginPath();ctx.arc(s.x,s.y,4.5,0,7);ctx.fill();
+      ctx.beginPath();ctx.moveTo(s.x-4.5,s.y);ctx.lineTo(s.x-3,s.y+9+Math.sin(t*.3+s.ph)*2);ctx.lineTo(s.x,s.y+5);ctx.lineTo(s.x+3,s.y+9+Math.cos(t*.3+s.ph)*2);ctx.lineTo(s.x+4.5,s.y);ctx.fill();ctx.shadowBlur=0;
+      ctx.fillStyle="#102040";ctx.fillRect(s.x-2.5,s.y-1,1.5,2);ctx.fillRect(s.x+1,s.y-1,1.5,2);});
+    const lg=ctx.createLinearGradient(0,wy,0,H);lg.addColorStop(0,"#ffb02e");lg.addColorStop(.3,"#e8470f");lg.addColorStop(1,"#4a0803");
+    ctx.fillStyle=lg;ctx.beginPath();ctx.moveTo(8,H);for(let x=8;x<=W-8;x+=6) ctx.lineTo(x,wy+Math.sin(x*.09+t*.06)*sw);ctx.lineTo(W-8,H);ctx.closePath();ctx.fill();
+    ctx.fillStyle="rgba(255,220,120,.7)";for(let i=0;i<5;i++){ctx.fillRect(12+(i*71+t*.3)%(W-24),wy+4+((t*.4+i*7)%12),2,2);}
+    if(g.heat){ctx.fillStyle="rgba(255,80,0,"+(.07+.05*Math.sin(t*.3))+")";ctx.fillRect(8,16,W-16,H-16);
+      ctx.fillStyle="#ffb347";ctx.font="12px system-ui,sans-serif";ctx.textAlign="center";ctx.fillText("HEAT WAVE",W/2,62);ctx.textAlign="left";}
+  };
+  /* "A FIRE HAS EMERGED": a chain shoots in, grabs the words and drags them away with a growl */
+  const hadesIntro=ctx=>{
+    const t=g.t,bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#120202");bg.addColorStop(1,"#4a0d00");ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    for(let i=0;i<40;i++){const x=(i*53+t*.3*(1+i%3))%W,y=H-((t*(.8+i%4*.4)+i*37)%H);ctx.fillStyle=i%2?"#ff9b1a":"#ff4d00";ctx.fillRect(x,y,2,2);}
+    const grab=100,pull=Math.max(0,t-grab),dx=pull*pull*.09,sh=pull>0?(Math.random()-.5)*3:0,s="A FIRE HAS EMERGED";
+    ctx.textAlign="center";ctx.shadowColor="#ff5a00";ctx.shadowBlur=18+4*Math.sin(t*.3);ctx.fillStyle="#ffb347";
+    ctx.font=fitFont(ctx,s,"bold %px Cinzel,Georgia,serif",W-30,30);
+    const tw=ctx.measureText(s).width,tx=W/2+dx+sh,e0=W/2+tw/2+4,endx=tx+tw/2+4;
+    ctx.globalAlpha=Math.min(1,t/30);ctx.fillText(s,tx,H/2);ctx.globalAlpha=1;ctx.shadowBlur=0;ctx.textAlign="left";
+    if(t>=60){const head=t<grab?(W+30)-((W+30)-e0)*((t-60)/40):endx,y=H/2-8;
+      for(let x=head;x<W+30;x+=9){const k=Math.round((x-head)/9)%2;ctx.fillStyle="#8a8f9a";ctx.strokeStyle="#3a3f4a";ctx.lineWidth=1;
+        ctx.beginPath();ctx.ellipse(x,y,k?4.5:3,k?3:4.5,0,0,7);ctx.stroke();ctx.fillRect(x-1,y-1,2,2);}
+      if(t>=grab&&t<grab+8){ctx.fillStyle="rgba(255,200,120,.35)";ctx.fillRect(0,0,W,H);}}
+  };
   const GYF=H-22,WC=["#38b6ff","#7fd8ff","#1a6fc9","#cdefff"];
   const mix=(r,a,b)=>"rgb("+a.map((v,i)=>Math.round(v+(b[i]-v)*r)).join(",")+")";
   const puff=(x,y,n,cols,sp)=>{for(let i=0;i<n;i++)g.parts.push({x,y,vx:(Math.random()-.5)*sp,vy:-Math.random()*sp,l:40+Math.random()*30,c:cols[i%cols.length],gr:.14});};
@@ -680,7 +761,7 @@ function createGame(W,H){
     g.z={x:290,y:0,vy:0,rush:0,rt:0,sh:0,nx:35-D.shieldEvery,hp:35,fl:0,d:-1,w:0,cd:90,st:0,t2:0,q:0,hits:0,ag:1};g.zb=[];g.zd=[];g.parts=[];bossMusic(true);
   };
   /* DAMAGE TABLE (hearts you lose). Change these numbers to tune the fight. inv = frames you are safe after a hit. enrageAt = his hearts left when he goes berserk. */
-  const D={stream:1,melee:2,splash:2,inv:40,enrageAt:12,block:.55,knock:40,shieldEvery:5,shieldTime:360};
+  const D={stream:1,melee:1,splash:1,inv:60,enrageAt:12,block:.5,knock:40,shieldEvery:5,shieldTime:300};
   const hurtP=n=>{if(g.inv>0)return;g.php-=n||1;g.inv=D.inv;g.pflash=40;thunder(.25,0);if(g.php<=0){g.over=true;g.bs=0;bossMusic(false);}};
   const hitZ=n=>{const z=g.z;z.hp-=n;z.fl=14;z.hits++;g.score+=10*n;zap();puff(z.x,GYF-40,6,WC,4);
     if(z.hp>0&&z.hp<=z.nx){z.nx=Math.floor((z.hp-1)/D.shieldEvery)*D.shieldEvery;z.sh=D.shieldTime;underYell(1.4);}
@@ -688,7 +769,7 @@ function createGame(W,H){
     if(z.hp<=0){g.bs=0;g.phase="win";g.t=0;g.hidePad=true;g.parts=[];g.zb=[];g.zd=[];g.fire=null;bossMusic(false);victory();}};
   const fightStep=()=>{
     const K=window.GK||{},z=g.z;g.bt++;
-    z.ag=1+(1-z.hp/35)*1.2;
+    z.ag=1+(1-z.hp/35)*.8;
     if(z.fl>0)z.fl--; if(g.pflash>0)g.pflash--; if(g.inv>0)g.inv--;
     if(!z.en&&z.hp<=D.enrageAt){z.en=1;underYell(2.2);}
     /* player: left/right walk, down crouch, up jump, space sword (7 hits charges fire, next space shoots it for 4x damage) */
@@ -716,18 +797,18 @@ function createGame(W,H){
     if(++g.rg>=5400){g.rg=0;if(g.php<11)g.php++;}   /* one heart back every 1 min 30 s */
     /* Poseidon: keeps his distance and throws water from the trident, melee up close, splash after every 8 hits */
     const dist=Math.abs(g.pxp-z.x);z.d=g.pxp>z.x?1:-1;z.cd-=z.ag;
-    if(z.sh>0){z.sh--;z.cd-=.8;}   /* while the shield is up he attacks faster */
+    if(z.sh>0){z.sh--;z.cd-=.15;}   /* while the shield is up he attacks faster */
     if(z.y>0||z.vy>0){z.vy-=.5;z.y=Math.max(0,z.y+z.vy);if(z.y===0)z.vy=0;}
     if(z.st===0){
       let m=0,spd=.9;
       if(z.rush){z.rt++;if(dist>44){m=z.d;spd=1.3;}if(z.rt>260)z.rush=0;}
       else if(dist<110&&z.x<W-45)m=-z.d;else if(dist>190)m=z.d;
-      z.x=Math.max(40,Math.min(W-30,z.x+m*spd*z.ag));z.w=m?z.w+.22:0;
+      z.x=Math.max(40,Math.min(W-30,z.x+m*Math.min(2.1,spd*z.ag)));z.w=m?z.w+.22:0;
       if(z.y===0&&Math.random()<(m?.006:.002)*z.ag) z.vy=7;
       if(z.cd<=0){
-        if(z.q){z.q=0;z.st=1;z.t2=45;z.cd=95;underYell(1.3);}
-        else if(dist<56){z.st=3;z.t2=22;z.cd=80;z.rush=Math.random()<.5?1:0;z.rt=0;underYell(.6);}
-        else if(!z.rush){z.st=2;z.t2=28;z.cd=95;z.rush=Math.random()<.5?1:0;z.rt=0;underYell(.7);}
+        if(z.q){z.q=0;z.st=1;z.t2=45;z.cd=150;underYell(1.3);}
+        else if(dist<56){z.st=3;z.t2=22;z.cd=110;z.rush=Math.random()<.5?1:0;z.rt=0;underYell(.6);}
+        else if(!z.rush){z.st=2;z.t2=28;z.cd=150;z.rush=Math.random()<.5?1:0;z.rt=0;underYell(.7);}
       }
     }else if(--z.t2<=0){
       if(z.st===1){for(let i=0;i<(z.en?10:6);i++) g.zd.push({x:z.x,y:36,vx:(i%2?1:-1)*(1.3+(i>>1)*.9),r:9});splash();}
@@ -741,6 +822,7 @@ function createGame(W,H){
     g.zb=g.zb.filter(b=>b.x>-20&&b.x<W+20);g.zd=g.zd.filter(b=>b.x>-20&&b.x<W+20);
     g.parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=p.gr;p.l--;});g.parts=g.parts.filter(p=>p.l>0);
     if(bm) bm.hot=z.ag>1.6;
+    if(g.bt%3===0) g.parts.push({x:z.x+(Math.random()-.5)*34,y:GYF-z.y-Math.random()*66,vx:0,vy:-.5,l:30,c:"rgba(120,220,255,.6)",gr:0});
   };
   const fightDraw=ctx=>{
     const z=g.z,r=1-z.hp/35;
@@ -752,7 +834,7 @@ function createGame(W,H){
     if(z.st===1){ctx.strokeStyle="rgba(120,220,255,.8)";ctx.lineWidth=2;ctx.beginPath();ctx.arc(z.x,GYF-40,(45-z.t2)*1.2,0,7);ctx.stroke();}
     if(z.sh>0){const q=.5+.5*Math.sin(g.bt*.2);ctx.fillStyle="rgba(120,220,255,"+(.12+.08*q)+")";ctx.strokeStyle="rgba(190,245,255,"+(.6+.3*q)+")";ctx.lineWidth=2;ctx.beginPath();ctx.arc(z.x,GYF-z.y-36,54,0,7);ctx.fill();ctx.stroke();ctx.font="11px system-ui,sans-serif";ctx.fillStyle="#bfeaff";ctx.textAlign="center";ctx.fillText("WATER SHIELD - survive until it breaks",W/2,28);ctx.textAlign="left";}
     const sa=z.st===2?-.15:z.st===3?-1.2+(1-z.t2/22)*1.6:-1.2;
-    man(ctx,z.x,GYF-z.y,4,{d:z.d,w:z.w,col:z.fl>0?"#ff3030":mix(r,[31,141,146],[210,30,30]),skin:z.fl>0?"#ff5a4a":mix(r,[127,208,196],[255,90,80]),wp:"t",a:sa,crown:1});
+    man(ctx,z.x,GYF-z.y,5,{d:z.d,w:z.w,col:z.fl>0?"#ff3030":mix(r,[14,70,90],[190,25,25]),skin:z.fl>0?"#ff5a4a":mix(r,[80,140,150],[230,80,70]),wp:"t",a:sa,crown:1,mon:1,ec:mix(r,[56,240,255],[255,40,30]),t:g.bt});
     const pa=g.swing>0?-1.4+(1-g.swing/(g.hitd&&g.chg===0&&g.swing<=16?16:36))*2.2:-.9;
     man(ctx,g.pxp,GYF-g.py,3,{d:g.pd,w:g.pw2,k:g.pk,col:g.pflash>0?"#ff6a6a":"#3b6fd6",skin:"#f1c27d",wp:"s",a:pa,fire:g.chg>=7});
     ctx.fillStyle="#6fd6ff";g.zb.forEach(b=>ctx.fillRect(Math.round(b.x-b.r),Math.round(GYF-b.y-b.r),b.r*2,b.r*2));
@@ -775,7 +857,7 @@ function createGame(W,H){
     if(t>=20&&t<170){ctx.fillStyle="rgba(70,0,0,"+Math.min(.5,(t-20)/60)+")";ctx.fillRect(0,0,W,H);
       ctx.textAlign="center";ctx.fillStyle="#ff3b3b";const s="YOU TOOK MY WATER";ctx.font=fitFont(ctx,s,"bold %px Cinzel,Georgia,serif",W-24,30);
       ctx.fillText(s,W/2+(Math.random()-.5)*6,H/2+(Math.random()-.5)*6);ctx.textAlign="left";}
-    if(t>=190){const zx=Math.min(290,-40+(t-190)*1.75);man(ctx,zx,GYF,4,{d:zx<290?1:-1,w:zx<290?t*.2:0,col:"#1f8d92",skin:"#7fd0c4",wp:"t",a:-1.2,crown:1});}
+    if(t>=190){const zx=Math.min(290,-40+(t-190)*1.75);man(ctx,zx,GYF,5,{d:zx<290?1:-1,w:zx<290?t*.2:0,col:"#0e4654",skin:"#5f9a9a",wp:"t",a:-1.2,crown:1,mon:1,t:t});}
     if(t>=400&&t<520&&(t<440||t%4<3)){ctx.fillStyle="#fff";ctx.fillRect(g.cx-4,GYF-8,8,8);}
     if(t>=440){const q=Math.min(1,(t-440)/80);ctx.save();ctx.beginPath();ctx.rect(g.cx-30,GYF-48*q,60,48*q+1);ctx.clip();
       man(ctx,g.cx,GYF,3,{d:1,w:0,col:"#3b6fd6",skin:"#f1c27d",wp:t>=650?"s":0,a:-.9});ctx.restore();}
@@ -786,6 +868,7 @@ function createGame(W,H){
     if(g.bs===3){bossDraw(ctx);return;}
     if(g.bs===5){fightDraw(ctx);return;}
     if(g.bs===4){cutDraw(ctx);return;}
+    if(g.bs===6){darkDraw(ctx);return;}
     baseDraw(ctx);
     if(g.bs===1||g.bs===2) introDraw(ctx);
   };
@@ -802,6 +885,14 @@ function man(c,x,gy,u,o){
   c.fillStyle=o.skin;c.fillRect(x-2*u,top-4*u,4*u,4*u);
   c.fillStyle="#111";c.fillRect(x+(d>0?.5:-1.5)*u,top-3*u,u,u);
   if(o.crown){c.fillStyle="#f3e3b0";[-2,-.5,1].forEach(q=>c.fillRect(x+q*u,top-5*u,u,u));}
+  if(o.mon){const ec=o.ec||"#38f0ff",tt=o.t||0;
+    c.fillStyle="#04141a";c.fillRect(x-2*u,top-4*u,4*u,1.2*u);   /* heavy brow */
+    c.save();c.shadowColor=ec;c.shadowBlur=u*3;c.fillStyle=ec;c.fillRect(x-1.7*u,top-3.1*u,1.3*u,.9*u);c.fillRect(x+.4*u,top-3.1*u,1.3*u,.9*u);c.restore();
+    c.fillStyle="#0a0008";c.fillRect(x-1.7*u,top-1.6*u,3.4*u,1.1*u);
+    c.fillStyle="#f1ecd8";for(let i=0;i<5;i++){c.fillRect(x-1.7*u+i*.75*u,top-1.6*u,.45*u,.6*u);c.fillRect(x-1.35*u+i*.75*u,top-.8*u,.4*u,.5*u);}
+    c.fillStyle="#0a3640";for(let i=0;i<5;i++){const wv=Math.sin(tt*.15+i)*.4*u;c.fillRect(x-1.9*u+i*.95*u+wv,top,.7*u,(2.6+(i%2)*1.4)*u);}
+    c.fillStyle="#08262c";[-1,1].forEach(q=>{for(let j=0;j<3;j++)c.fillRect(x+q*(2.1+j*.5)*u-(q<0?.8*u:0),top+(j*1.3-.4)*u,.8*u,.8*u);});
+    c.fillStyle="rgba(120,230,255,.5)";for(let i=0;i<4;i++)c.fillRect(x-1.2*u+i*.8*u,top+(1+i%2*1.5)*u,.3*u,1.2*u);}
   if(o.wp){const hx=x+d*3*u,hy=top+1.5*u,a=o.a||0,len=o.wp==="t"?13:8;
     c.fillStyle=o.col;c.fillRect(Math.min(x,hx),hy,3*u,u);
     c.fillStyle=o.wp==="t"?"#a8e6ff":o.fire?"#ff9b3a":"#e8f0ff";
@@ -832,6 +923,44 @@ function underYell(dur){
       o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*2,t+.08);g.gain.setValueAtTime(.1,t);g.gain.exponentialRampToValueAtTime(.001,t+.1);
       o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+.11);}
   }catch(e){}
+}
+/* Hades: deep demon growl (intro) and the jumpscare roar */
+function hadesGrowl(d,v){
+  if(!ac) return;
+  try{const n=ac.currentTime,m=ac.createGain(),ws=ac.createWaveShaper(),cv=new Float32Array(256);
+    for(let i=0;i<256;i++){cv[i]=Math.tanh((i/128-1)*4);} ws.curve=cv;
+    m.gain.setValueAtTime(0,n);m.gain.linearRampToValueAtTime(v,n+.15);m.gain.setValueAtTime(v,n+d*.6);m.gain.exponentialRampToValueAtTime(.001,n+d);m.connect(ws);ws.connect(ac.destination);
+    const lp=ac.createBiquadFilter();lp.type="lowpass";lp.frequency.setValueAtTime(400,n);lp.frequency.linearRampToValueAtTime(1200,n+d*.4);lp.frequency.linearRampToValueAtTime(300,n+d);lp.connect(m);
+    [1,1.02,.5].forEach((dt,i)=>{const o=ac.createOscillator(),l=ac.createOscillator(),lg=ac.createGain();o.type=i===2?"square":"sawtooth";
+      o.frequency.setValueAtTime(55*dt,n);o.frequency.exponentialRampToValueAtTime(95*dt,n+d*.4);o.frequency.exponentialRampToValueAtTime(40*dt,n+d);
+      l.frequency.value=16+i*3;lg.gain.value=14;l.connect(lg);lg.connect(o.frequency);o.connect(lp);o.start(n);o.stop(n+d);l.start(n);l.stop(n+d);});
+    const buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),data=buf.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+    const ns=ac.createBufferSource(),hp=ac.createBiquadFilter(),ng=ac.createGain();ns.buffer=buf;hp.type="highpass";hp.frequency.value=2500;ng.gain.value=.25;ns.connect(hp);hp.connect(ng);ng.connect(m);ns.start(n);
+  }catch(e){}
+}
+function hadesRoar(){hadesGrowl(2.2,1);scream();}
+/* Hades jumpscare: burning skull with fire eyes and a crown of flames */
+function hades(c,w,h,t,f){
+  c.fillStyle="#000";c.fillRect(0,0,w,h);
+  if(f%6<3){c.fillStyle="rgba(210,50,0,.5)";c.fillRect(0,0,w,h);}
+  const s=Math.max(Math.min(w,h)*.5,Math.min(w*.7,h*.45))*.85*Math.min(1,.3+t*4)*(1+t*.2);
+  c.save();c.translate(w/2+(Math.random()-.5)*16,h/2+s*.25+(Math.random()-.5)*16);hadesFig(c,s,f);c.restore();
+}
+function hadesFig(c,s,f){
+  c.lineJoin="round";
+  for(let i=0;i<16;i++){const a=Math.PI*(1+i/15),fl=Math.sin(f*.5+i*2)*.15;
+    c.fillStyle=i%2?"#ff7a1a":"#ff3b00";c.beginPath();c.moveTo(Math.cos(a)*s*.45-s*.09,Math.sin(a)*s*.55);c.lineTo(Math.cos(a)*s*(1.05+fl),Math.sin(a)*s*(1.45+fl));c.lineTo(Math.cos(a)*s*.45+s*.09,Math.sin(a)*s*.55);c.fill();}
+  const sg=c.createRadialGradient(0,-s*.2,s*.05,0,0,s*.7);sg.addColorStop(0,"#f2ecdc");sg.addColorStop(1,"#a89c84");
+  c.fillStyle=sg;c.beginPath();c.ellipse(0,-s*.05,s*.5,s*.6,0,0,7);c.fill();
+  c.fillStyle="#d8d0bc";c.fillRect(-s*.3,s*.3,s*.6,s*.2);
+  [-1,1].forEach(sx=>{const x=sx*s*.22,y=-s*.12;c.fillStyle="#000";c.beginPath();c.ellipse(x,y,s*.15,s*.18,0,0,7);c.fill();
+    c.shadowColor="#ff4d00";c.shadowBlur=s*.18;c.fillStyle="#ff9b1a";c.beginPath();c.ellipse(x,y+s*.02,s*.07,s*.11+Math.sin(f*.8)*s*.015,0,0,7);c.fill();c.fillStyle="#ffe066";c.beginPath();c.ellipse(x,y+s*.04,s*.03,s*.05,0,0,7);c.fill();c.shadowBlur=0;});
+  c.fillStyle="#000";c.beginPath();c.moveTo(0,s*.08);c.lineTo(-s*.06,s*.22);c.lineTo(s*.06,s*.22);c.fill();
+  const my=s*.42,mh=s*(.1+.06*Math.sin(f*.8));
+  c.fillStyle="#1a0000";c.beginPath();c.ellipse(0,my+mh*.5,s*.28,mh,0,0,7);c.fill();
+  c.fillStyle="#f1ecdc";for(let i=-3;i<=3;i++){const x=i*s*.075;c.beginPath();c.moveTo(x-s*.03,my-mh*.4);c.lineTo(x+s*.03,my-mh*.4);c.lineTo(x,my+s*(i%2?.08:.12));c.fill();
+    c.beginPath();c.moveTo(x-s*.025,my+mh*1.4);c.lineTo(x+s*.025,my+mh*1.4);c.lineTo(x,my+mh*1.4-s*.08);c.fill();}
+  c.strokeStyle="#1a1410";c.lineWidth=s*.012;c.beginPath();c.moveTo(-s*.08,-s*.6);c.lineTo(-s*.02,-s*.38);c.lineTo(-s*.1,-s*.3);c.stroke();
 }
 function rumble(){
   if(!ac) return;
@@ -1467,8 +1596,8 @@ function showGame(on,endless){
     const d=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0); if(d&&!(game.frozen>0)) game.px=clamp(game.px+d*7);
     game.step();
     if(game.over&&!game.ready){
-      const zs=game.round>=2,ps=game.round>=3;
-      if(scare===0){sc.width=innerWidth;sc.height=innerHeight;sc.hidden=false;audio();(ps?tidalRoar:zs?thunder:scream)();if(zs&&!ps)godblast();}
+      const zs=game.round>=2,ps=game.round>=3,hs=game.round>=4;
+      if(scare===0){sc.width=innerWidth;sc.height=innerHeight;sc.hidden=false;audio();(hs?hadesRoar:ps?tidalRoar:zs?thunder:scream)();if(zs&&!ps)godblast();}
       scare++;
       if(scare>=SCARE){game.ready=true;sc.hidden=true;}
     }
@@ -1476,7 +1605,7 @@ function showGame(on,endless){
   const loop=now=>{
     acc+=Math.max(0,Math.min(100,now-last));last=now;
     while(acc>=STEP){tick();acc-=STEP;}
-    if(game.over&&!game.ready&&scare>0){const rd=game.round;(rd>=3?poseidon:rd>=2?zeus:medusa)(sx,sc.width,sc.height,scare/SCARE,scare);}
+    if(game.over&&!game.ready&&scare>0){const rd=game.round;(rd>=4?hades:rd>=3?poseidon:rd>=2?zeus:medusa)(sx,sc.width,sc.height,scare/SCARE,scare);}
     ctx.setTransform(cv.width/GW,0,0,cv.height/GH,0,0);game.draw(ctx);raf=requestAnimationFrame(loop);}; raf=requestAnimationFrame(loop);
 }
 function render(){
