@@ -677,12 +677,13 @@ function createGame(W,H){
   };
   const initFight=()=>{
     g.bs=5;g.php=11;g.inv=0;g.rg=0;g.pxp=g.cx;g.py=0;g.pvy=0;g.pk=0;g.pd=1;g.pw2=0;g.swing=0;g.hitd=0;g.sp0=false;g.chg=0;g.fire=null;g.pflash=0;
-    g.z={x:290,y:0,vy:0,rush:0,rt:0,hp:35,fl:0,d:-1,w:0,cd:90,st:0,t2:0,q:0,hits:0,ag:1};g.zb=[];g.zd=[];g.parts=[];bossMusic(true);
+    g.z={x:290,y:0,vy:0,rush:0,rt:0,sh:0,nx:35-D.shieldEvery,hp:35,fl:0,d:-1,w:0,cd:90,st:0,t2:0,q:0,hits:0,ag:1};g.zb=[];g.zd=[];g.parts=[];bossMusic(true);
   };
   /* DAMAGE TABLE (hearts you lose). Change these numbers to tune the fight. inv = frames you are safe after a hit. enrageAt = his hearts left when he goes berserk. */
-  const D={stream:1,melee:2,splash:2,inv:40,enrageAt:12};
+  const D={stream:1,melee:2,splash:2,inv:40,enrageAt:12,block:.55,knock:40,shieldEvery:5,shieldTime:360};
   const hurtP=n=>{if(g.inv>0)return;g.php-=n||1;g.inv=D.inv;g.pflash=40;thunder(.25,0);if(g.php<=0){g.over=true;g.bs=0;bossMusic(false);}};
   const hitZ=n=>{const z=g.z;z.hp-=n;z.fl=14;z.hits++;g.score+=10*n;zap();puff(z.x,GYF-40,6,WC,4);
+    if(z.hp>0&&z.hp<=z.nx){z.nx=Math.floor((z.hp-1)/D.shieldEvery)*D.shieldEvery;z.sh=D.shieldTime;underYell(1.4);}
     if(z.hits%8===0) z.q=1;
     if(z.hp<=0){g.bs=0;g.phase="win";g.t=0;g.hidePad=true;g.parts=[];g.zb=[];g.zd=[];g.fire=null;bossMusic(false);victory();}};
   const fightStep=()=>{
@@ -700,15 +701,22 @@ function createGame(W,H){
     const sp=!!K[" "]&&!g.sp0;g.sp0=!!K[" "];
     if(sp&&g.swing===0){
       if(g.chg>=7){g.fire={x:g.pxp+g.pd*27,y:g.py+(g.pk?14:27),vx:g.pd*5.2};g.chg=0;g.hitd=1;g.swing=16;zap();puff(g.pxp+g.pd*27,GYF-g.py-(g.pk?14:27),10,["#ff7a1a","#ffe066","#ff4d00"],5);}
-      else{g.hitd=0;g.swing=18;ping(4);}}
+      else{g.hitd=0;g.swing=36;ping(4);}}
     if(g.swing>0){g.swing--;
-      if(g.swing===9&&!g.hitd&&Math.abs(z.x-g.pxp)<=48&&Math.abs(g.py-z.y)<40){g.hitd=1;g.chg=Math.min(7,g.chg+1);hitZ(1);if(g.bs!==5)return;}}
+      if(g.swing===27&&!g.hitd&&Math.abs(z.x-g.pxp)<=48&&Math.abs(g.py-z.y)<40){g.hitd=1;
+        /* he blocks with the trident while he is not attacking: sparks, no damage, and he slides back */
+        if(z.sh>0||(z.st===0&&Math.random()<D.block)){puff(z.x-z.d*8,GYF-z.y-40,8,["#ffffff","#cdefff","#7fd8ff"],5);ping(1);z.x=Math.max(40,Math.min(W-30,z.x-z.d*10));}
+        else{g.chg=Math.min(7,g.chg+1);hitZ(1);if(g.bs!==5)return;
+        /* he reacts: steps back, sometimes hops, and often hits back fast */
+        z.x=Math.max(40,Math.min(W-30,z.x-z.d*D.knock));if(z.y===0&&Math.random()<.5) z.vy=6;
+        if(z.st===0&&Math.random()<.4) z.cd=Math.min(z.cd,10);}}}
     if(g.fire){const f=g.fire;f.x+=f.vx;f.y+=(z.y+34-f.y)*.05;
       for(let i=0;i<2;i++) g.parts.push({x:f.x-Math.sign(f.vx)*6+(Math.random()-.5)*6,y:GYF-f.y+(Math.random()-.5)*8,vx:-Math.sign(f.vx)*.6,vy:-.3,l:16,c:["#ff4d00","#ff9b1a","#ffe066"][i%3],gr:-.02});
-      if(Math.abs(f.x-z.x)<=20&&f.y>=z.y-6&&f.y<=z.y+76){g.fire=null;puff(z.x,GYF-z.y-40,14,["#ff7a1a","#ffe066","#ff4d00"],7);hitZ(4);if(g.bs!==5)return;}else if(f.x<8||f.x>W-8) g.fire=null;}
+      if(Math.abs(f.x-z.x)<=20&&f.y>=z.y-6&&f.y<=z.y+76){g.fire=null;puff(z.x,GYF-z.y-40,14,["#ff7a1a","#ffe066","#ff4d00"],7);if(z.sh<=0){hitZ(4);if(g.bs!==5)return;}}else if(f.x<8||f.x>W-8) g.fire=null;}
     if(++g.rg>=5400){g.rg=0;if(g.php<11)g.php++;}   /* one heart back every 1 min 30 s */
     /* Poseidon: keeps his distance and throws water from the trident, melee up close, splash after every 8 hits */
     const dist=Math.abs(g.pxp-z.x);z.d=g.pxp>z.x?1:-1;z.cd-=z.ag;
+    if(z.sh>0){z.sh--;z.cd-=.8;}   /* while the shield is up he attacks faster */
     if(z.y>0||z.vy>0){z.vy-=.5;z.y=Math.max(0,z.y+z.vy);if(z.y===0)z.vy=0;}
     if(z.st===0){
       let m=0,spd=.9;
@@ -742,9 +750,10 @@ function createGame(W,H){
     if(g.pflash>0){ctx.fillStyle="rgba(255,60,60,"+Math.min(.4,g.pflash/90)+")";ctx.fillRect(0,0,W,H);}
     ctx.fillStyle="#2a0d0d";ctx.fillRect(16,6,W-32,6);ctx.fillStyle="#d12f2f";ctx.fillRect(16,6,(W-32)*Math.max(0,z.hp)/35,6);
     if(z.st===1){ctx.strokeStyle="rgba(120,220,255,.8)";ctx.lineWidth=2;ctx.beginPath();ctx.arc(z.x,GYF-40,(45-z.t2)*1.2,0,7);ctx.stroke();}
+    if(z.sh>0){const q=.5+.5*Math.sin(g.bt*.2);ctx.fillStyle="rgba(120,220,255,"+(.12+.08*q)+")";ctx.strokeStyle="rgba(190,245,255,"+(.6+.3*q)+")";ctx.lineWidth=2;ctx.beginPath();ctx.arc(z.x,GYF-z.y-36,54,0,7);ctx.fill();ctx.stroke();ctx.font="11px system-ui,sans-serif";ctx.fillStyle="#bfeaff";ctx.textAlign="center";ctx.fillText("WATER SHIELD - survive until it breaks",W/2,28);ctx.textAlign="left";}
     const sa=z.st===2?-.15:z.st===3?-1.2+(1-z.t2/22)*1.6:-1.2;
     man(ctx,z.x,GYF-z.y,4,{d:z.d,w:z.w,col:z.fl>0?"#ff3030":mix(r,[31,141,146],[210,30,30]),skin:z.fl>0?"#ff5a4a":mix(r,[127,208,196],[255,90,80]),wp:"t",a:sa,crown:1});
-    const pa=g.swing>0?-1.4+(1-g.swing/18)*2.2:-.9;
+    const pa=g.swing>0?-1.4+(1-g.swing/(g.hitd&&g.chg===0&&g.swing<=16?16:36))*2.2:-.9;
     man(ctx,g.pxp,GYF-g.py,3,{d:g.pd,w:g.pw2,k:g.pk,col:g.pflash>0?"#ff6a6a":"#3b6fd6",skin:"#f1c27d",wp:"s",a:pa,fire:g.chg>=7});
     ctx.fillStyle="#6fd6ff";g.zb.forEach(b=>ctx.fillRect(Math.round(b.x-b.r),Math.round(GYF-b.y-b.r),b.r*2,b.r*2));
     g.zd.forEach(b=>{ctx.fillStyle="#38b6ff";ctx.fillRect(Math.round(b.x-b.r),Math.round(GYF-b.y-b.r),b.r*2,b.r*2);ctx.fillStyle="#cdefff";ctx.fillRect(Math.round(b.x-b.r+3),Math.round(GYF-b.y-b.r+3),5,5);});
