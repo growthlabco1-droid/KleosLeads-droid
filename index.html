@@ -299,7 +299,7 @@ function createGame(W,H){
   /* boss room only: the ball sits on the paddle and launches when you move */
   const serveStuck=()=>{g.balls=[{x:g.px,y:py-5,vx:0,vy:-1,stuck:true,px0:g.px}];};
   const initBoss=()=>{
-    g.bs=3;g.bt=0;g.btime=0;g.lives=3;g.php=3;
+    g.bs=3;g.bt=0;g.btime=0;g.lives=4;g.php=4;
     g.enraged=false;g.rage=0;g.bclock=0;g.nextLaugh=20;g.laughUntil=0;
     g.alive.fill(0);g.kind.fill(0);g.left=0;g.bolts=[];g.arc=null;g.arcs=[];
     g.bb=[];g.pu=null;g.pu2=null;g.mult=1;g.pm=-1;g.bhits=0;g.nb=80;g.hurt=0;g.carry=0;g.shotN=0;
@@ -331,10 +331,15 @@ function createGame(W,H){
         continue;}
       const m=Math.hypot(b.vx,b.vy)||1; b.vx*=sp/m; b.vy*=sp/m; b.x+=b.vx; b.y+=b.vy;
       if(b.x<13){b.x=13;b.vx=Math.abs(b.vx);} if(b.x>W-13){b.x=W-13;b.vx=-Math.abs(b.vx);}
-      if(b.vy<0&&Math.abs(b.x-z.x)<=hw+3&&b.y<=z.y+hw+3){
+      /* Zeus hitbox: his whole body square, from every side. (Before, only a ball moving UP could hit him, so a ball moving down or sideways went straight through his body.) */
+      if(b.zc>0)b.zc--;
+      const zdx=b.x-z.x,zdy=b.y-z.y;
+      if(!(b.zc>0)&&Math.abs(zdx)<=hw+3&&Math.abs(zdy)<=hw+3){
+        b.zc=8;
         const dmg=g.pm>=0?g.mult:1;
         z.hp-=dmg;z.flash=14;g.bhits++;g.score+=10*dmg;zap();
-        b.vy=Math.abs(b.vy);b.vx+=(Math.random()-.5)*.8;b.y=z.y+hw+4;
+        if(Math.abs(zdx)>Math.abs(zdy)){const sd=zdx>=0?1:-1;b.vx=sd*Math.abs(b.vx);b.x=z.x+sd*(hw+4);b.vy+=(Math.random()-.5)*.8;}   /* hit his side: bounce sideways away from him */
+        else{const sd=zdy>=0?1:-1;b.vy=sd*Math.abs(b.vy);b.y=z.y+sd*(hw+4);b.vx+=(Math.random()-.5)*.8;}   /* hit his top or bottom: bounce up or down away from him */
         if(g.pm>=0){g.pm=-1;g.mult=1;}
         if(z.hp<=0){g.bs=0;g.phase="win";g.t=0;g.balls=[];g.bb=[];g.pu=null;g.pu2=null;bossMusic(false);victory();return;}
         if(g.bhits%4===0) spawnPU();
