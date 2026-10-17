@@ -619,10 +619,10 @@ function createGame(W,H){
     if(g.phase==="win"){const R=g.round,ty=Math.min(H*.2,110);
       ctx.fillStyle="rgba(5,8,16,.72)";ctx.fillRect(0,0,W,H);
       ctx.textAlign="center";ctx.fillStyle="#f3e3b0";
-      const t1=R>=3?"You have defeated Poseidon":R===2?"You have defeated Zeus":"Good job, you won!";
+      const t1=R>=4?"You have defeated Hades":R>=3?"You have defeated Poseidon":R===2?"You have defeated Zeus":"Good job, you won!";
       ctx.font=fitFont(ctx,t1,"bold %px Cinzel,Georgia,serif",W-24,24);ctx.fillText(t1,W/2,ty);
-      ctx.fillStyle="#cfd6e4";ctx.font="14px system-ui,sans-serif";ctx.fillText(R>=3?"The sea falls silent.":R===2?"The king of the gods has fallen.":"Medusa is defeated... or is she?",W/2,ty+24);
-      (R>=3?deadPoseidon:R===2?deadZeus:deadMedusa)(ctx,W,H,ty+36,g.t);
+      ctx.fillStyle="#cfd6e4";ctx.font="14px system-ui,sans-serif";ctx.fillText(R>=4?"The underworld bows.":R>=3?"The sea falls silent.":R===2?"The king of the gods has fallen.":"Medusa is defeated... or is she?",W/2,ty+24);
+      (R>=4?deadHades:R>=3?deadPoseidon:R===2?deadZeus:deadMedusa)(ctx,W,H,ty+36,g.t);
       if(R>=4&&g.t>=150){ctx.fillStyle="#f3e3b0";ctx.font="15px system-ui,sans-serif";ctx.fillText("Click to play again",W/2,H-22);}
       ctx.textAlign="left";}
     if(g.phase==="warn"&&g.round===3) hadesIntro(ctx);
@@ -689,24 +689,290 @@ function createGame(W,H){
     if(g.pm>=0){ctx.fillStyle="#f3e3b0";ctx.textAlign="center";ctx.fillText(["ARROW x2","LASER x3","SWORD x4"][g.pm],W/2,H-6);ctx.textAlign="left";}
   };
   const baseDraw=g.draw;
-  /* pomegranate: everything goes black. Placeholder for the horror level: walk with the arrows, a short pixel beam of light follows you */
-  const startDark=()=>{g.cutDone=1;g.bs=6;g.dt=0;g.balls=[];g.burn=[];g.embers=[];g.souls=[];g.hx=W/2;g.hy=H/2;g.ha=-1.57;g.hw=0;thunder(.5,0);rumble();angryRoar();};
-  const darkStep=()=>{
-    g.dt++;const K=window.GK||{};
-    if(g.dt>150){const dx=(K.ArrowRight?1:0)-(K.ArrowLeft?1:0),dy=(K.ArrowDown?1:0)-(K.ArrowUp?1:0);
-      if(dx||dy){g.hx=Math.max(14,Math.min(W-14,g.hx+dx*1.6));g.hy=Math.max(40,Math.min(H-8,g.hy+dy*1.6));g.ha=Math.atan2(dy,dx);g.hw+=.25;}else g.hw=0;}
+  /* ===== HADES HORROR MINI-GAME (half 1) =====
+     Starts when the pomegranate brick is hit (kind 10 -> startDark). The brick breaker is paused (g.bs===6).
+     The scene is drawn at 120x140 and scaled x3 with no smoothing = low-res grainy pixel look. */
+  const HZ={VW:120,VH:140,WW:700,WH:180,FR:22,SPEED:.55,STRIDE:9,
+    fires:[[60,100],[215,95],[365,160],[490,60],[525,140],[640,95]],   /* safe spots */
+    seeds:[[158,168],[430,40],[572,165],[611,36]],gate:[688,90],hang:[[190,70],[262,128],[470,110],[612,100]],
+    names:["A cold riverbank","The bone halls","The mirror hall","The fire cavern","The overgrown graveyard"]};
+  HZ.decor=(()=>{let s=20261017;const r=()=>(s=(s*1664525+1013904223)>>>0)/4294967296,d=[];
+    for(let i=0;i<30;i++)d.push([i%6===0?"skull":i%4===0?"rib":"bone",150+r()*135,16+r()*150]);
+    d.push(["pile",160,166],["pile",235,40],["pile",200,150]);
+    [300,332,364,396].forEach(x=>d.push(["mirror",x,36]));[316,348,380,412].forEach(x=>d.push(["mirror",x,176]));d.push(["mirror",430,36]);
+    for(let i=0;i<14;i++)d.push(["rock",445+r()*130,10+r()*160]);
+    d.push(["pit",490,60],["pit",525,140],["tomb",611,30]);
+    for(let i=0;i<10;i++)d.push(["tomb",588+r()*85,24+r()*140]);
+    for(let i=0;i<70;i++)d.push(["grass",585+r()*105,10+r()*165]);
+    return d.sort((a,b)=>a[2]-b[2]);})();
+  const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v)),hzAd=(a,b)=>{let d=a-b;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;return Math.abs(d);};
+  const hzRoom=x=>x<140?0:x<290?1:x<440?2:x<580?3:4;
+  const hzSafe=(x,y)=>HZ.fires.some(f=>Math.hypot(x-f[0],y-f[1])<HZ.FR);
+  const hzCam=h=>({x:Math.round(hzCl(h.x-HZ.VW/2,0,HZ.WW-HZ.VW)),y:Math.round(hzCl(h.y-HZ.VH/2-8,0,HZ.WH-HZ.VH))});
+  /* THE LIGHT CHECK: is a point inside the flashlight cone? (souls freeze when this is true) */
+  const hzLit=(h,x,y)=>{if(h.fl<=.35)return false;const dx=x-h.x,dy=y-5-(h.y-5),d=Math.hypot(dx,dy);
+    if(d>h.L+3)return false;if(d<4)return true;return hzAd(Math.atan2(dy,dx),h.a)<=.42+Math.min(.5,3/d);};
+  const hzSpawn=ch=>{const h=g.hz;for(let i=0;i<40;i++){let x,y;
+    if(i<14){const a=h.a+Math.PI+(Math.random()-.5)*1.4;x=h.x+Math.cos(a)*(70+Math.random()*20);y=h.y+Math.sin(a)*(70+Math.random()*20);}
+    else{x=130+Math.random()*560;y=10+Math.random()*160;}
+    if(x<30||x>HZ.WW-8||y<10||y>HZ.WH-6||Math.hypot(x-h.x,y-h.y)<75||HZ.fires.some(f=>Math.hypot(x-f[0],y-f[1])<HZ.FR+8))continue;
+    h.souls.push({x,y,lit:0,ch:ch?1:0,tr:[]});return;}};
+  /* start / restart. first=true: full reset. false: after dying, back at the river with the seeds you already have */
+  const hzReset=first=>{const h=g.hz;
+    Object.assign(h,{x:40,y:100,a:0,walk:0,stepAcc:0,foot:0,peek:null,dead:0,fl:1,flT:0,flTarget:1,hbT:0,whT:240,slam:null,silent:0,out:0,dark:0,fkT:0,catch:0,souls:[],L:30,crawl:null,cer:null,face:0,skull:0,nflash:0,pa:0,hg:HZ.hang.map(()=>({d:0}))});
+    if(first)Object.assign(h,{t:0,seeds:0,got:[0,0,0,0],quiet:0,fake:0,slamDone:0,spawned:0,room:-1,toast:0,chase:0,ct:0,wh3:0,whR:60,crawlT:0,crawlDone:0,chDone:0,turnDone:0,hw:[0,0,0],mir:{s:0,t:0,rx:0,ry:0}});
+    else{h.t=Math.max(h.t,3600);h.quiet=1;h.spawned=1;for(let i=0;i<Math.max(1,h.seeds);i++)hzSpawn();if(h.chDone)hzSpawn(1);if(h.chase)for(let i=0;i<3;i++)hzSpawn();}
+    h.open=h.seeds>=4?1:0;};
+  const hzInit=()=>{g.hz={};hzReset(true);hzAmbient(true);};
+  g.hzDead=()=>g.bs===6&&!!g.hz&&g.hz.dead>0;
+  g.hzRevive=()=>{hzReset(false);hzAmbLevel(.05);};
+  const hzFinish=()=>hzThroneStart();   /* gate reached -> throne room */
+  const startDark=()=>{g.cutDone=1;g.bs=6;g.dt=0;g.balls=[];g.burn=[];g.embers=[];g.souls=[];g.hz=null;g.tpt=null;thunder(.5,0);rumble();angryRoar();};
+  const darkStep=()=>{g.dt++;if(g.dt<150)return;if(!g.hz)hzInit();hzStep();};
+  /* ===== HALF 2: chase, chained soul, ceiling hangers, mirror soul, Cerberus, crawling body, throne room ===== */
+  const hzSoul=(c,sx,sy)=>{c.fillStyle="#bdbdb2";c.fillRect(sx-1,sy-8,3,7);c.fillRect(sx-2,sy-8,1,6);c.fillRect(sx+2,sy-8,1,6);c.fillRect(sx-1,sy-1,1,1);c.fillRect(sx+1,sy-1,1,1);
+    c.fillStyle="#d8d8cc";c.fillRect(sx-2,sy-12,5,4);c.fillStyle="#000";c.fillRect(sx-1,sy-11,1,2);c.fillRect(sx+1,sy-11,1,2);c.fillRect(sx,sy-9,1,1);};
+  /* last seed: lights go out, Hades skull flashes, EVERY soul now moves toward you whether you look or not, the gate is open */
+  const hzChase=h=>{h.chase=1;h.ct=0;h.dark=50;h.skull=14;h.hw[2]=1;thunder(.8,0);rumble();howl(0,.3);for(let i=0;i<3;i++)hzSpawn();hzAmbLevel(.09);};
+  const hzExtra=(h,sec,safeP,near)=>{
+    if(h.face>0)h.face--;if(h.skull>0)h.skull--;if(h.nflash>0)h.nflash--;
+    const lookUp=h.a<-.85&&h.a>-2.3;
+    /* Cerberus howls far away at 3 points (1:15, second seed, start of the chase) */
+    if(sec>=75&&!h.hw[0]){h.hw[0]=1;howl(-.7,.18);}
+    if(h.seeds>=2&&!h.hw[1]){h.hw[1]=1;howl(.7,.2);}
+    /* chained soul: first seed. You hear the chain long before you see it, and it comes straight at you */
+    if(h.seeds>=1&&!h.chDone){h.chDone=1;hzSpawn(1);}
+    h.souls.forEach(s=>{if(!s.ch)return;if(h.t%5===0){s.tr.push([s.x,s.y]);if(s.tr.length>8)s.tr.shift();}
+      const d=Math.hypot(s.x-h.x,s.y-h.y);if(!(--s.ck>0)){s.ck=22+Math.floor(Math.random()*26);if(!h.silent)chainClink(hzCl((s.x-h.x)/50,-1,1),hzCl(.34-d/260,.05,.3),0);}});
+    /* ceiling hangers: they only drop if you walk under one without looking up */
+    HZ.hang.forEach((p,i)=>{const q=h.hg[i];if(q.d)return;
+      if(Math.abs(h.x-p[0])<6&&h.y>p[1]&&h.y-p[1]<16&&!safeP){if(lookUp&&h.fl>.35){if(!q.w){q.w=1;whisper(0,.2);}}else{q.d=1;h.catch=1;}}});
+    /* mirror hall: your reflection copies you, then moves wrong, then becomes a soul (only progresses while you look at it) */
+    const m=h.mir;
+    if(h.room===2&&m.s<2&&sec>=60){
+      if(m.s===0){m.rx=h.x;m.ry=Math.max(14,h.y-26);}else{m.rx+=((730-h.x)-m.rx)*.06;m.ry=Math.max(14,h.y-26)+Math.sin(h.t*.2)*2;}
+      if(hzLit(h,m.rx,m.ry)&&++m.t>150){m.t=0;m.s++;
+        if(m.s===1){whisper(0,.25);heartbeat(.7);}else{h.souls.push({x:m.rx,y:m.ry,lit:1,ch:0,tr:[]});heartbeat(.9);whisper(0,.3);h.nflash=4;}}}
+    /* third seed: creepy whispering starts, then a crawling body is yanked into the dark (does not kill you) */
+    if(h.wh3&&!h.silent&&--h.whR<=0){h.whR=80+Math.floor(Math.random()*200);whisper(Math.random()*2-1,.12+Math.random()*.12);if(Math.random()<.35)whisper(Math.random()*2-1,.1);}
+    if(h.wh3&&!h.crawlDone&&!h.crawl&&!h.silent&&--h.crawlT<=0){
+      if(!safeP&&h.fl>.5){h.crawl={x:h.x+Math.cos(h.a)*26,y:h.y+Math.sin(h.a)*26,ux:-Math.cos(h.a),uy:-Math.sin(h.a),s:0,t:0,d:26};crawlSting();}else h.crawlT=30;}
+    if(h.crawl){const k=h.crawl;k.t++;
+      if(k.s===0){k.x+=k.ux*.3;k.y+=k.uy*.3;k.d-=.3;if(k.d<=13){k.s=1;dragSound();}}
+      else{k.x-=k.ux*2.6;k.y-=k.uy*2.6;k.d+=2.6;if(k.d>90){h.crawl=null;h.crawlDone=1;}}}
+    /* a soul right behind you when you turn around (once, no light needed, it just freezes in your beam) */
+    if(h.t%30===0)h.pa=h.a;
+    if(!h.turnDone&&h.seeds>=2&&sec>=100&&!safeP&&h.walk>0&&hzAd(h.a,h.pa)>2.6){const x=h.x+Math.cos(h.a)*13,y=h.y+Math.sin(h.a)*13;
+      if(x>30&&x<HZ.WW-8&&y>10&&y<HZ.WH-6&&!HZ.fires.some(f=>Math.hypot(x-f[0],y-f[1])<HZ.FR+8)){h.turnDone=1;h.souls.push({x,y,lit:1,ch:0,tr:[]});h.face=14;noiseHit();}}
+    /* the chase (4:00-5:15 in the plan): events are timed from the moment the last seed is taken */
+    if(h.chase){h.ct++;
+      if(h.ct===400){h.dark=12;whisper(1,.3);heartbeat(.8);}          /* fake scare */
+      if(h.ct===1100){h.silent=1;hzAmbLevel(0);}                       /* total silence... */
+      if(h.ct===1190){noiseHit();h.nflash=8;h.silent=0;hzAmbLevel(.09);} /* ...then a sudden loud noise */
+      if(h.ct===1500){howl(0,.45);h.cer={x:hzCl(h.x-Math.cos(h.a)*85,30,694),y:hzCl(h.y-Math.sin(h.a)*85,10,176),t:0,f:1};}}
+    if(h.cer){const e=h.cer,ex=h.x-e.x,ey=h.y-e.y,d=Math.hypot(ex,ey)||1;e.t++;e.f=ex>=0?1:-1;   /* Cerberus: a short, fast chase */
+      if(e.t<600){const nx=e.x+ex/d*.8,ny=e.y+ey/d*.8;if(!HZ.fires.some(f=>Math.hypot(nx-f[0],ny-f[1])<HZ.FR+5)){e.x=nx;e.y=ny;}if(d<6&&!safeP)h.catch=1;}
+      else{e.x-=ex/d*.8;e.y-=ey/d*.8;if(d>110||e.t>800)h.cer=null;}}
+  };
+  const hzDrawExtra=(c,cam,h)=>{const R=Math.round;
+    HZ.hang.forEach((p,i)=>{if(h.hg[i].d)return;const sx=R(p[0]-cam.x),sy=R(p[1]-cam.y);if(sx<-10||sx>HZ.VW+10||sy<-10||sy>HZ.VH+30)return;
+      c.fillStyle="#3a3028";c.fillRect(sx,sy-30,1,12);hzSoul(c,sx,sy-6+(R(h.t/20)%2));});
+    h.souls.forEach(s=>{if(s.ch){c.fillStyle="#8a8f9a";s.tr.forEach(t=>c.fillRect(R(t[0]-cam.x),R(t[1]-cam.y)-3,1,1));}});
+    const m=h.mir;
+    if(h.room===2&&m.s<2&&m.rx){const sx=R(m.rx-cam.x),sy=R(m.ry-cam.y);c.fillStyle="#1a1a22";c.fillRect(sx-2,sy-2,4,2);c.fillStyle=m.s?"#4a5a7a":"#2b3f6e";c.fillRect(sx-2,sy-6,4,4);
+      c.fillStyle=m.s?"#c8c8bc":"#cfa77a";c.fillRect(sx-1,sy-9,3,3);if(m.s){c.fillStyle="#000";c.fillRect(sx-1,sy-8,1,2);c.fillRect(sx+1,sy-8,1,2);}}
+    if(h.crawl){const k=h.crawl,sx=R(k.x-cam.x),sy=R(k.y-cam.y),f=k.ux>=0?1:-1;
+      if(k.s===1){c.fillStyle="#000";for(let i=0;i<13;i++)c.fillRect(R(sx-k.ux*(4+i)),R(sy-k.uy*(4+i))-2,2,2);c.fillStyle="#ff2a2a";c.fillRect(R(sx-k.ux*17),R(sy-k.uy*17)-2,1,1);}
+      c.fillStyle="#bdbdb2";c.fillRect(sx-4,sy-3,8,3);c.fillRect(f>0?sx-7:sx+4,sy-2,3,1);c.fillRect(f>0?sx+4:sx-8,sy-1+(R(k.t/6)%2),4,1);
+      c.fillStyle="#d8d8cc";c.fillRect(f>0?sx+4:sx-7,sy-4,3,4);c.fillStyle="#000";c.fillRect(f>0?sx+5:sx-6,sy-3,1,1);}
+    if(h.cer){const e=h.cer,sx=R(e.x-cam.x),sy=R(e.y-cam.y);c.fillStyle="#17090b";c.fillRect(sx-8,sy-10,16,7);[-7,-3,2,6].forEach(l=>c.fillRect(sx+l,sy-3,2,3+(R(e.t/5)%2)));
+      [0,1,2].forEach(i=>{const hx=sx+e.f*(9+i)-2,hy=sy-13+i*2;c.fillRect(hx,hy,4,4);c.fillStyle="#ff2a2a";c.fillRect(hx+(e.f>0?2:0),hy+1,1,1);c.fillStyle="#17090b";});}
+  };
+  const hzFace=(ctx,k)=>{const s=150+k*8,x=W/2+(Math.random()-.5)*14,y=H/2+(Math.random()-.5)*14;ctx.fillStyle=k%4<2?"#000":"#300";ctx.fillRect(0,0,W,H);
+    ctx.fillStyle="#d9d9cf";ctx.beginPath();ctx.ellipse(x,y,s*.55,s*.8,0,0,7);ctx.fill();ctx.fillStyle="#000";
+    [-1,1].forEach(q=>{ctx.beginPath();ctx.ellipse(x+q*s*.2,y-s*.2,s*.12,s*.2,0,0,7);ctx.fill();});ctx.beginPath();ctx.ellipse(x,y+s*.4,s*.18,s*.3,0,0,7);ctx.fill();};
+  const hzOverlays=(ctx,h)=>{
+    if(h.face>0)hzFace(ctx,14-h.face);
+    if(h.skull>0)hades(ctx,W,H,.7,h.skull);   /* the Hades skull flash (does not kill you) */
+    if(h.nflash>0){ctx.fillStyle="rgba(255,255,255,"+h.nflash/8+")";ctx.fillRect(0,0,W,H);}
+    if(h.chase&&h.ct<240){ctx.textAlign="center";ctx.font="bold 15px Cinzel,Georgia,serif";ctx.fillStyle="rgba(255,50,40,"+Math.min(.9,(240-h.ct)/60)+")";ctx.fillText("RUN TO THE GATE",W/2+(Math.random()-.5)*3,48);ctx.textAlign="left";}
+  };
+  /* ---- throne room ending ---- */
+  const HZP=[[-14,-24,28,24,"#1c0612"],[-10,-24,6,24,"#2d0c1c"],[-12,-34,24,12,"#240818"],[-6,-44,12,11,"#9a8f96"],[-5,-38,10,4,"#6a5f66"],[-4,-39,3,1,"#000"],[1,-39,3,1,"#000"],
+    [-6,-46,12,2,"#c59a3d"],[-6,-49,2,3,"#c59a3d"],[-1,-50,2,4,"#c59a3d"],[4,-49,2,3,"#c59a3d"],[-16,-30,4,16,"#1c0612"],[12,-30,4,16,"#1c0612"],[-16,-14,4,3,"#9a8f96"],[12,-14,4,3,"#9a8f96"],[8,-10,8,10,"#240818"]];
+  const hzHades=(c,x,y,cr,t)=>{c.save();c.beginPath();c.rect(x-34,y-64+cr*64,68,68);c.clip();   /* cr 0..1: crumbles from the top down */
+    HZP.forEach(([a,b,w,hh,col])=>{c.fillStyle=col;c.fillRect(x+a,y+b,w,hh);});
+    for(let i=-3;i<=3;i++){const hg=3+Math.abs(Math.sin(t*.2+i))*4;c.fillStyle=i%2?"#ff5a14":"#c23a0a";c.fillRect(x+i*2-1,Math.round(y-52-hg),2,Math.round(hg)+1);}
+    c.restore();};
+  const hzSword=(c,x,y,t)=>{c.fillStyle="#5a3a1a";c.fillRect(x-1,y-24,3,6);c.fillRect(x-5,y-18,11,2);c.fillStyle="#ffb347";c.fillRect(x-1,y-16,3,16);c.fillStyle="#fff2b0";c.fillRect(x,y-16,1,16);
+    for(let i=-1;i<=1;i+=2){const hg=5+Math.abs(Math.sin(t*.3+i))*5;c.fillStyle="#ff5a14";c.fillRect(x+i*3-1,Math.round(y-8-hg),2,Math.round(hg));}};
+  const hzMan=(c,px,py,walk,foot)=>{c.fillStyle="#1a1a22";c.fillRect(px-2,py-2+(walk&&foot?1:0),2,2);c.fillRect(px,py-2+(walk&&!foot?1:0),2,2);
+    c.fillStyle="#2b3f6e";c.fillRect(px-2,py-6,4,4);c.fillStyle="#cfa77a";c.fillRect(px-1,py-9,3,3);};
+  const hzThroneStart=()=>{const h=g.hz;h.out=0;h.souls=[];h.crawl=null;h.cer=null;h.th={x:60,y:130,walk:0,foot:0,sa:0,armed:0,stab:0,t:0,e0:0,emb:[],pr:0};hzAmbient(false);rumble();hadesGrowl(2,.5);};
+  const hzWin=()=>{hzAmbient(false);g.hz=null;g.bs=0;g.phase="win";g.t=0;g.balls=[];g.hidePad=true;g.snakes=[];g.shots=[];g.laser=0;g.frozen=0;victory();};   /* existing win screen (now with a dead Hades) */
+  const hzThroneStep=h=>{
+    const T=h.th,K=window.GK||{};T.t++;
+    const e=!!(K.e||K.E||g.tapE);g.tapE=0;const press=e&&!T.e0;T.e0=e;
+    T.emb.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.l--;});T.emb=T.emb.filter(p=>p.l>0);
+    if(T.stab){T.stab++;if(T.stab===2){thunder(.7,0);hadesGrowl(1.8,.8);}
+      if(T.stab>18&&T.stab<170){const c=(T.stab-18)/150;for(let i=0;i<3;i++)T.emb.push({x:60+(Math.random()-.5)*26,y:74-60*(1-c)+Math.random()*6,vx:(Math.random()-.5)*.3,vy:-.2-Math.random()*.5,l:60+Math.random()*50});}
+      if(T.stab>=260)hzWin();return;}
+    let dx=(K.ArrowRight?1:0)-(K.ArrowLeft?1:0),dy=(K.ArrowDown?1:0)-(K.ArrowUp?1:0);
+    if(!dx&&!dy&&g.tpt){const tx=g.tpt.x*HZ.VW/W-T.x,ty=g.tpt.y*HZ.VH/H-T.y;if(Math.hypot(tx,ty)>3){dx=tx;dy=ty;}}
+    const ln=Math.hypot(dx,dy);
+    if(ln>0){dx/=ln;dy/=ln;T.x=hzCl(T.x+dx*.55,8,112);T.y=hzCl(T.y+dy*.55,84,134);T.walk+=.25;T.sa+=.55;if(T.sa>=9){T.sa-=9;T.foot^=1;plop();}}else T.walk=0;
+    T.pr=!T.armed&&Math.hypot(T.x-60,T.y-100)<14?1:T.armed&&Math.hypot(T.x-60,T.y-76)<18?2:0;
+    if(press&&T.pr===1){T.armed=1;zap();rumble();}   /* E: grab the sword, it burns in your hand */
+    else if(press&&T.pr===2){T.stab=1;}               /* E: stab Hades */
+    if(T.armed&&T.t%3===0)T.emb.push({x:T.x+4+Math.random()*3,y:T.y-12,vx:(Math.random()-.5)*.3,vy:-.4,l:18});
+  };
+  const hzThroneDraw=(ctx,h)=>{
+    const T=h.th,V=HZ.VW,VH=HZ.VH,t=T.t;
+    if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
+    const c=h.A.getContext("2d");
+    c.fillStyle="#1a0608";c.fillRect(0,0,V,60);
+    for(let y=60;y<VH;y+=6)for(let x=0;x<V;x+=6){c.fillStyle=((x+y)/6)%2?"#3a1608":"#33120a";c.fillRect(x,y,6,6);}
+    [8,32,88,112].forEach(x=>{c.fillStyle="#2b0d10";c.fillRect(x-4,0,8,62);c.fillStyle="#4a1a18";c.fillRect(x-4,0,2,62);});
+    c.fillStyle="#0c0406";c.fillRect(44,8,32,50);[46,58,70].forEach(x=>c.fillRect(x,0,3,10));c.fillStyle="#5a1216";c.fillRect(48,14,24,3);
+    [[14,72],[106,72],[14,122],[106,122]].forEach((p,i)=>hzFire(c,p[0],p[1],true,t+i*7));
+    hzHades(c,60,74,T.stab>20?Math.min(1,(T.stab-20)/150):0,t);
+    if(!T.armed)hzSword(c,60,100,t);
+    hzMan(c,Math.round(T.x),Math.round(T.y),T.walk,T.foot);
+    if(T.armed){const sx=Math.round(T.x)+4,sy=Math.round(T.y)-8;c.fillStyle="#ffd05a";c.fillRect(sx,sy-12,1,12);c.fillStyle="#ff5a14";c.fillRect(sx-1,sy-14-(t>>1)%3,3,3);}
+    T.emb.forEach(p=>{c.fillStyle=p.l%2?"#ff9b1a":"#ffe066";c.fillRect(Math.round(p.x),Math.round(p.y),1,1);});
+    c.globalCompositeOperation="lighter";const gr=c.createRadialGradient(60,76,4,60,76,70);gr.addColorStop(0,"rgba(255,110,30,.22)");gr.addColorStop(1,"rgba(255,110,30,0)");c.fillStyle=gr;c.fillRect(0,0,V,VH);c.globalCompositeOperation="source-over";
+    ctx.imageSmoothingEnabled=false;ctx.drawImage(h.A,0,0,V,VH,0,0,W,H);
+    for(let i=0;i<70;i++){ctx.fillStyle=Math.random()<.5?"rgba(255,255,255,.05)":"rgba(0,0,0,.15)";ctx.fillRect(Math.floor(Math.random()*W/3)*3,Math.floor(Math.random()*H/3)*3,3,3);}
+    const vg=ctx.createRadialGradient(W/2,H/2,H*.25,W/2,H/2,H*.65);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.8)");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+    if(T.armed&&!T.stab&&(t>>2)%2){ctx.fillStyle="rgba(255,60,0,.08)";ctx.fillRect(0,0,W,H);}
+    if(T.pr&&!T.stab){ctx.textAlign="center";ctx.font="bold 15px Cinzel,Georgia,serif";ctx.fillStyle="#fff";ctx.shadowColor="#000";ctx.shadowBlur=4;ctx.fillText("Press E",T.x*W/V,(T.y-16)*H/VH);ctx.shadowBlur=0;ctx.textAlign="left";}
+    if(T.stab&&T.stab<26){ctx.fillStyle="rgba(255,255,255,"+(1-T.stab/26)+")";ctx.fillRect(0,0,W,H);}
+    if(t<60){ctx.fillStyle="rgba(0,0,0,"+(1-t/60)+")";ctx.fillRect(0,0,W,H);}
+  };
+  const hzStep=()=>{
+    const h=g.hz,K=window.GK||{};
+    if(h.th){hzThroneStep(h);return;}
+    if(h.out>0){if(++h.out>=110)hzFinish();return;}
+    if(h.dead>0)return;
+    h.t++;const sec=h.t/60;   /* 60 steps = 1 second, so the 6-minute timeline is h.t/60 */
+    /* walking: arrow keys or a finger drag. One "plop" for every step taken */
+    let dx=(K.ArrowRight?1:0)-(K.ArrowLeft?1:0),dy=(K.ArrowDown?1:0)-(K.ArrowUp?1:0);
+    if(!dx&&!dy&&g.tpt){const cm=hzCam(h),tx=g.tpt.x*HZ.VW/W-(h.x-cm.x),ty=g.tpt.y*HZ.VH/H-(h.y-cm.y);if(Math.hypot(tx,ty)>3){dx=tx;dy=ty;}}
+    const ln=Math.hypot(dx,dy);
+    if(ln>0){dx/=ln;dy/=ln;h.x=hzCl(h.x+dx*HZ.SPEED,26,HZ.WW-6);h.y=hzCl(h.y+dy*HZ.SPEED,10,HZ.WH-4);h.a=Math.atan2(dy,dx);h.walk+=.25;
+      h.stepAcc+=HZ.SPEED;if(h.stepAcc>=HZ.STRIDE){h.stepAcc-=HZ.STRIDE;h.foot^=1;plop();}}else h.walk=0;
+    /* flickering beam */
+    if(h.dark>0){h.dark--;h.fl=0;h.flTarget=0;}
+    else{if(--h.flT<=0){h.flT=3+Math.floor(Math.random()*6);const r=Math.random();h.flTarget=r<.05?.1:r<.22?.6:r<.5?.88:1;}h.fl+=(h.flTarget-h.fl)*.35;}
+    h.L=(30+3*Math.sin(h.t*.7))*(.5+.5*h.fl)*(h.chase?.8:1);
+    const rm=hzRoom(h.x);if(rm!==h.room){h.room=rm;h.toast=150;}if(h.toast>0)h.toast--;
+    const safeP=hzSafe(h.x,h.y);
+    /* souls: only move while the beam is NOT on them. Fires block them. */
+    if(sec>=60&&!h.spawned){h.spawned=1;hzSpawn();}   /* 1:00 = the danger starts */
+    const spd=.16+.05*h.seeds+(h.chase?.04:0);let near=999;
+    h.souls.forEach(s=>{s.lit=hzLit(h,s.x,s.y);const ex=h.x-s.x,ey=h.y-s.y,d=Math.hypot(ex,ey)||1;near=Math.min(near,d);
+      if(!s.lit||h.chase||s.ch){const sp2=s.ch?spd+.1:spd,nx=s.x+ex/d*sp2,ny=s.y+ey/d*sp2;if(!HZ.fires.some(f=>Math.hypot(nx-f[0],ny-f[1])<HZ.FR+5)){s.x=nx;s.y=ny;}
+        if(d<4.5&&!safeP)h.catch=1;}});
+    if(h.catch){h.catch=0;h.dead=1;h.slam=null;h.silent=0;hzAmbLevel(0);return;}   /* caught: showGame plays the Hades skull jumpscare */
+    /* seeds */
+    HZ.seeds.forEach((p,i)=>{if(!h.got[i]&&Math.hypot(h.x-p[0],h.y-p[1])<7){h.got[i]=1;h.seeds++;seedChime();hzSpawn();
+      h.souls.forEach(s=>{if(!s.lit){const d=Math.hypot(h.x-s.x,h.y-s.y);if(d>45){s.x+=(h.x-s.x)/d*10;s.y+=(h.y-s.y)/d*10;}}});   /* souls get closer */
+      if(h.seeds===3){h.wh3=1;h.crawlT=600+Math.floor(Math.random()*900);}if(h.seeds>=4){h.open=1;hzChase(h);}}});
+    if(h.open&&Math.hypot(h.x-HZ.gate[0],h.y-HZ.gate[1])<10)h.out=1;
+    hzExtra(h,sec,safeP,near);
+    /* scare 1 (0:38): quiet one. A pale face at the edge of the beam, gone when you look back */
+    if(!h.quiet&&sec>=38&&h.fl>.5){h.quiet=1;const a=h.a+.34;h.peek={x:h.x+Math.cos(a)*h.L*.8,y:h.y-5+Math.sin(a)*h.L*.8,t:0,out:0};}
+    if(h.peek){const p=h.peek;p.t++;if(hzLit(h,p.x,p.y+3)){if(p.out)h.peek=null;}else if(p.t>20)p.out=1;if(p.t>200)h.peek=null;}
+    /* fake scare (1:45): lights flicker out, whisper and heartbeat, nothing there */
+    if(!h.fake&&sec>=105&&!h.slam){h.fake=1;h.dark=14;h.fkT=18;whisper(Math.random()<.5?-1:1,.3);heartbeat(.7);}
+    if(h.fkT>0&&--h.fkT===0)heartbeat(.8);
+    /* real jumpscare (after 2 seeds, 2:20+): total silence, then a face slams into the beam */
+    if(!h.slamDone&&!h.slam&&h.seeds>=2&&sec>=140&&!safeP&&near>45){h.slam={t:0};h.silent=1;hzAmbLevel(0);}
+    if(h.slam){const s=h.slam;s.t++;if(s.t===100)noiseHit();if(s.t>=118){h.slam=null;h.silent=0;h.slamDone=1;hzAmbLevel(.05);}}
+    /* sound: heartbeat speeds up near souls, whispers come from the side of the nearest soul */
+    if(h.souls.length&&!h.silent){
+      if(--h.hbT<=0){h.hbT=Math.round(hzCl(20+(near-20)*.7,20,76));heartbeat(safeP?.25:hzCl(.22+(90-near)/200,.22,.6));}
+      if(--h.whT<=0){h.whT=300+Math.floor(Math.random()*420);const s=h.souls.reduce((a,b)=>Math.hypot(a.x-h.x,a.y-h.y)<Math.hypot(b.x-h.x,b.y-h.y)?a:b);
+        whisper(hzCl((s.x-h.x)/50,-1,1),hzCl(.28-near/400,.05,.22));}}
+  };
+  /* drawing */
+  const hzH=(a,b)=>{let n=(a*374761393+b*668265263)|0;n=(n^(n>>>13))*1274126177|0;return((n^(n>>>16))>>>0)%100;};
+  const HZF=[["#1b2029","#1f252f","#171b23"],["#2b2723","#302b26","#25211d"],["#252330","#2a2837","#201e2a"],["#34201a","#3a251d","#2d1b16"],["#1c2a1c","#213221","#182418"]];
+  const hzFire=(c,x,y,big,t)=>{c.fillStyle="#3b2515";c.fillRect(x-4,y-1,8,2);
+    for(let i=-2;i<=2;i++){const hg=(big?5:3)+Math.abs(Math.sin(t*.3+i*1.7))*(big?6:4)-Math.abs(i)*(big?1:.8);
+      c.fillStyle="#ff5a14";c.fillRect(Math.round(x+i*1.5-1),Math.round(y-1-hg),2,Math.round(hg));
+      c.fillStyle="#ffc94a";c.fillRect(Math.round(x+i*1.5-.5),Math.round(y-1-hg*.6),1,Math.round(hg*.6));}};
+  const hzWorld=(c,cam,h)=>{
+    const V=HZ.VW,VH=HZ.VH,t=h.t;
+    for(let ty=Math.floor(cam.y/6);ty<=Math.floor((cam.y+VH)/6);ty++)for(let tx=Math.floor(cam.x/6);tx<=Math.floor((cam.x+V)/6);tx++){
+      c.fillStyle=HZF[hzRoom(tx*6+3)][hzH(tx,ty)%3];c.fillRect(tx*6-cam.x,ty*6-cam.y,6,6);}
+    c.fillStyle="#0a1a30";c.fillRect(-cam.x,-cam.y,24,HZ.WH);c.fillStyle="#3a3f46";c.fillRect(24-cam.x,-cam.y,2,HZ.WH);
+    for(let i=0;i<14;i++){c.fillStyle=i%2?"#1b4a78":"#143a62";c.fillRect(2+(i*5)%18-cam.x,((i*23+t*.35*(1+(i%3)*.3))%HZ.WH)-cam.y|0,5,1);}
+    HZ.decor.forEach(([k,x,y])=>{if(x<cam.x-14||x>cam.x+V+14||y<cam.y-8||y>cam.y+VH+40)return;const sx=Math.round(x-cam.x),sy=Math.round(y-cam.y);
+      if(k==="bone"||k==="pile"){c.fillStyle="#b9b19a";const n=k==="pile"?4:1;for(let i=0;i<n;i++){const ox=i*3-4,oy=(i%2)*-2;c.fillRect(sx+ox,sy+oy,5,1);c.fillRect(sx+ox-1,sy+oy-1,1,3);c.fillRect(sx+ox+5,sy+oy-1,1,3);}}
+      else if(k==="skull"){c.fillStyle="#cfc7ae";c.fillRect(sx,sy-4,5,4);c.fillStyle="#000";c.fillRect(sx+1,sy-3,1,1);c.fillRect(sx+3,sy-3,1,1);}
+      else if(k==="rib"){c.fillStyle="#a8a089";c.fillRect(sx,sy-5,5,1);for(let i=0;i<3;i++)c.fillRect(sx+i*2,sy-5,1,5);}
+      else if(k==="mirror"){c.fillStyle="#4b3f2c";c.fillRect(sx-6,sy-24,12,24);c.fillStyle="#27384a";c.fillRect(sx-5,sy-23,10,22);
+        c.fillStyle=(t>>4)%5?"#4d6b86":"#7fa6c4";c.fillRect(sx-4,sy-21,1,5);c.fillRect(sx-3,sy-19,1,3);}
+      else if(k==="rock"){c.fillStyle="#3a2a24";c.fillRect(sx,sy,4,3);c.fillStyle="#4a3830";c.fillRect(sx,sy,3,1);}
+      else if(k==="pit"){c.fillStyle="#4a3a33";for(let i=0;i<8;i++){const a=i*.785;c.fillRect(Math.round(sx+Math.cos(a)*8),Math.round(sy+Math.sin(a)*5),2,2);}}
+      else if(k==="tomb"){c.fillStyle="#6b6f74";c.fillRect(sx-3,sy-9,6,9);c.fillRect(sx-2,sy-10,4,1);c.fillStyle="#2f4d2a";c.fillRect(sx-3,sy-3,2,3);c.fillStyle="#3c4044";c.fillRect(sx,sy-7,1,4);c.fillRect(sx-1,sy-6,3,1);}
+      else if(k==="grass"){c.fillStyle="#2c4a25";c.fillRect(sx,sy-3,1,3);c.fillRect(sx+1,sy-4,1,4);c.fillRect(sx+2,sy-2,1,2);}});
+    HZ.fires.forEach((f,i)=>{const x=f[0]-cam.x,y=f[1]-cam.y;if(x>-12&&x<V+12&&y>-20&&y<VH+12)hzFire(c,Math.round(x),Math.round(y),i===3||i===4,t+i*9);});
+    HZ.seeds.forEach((p,i)=>{if(h.got[i])return;const sx=Math.round(p[0]-cam.x),sy=Math.round(p[1]-cam.y),pu=.6+.4*Math.sin(t*.15+i);
+      c.fillStyle="rgb("+Math.round(200+55*pu)+",30,70)";c.fillRect(sx-1,sy-1,3,3);c.fillStyle="#ffc0d0";c.fillRect(sx,sy-1,1,1);});
+    const gx=Math.round(HZ.gate[0]-cam.x),gy=Math.round(HZ.gate[1]-cam.y);
+    c.fillStyle="#5a5e66";c.fillRect(gx-8,gy-26,5,30);c.fillRect(gx+3,gy-26,5,30);c.fillRect(gx-9,gy-30,18,5);
+    c.fillStyle=h.open?((t>>2)%2?"#ff7a1a":"#ffd05a"):"#0a0a0c";c.fillRect(gx-3,gy-24,6,28);
+    if(!h.open){c.fillStyle="#3a1a1a";c.fillRect(gx-2,gy-24,1,28);c.fillRect(gx+1,gy-24,1,28);}
+    hzDrawExtra(c,cam,h);
+    h.souls.forEach(s=>{const sx=Math.round(s.x-cam.x),sy=Math.round(s.y-cam.y);   /* wailer: thin, pale, black eye holes */
+      c.fillStyle="#bdbdb2";c.fillRect(sx-1,sy-8,3,7);c.fillRect(sx-2,sy-8,1,6);c.fillRect(sx+2,sy-8,1,6);c.fillRect(sx-1,sy-1,1,1);c.fillRect(sx+1,sy-1,1,1);
+      c.fillStyle="#d8d8cc";c.fillRect(sx-2,sy-12,5,4);c.fillStyle="#000";c.fillRect(sx-1,sy-11,1,2);c.fillRect(sx+1,sy-11,1,2);c.fillRect(sx,sy-9,1,1);});
+    if(h.peek){const sx=Math.round(h.peek.x-cam.x),sy=Math.round(h.peek.y-cam.y);c.fillStyle="#d8d8cc";c.fillRect(sx-2,sy-3,5,6);c.fillStyle="#000";c.fillRect(sx-1,sy-2,1,2);c.fillRect(sx+1,sy-2,1,2);c.fillRect(sx,sy+1,1,1);}
+    const px=Math.round(h.x-cam.x),py2=Math.round(h.y-cam.y);   /* the player */
+    c.fillStyle="#1a1a22";c.fillRect(px-2,py2-2+(h.walk&&h.foot?1:0),2,2);c.fillRect(px,py2-2+(h.walk&&!h.foot?1:0),2,2);
+    c.fillStyle="#2b3f6e";c.fillRect(px-2,py2-6,4,4);c.fillStyle="#cfa77a";c.fillRect(px-1,py2-9,3,3);
+    c.fillStyle="#ffe9a8";c.fillRect(Math.round(px+Math.cos(h.a)*3),Math.round(py2-5+Math.sin(h.a)*3),1,1);
+  };
+  const hzHole=(c,x,y,r,al)=>{const gr=c.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,"rgba(0,0,0,"+al+")");gr.addColorStop(1,"rgba(0,0,0,0)");c.fillStyle=gr;c.beginPath();c.arc(x,y,r,0,7);c.fill();};
+  const hzBeam=(c,ox,oy,h,col,k)=>{if(h.fl<=.2)return;const L=h.L,gr=c.createRadialGradient(ox,oy,1,ox,oy,L);
+    gr.addColorStop(0,"rgba("+col+","+Math.min(1,h.fl)*k+")");gr.addColorStop(.7,"rgba("+col+","+.7*h.fl*k+")");gr.addColorStop(1,"rgba("+col+",0)");
+    c.fillStyle=gr;c.beginPath();c.moveTo(ox,oy);c.arc(ox,oy,L,h.a-.42,h.a+.42);c.closePath();c.fill();};
+  const hzDraw=ctx=>{
+    const h=g.hz;if(!h){ctx.fillStyle="#000";ctx.fillRect(0,0,W,H);return;}
+    if(h.th){hzThroneDraw(ctx,h);return;}
+    const V=HZ.VW,VH=HZ.VH;
+    if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
+    const a=h.A.getContext("2d"),b=h.B.getContext("2d"),cam=hzCam(h),ox=h.x-cam.x,oy=h.y-5-cam.y;
+    hzWorld(a,cam,h);
+    /* darkness layer: black everywhere, with holes cut for the beam, the fires, nearby seeds and the open gate */
+    b.globalCompositeOperation="source-over";b.fillStyle="#000";b.fillRect(0,0,V,VH);b.globalCompositeOperation="destination-out";
+    hzHole(b,ox,oy+3,8,.5);hzBeam(b,ox,oy,h,"0,0,0",1);
+    HZ.fires.forEach(f=>{hzHole(b,f[0]-cam.x,f[1]-cam.y-3,(h.chase?21:32)+Math.sin(h.t*.3+f[0])*2,.95);});
+    HZ.seeds.forEach((p,i)=>{if(!h.got[i]&&Math.hypot(h.x-p[0],h.y-p[1])<48)hzHole(b,p[0]-cam.x,p[1]-cam.y,7,.8);});
+    if(h.cer)hzHole(b,h.cer.x-cam.x,h.cer.y-cam.y-6,11,.7);
+    if(h.open)hzHole(b,HZ.gate[0]-cam.x,HZ.gate[1]-cam.y-8,30,.9);
+    b.globalCompositeOperation="source-over";a.drawImage(h.B,0,0);
+    a.globalCompositeOperation="lighter";hzBeam(a,ox,oy,h,"255,214,150",.16);a.globalCompositeOperation="source-over";
+    ctx.imageSmoothingEnabled=false;ctx.drawImage(h.A,0,0,V,VH,0,0,W,H);
+    for(let i=0;i<90;i++){ctx.fillStyle=Math.random()<.5?"rgba(255,255,255,.06)":"rgba(0,0,0,.18)";ctx.fillRect(Math.floor(Math.random()*W/3)*3,Math.floor(Math.random()*H/3)*3,3,3);}   /* grain */
+    const vg=ctx.createRadialGradient(W/2,H/2,H*.18,W/2,H/2,H*.62);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.96)");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);   /* edges fade to black */
+    ctx.textAlign="center";ctx.font="11px Cinzel,Georgia,serif";
+    if(h.toast>0){ctx.fillStyle="rgba(200,190,170,"+Math.min(.7,h.toast/40)+")";ctx.fillText(HZ.names[h.room],W/2,24);}
+    if(h.t<420){ctx.fillStyle="rgba(200,190,170,"+Math.min(.6,(420-h.t)/80)+")";ctx.fillText("arrow keys / drag to walk",W/2,H-24);}
+    if(h.t>=3600){ctx.textAlign="left";ctx.fillStyle="rgba(210,60,80,.75)";ctx.fillText("seeds "+h.seeds+"/4",14,H-12);}
+    ctx.textAlign="left";
+    if(h.slam&&h.slam.t>=100){const k=h.slam.t-100,s=150+k*8,x=W/2+(Math.random()-.5)*14,y=H/2+(Math.random()-.5)*14;   /* face slams into the beam */
+      ctx.fillStyle=k%4<2?"#000":"#300";ctx.fillRect(0,0,W,H);ctx.fillStyle="#d9d9cf";ctx.beginPath();ctx.ellipse(x,y,s*.55,s*.8,0,0,7);ctx.fill();
+      ctx.fillStyle="#000";[-1,1].forEach(q=>{ctx.beginPath();ctx.ellipse(x+q*s*.2,y-s*.2,s*.12,s*.2,0,0,7);ctx.fill();});ctx.beginPath();ctx.ellipse(x,y+s*.4,s*.18,s*.3,0,0,7);ctx.fill();}
+    hzOverlays(ctx,h);if(h.out>0){ctx.fillStyle="rgba(0,0,0,"+Math.min(1,h.out/90)+")";ctx.fillRect(0,0,W,H);ctx.textAlign="center";ctx.fillStyle="rgba(255,150,60,"+Math.min(1,h.out/90)+")";ctx.fillText("The gate opens...",W/2,H/2);ctx.textAlign="left";}
   };
   const darkDraw=ctx=>{
     const t=g.dt;
     if(t<150){baseDraw(ctx);drawHades(ctx);if(t>20&&t%14<4){ctx.fillStyle="rgba(0,0,0,.6)";ctx.fillRect(0,0,W,H);}
       ctx.fillStyle="rgba(0,0,0,"+Math.min(1,t/130)+")";ctx.fillRect(0,0,W,H);return;}
-    ctx.fillStyle="#000";ctx.fillRect(0,0,W,H);
-    const x=g.hx,y=g.hy-24,a=g.ha,L=84+Math.sin(t*.7)*3,sp=.42;
-    ctx.save();ctx.beginPath();ctx.moveTo(x,y);ctx.arc(x,y,L,a-sp,a+sp);ctx.closePath();ctx.clip();
-    for(let tx=0;tx<W;tx+=12)for(let ty=0;ty<H;ty+=12){ctx.fillStyle=((tx+ty)/12)%2?"#2a2623":"#201d1b";ctx.fillRect(tx,ty,12,12);}
-    const gg=ctx.createRadialGradient(x,y,4,x,y,L);gg.addColorStop(0,"rgba(255,230,160,.35)");gg.addColorStop(1,"rgba(0,0,0,.92)");ctx.fillStyle=gg;ctx.fillRect(0,0,W,H);
-    ctx.restore();
-    man(ctx,x,g.hy,3,{d:Math.cos(a)>=0?1:-1,w:g.hw,col:"#2b4a8a",skin:"#c9a070"});
+    hzDraw(ctx);
   };
   /* Hades round visuals: chains on the walls, burning blocks, chained ball, embers, souls, lava, heat wave */
   const drawHades=ctx=>{
@@ -1562,12 +1828,114 @@ function poseidonFig(c,s,f,dead){
   }
 }
 
+/* ---------- Hades horror mini-game: sounds ---------- */
+/* the walking "plop": a little water-drop that rises in pitch, slightly different every step */
+function plop(){
+  if(!ac) return;
+  try{const n=ac.currentTime,o=ac.createOscillator(),gn=ac.createGain(),f=140+Math.random()*40;
+    o.type="sine";o.frequency.setValueAtTime(f,n);o.frequency.exponentialRampToValueAtTime(f*2.6,n+.06);
+    gn.gain.setValueAtTime(.0001,n);gn.gain.exponentialRampToValueAtTime(.4,n+.008);gn.gain.exponentialRampToValueAtTime(.001,n+.12);
+    o.connect(gn);gn.connect(ac.destination);o.start(n);o.stop(n+.13);}catch(e){}
+}
+/* heartbeat: two thumps. v = volume */
+function heartbeat(v){
+  if(!ac) return;
+  try{[0,.17].forEach((t,i)=>{const n=ac.currentTime+t,o=ac.createOscillator(),gn=ac.createGain();
+    o.type="sine";o.frequency.setValueAtTime(i?62:80,n);o.frequency.exponentialRampToValueAtTime(34,n+.14);
+    gn.gain.setValueAtTime(v*(i?.7:1),n);gn.gain.exponentialRampToValueAtTime(.001,n+.16);
+    o.connect(gn);gn.connect(ac.destination);o.start(n);o.stop(n+.18);});}catch(e){}
+}
+/* whisper from one side: pan -1 (left) .. 1 (right) */
+function whisper(pan,v){
+  if(!ac) return;
+  try{const n=ac.currentTime,d=1.1,buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),data=buf.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+    const s=ac.createBufferSource(),bp=ac.createBiquadFilter(),am=ac.createGain(),lf=ac.createOscillator(),lg=ac.createGain(),gn=ac.createGain();
+    s.buffer=buf;bp.type="bandpass";bp.Q.value=3;bp.frequency.setValueAtTime(2200,n);bp.frequency.linearRampToValueAtTime(3200,n+d*.5);bp.frequency.linearRampToValueAtTime(1800,n+d);
+    am.gain.value=.5;lf.frequency.value=7+Math.random()*4;lg.gain.value=.5;lf.connect(lg);lg.connect(am.gain);
+    gn.gain.setValueAtTime(0,n);gn.gain.linearRampToValueAtTime(v,n+.25);gn.gain.linearRampToValueAtTime(0,n+d);
+    s.connect(bp);bp.connect(am);am.connect(gn);
+    if(ac.createStereoPanner){const p=ac.createStereoPanner();p.pan.value=pan;gn.connect(p);p.connect(ac.destination);}else gn.connect(ac.destination);
+    s.start(n);lf.start(n);lf.stop(n+d);}catch(e){}
+}
+/* seed pickup: two soft rising notes */
+function seedChime(){
+  if(!ac) return;
+  try{[[660,0],[990,.14]].forEach(([f,t])=>{const n=ac.currentTime+t,o=ac.createOscillator(),gn=ac.createGain();
+    o.type="sine";o.frequency.value=f;gn.gain.setValueAtTime(.2,n);gn.gain.exponentialRampToValueAtTime(.001,n+.5);
+    o.connect(gn);gn.connect(ac.destination);o.start(n);o.stop(n+.55);});}catch(e){}
+}
+/* sudden loud noise for the face-slam scare */
+function noiseHit(){thunder(.9,0);godblast();}
+/* quiet river / water bed under the whole mini-game */
+let hzAmb=null;
+function hzAmbient(on){
+  if(hzAmb){try{hzAmb.src.stop();hzAmb.lf.stop();}catch(e){}hzAmb=null;}
+  if(!on||!ac) return;
+  try{const d=3,buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),data=buf.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+    const s=ac.createBufferSource(),lp=ac.createBiquadFilter(),gn=ac.createGain(),lf=ac.createOscillator(),lg=ac.createGain();
+    s.buffer=buf;s.loop=true;lp.type="lowpass";lp.frequency.value=420;gn.gain.value=.05;
+    lf.frequency.value=.25;lg.gain.value=.02;lf.connect(lg);lg.connect(gn.gain);
+    s.connect(lp);lp.connect(gn);gn.connect(ac.destination);s.start();lf.start();hzAmb={src:s,gain:gn,lf};}catch(e){}
+}
+function hzAmbLevel(v){if(hzAmb&&ac){try{hzAmb.gain.gain.setTargetAtTime(v,ac.currentTime,.15);}catch(e){}}}
+/* chain clinks (3 small metal pings). dl = delay in seconds */
+function chainClink(pan,v,dl){
+  if(!ac) return;
+  try{for(let i=0;i<3;i++){const n=ac.currentTime+(dl||0)+i*.07+Math.random()*.03,o=ac.createOscillator(),gn=ac.createGain(),f=1800+Math.random()*1800;
+    o.type="square";o.frequency.setValueAtTime(f,n);o.frequency.exponentialRampToValueAtTime(f*.7,n+.05);
+    gn.gain.setValueAtTime(v*.5,n);gn.gain.exponentialRampToValueAtTime(.001,n+.08);
+    o.connect(gn);if(ac.createStereoPanner){const p=ac.createStereoPanner();p.pan.value=pan;gn.connect(p);p.connect(ac.destination);}else gn.connect(ac.destination);o.start(n);o.stop(n+.09);}}catch(e){}
+}
+/* Cerberus howl, far away: three detuned voices (three heads) with a wobble */
+function howl(pan,v){
+  if(!ac) return;
+  try{const n=ac.currentTime,d=2.4,m=ac.createGain(),lp=ac.createBiquadFilter();
+    lp.type="lowpass";lp.frequency.value=900;m.gain.setValueAtTime(0,n);m.gain.linearRampToValueAtTime(v,n+.5);m.gain.setValueAtTime(v,n+d*.6);m.gain.exponentialRampToValueAtTime(.001,n+d);
+    lp.connect(m);if(ac.createStereoPanner){const p=ac.createStereoPanner();p.pan.value=pan;m.connect(p);p.connect(ac.destination);}else m.connect(ac.destination);
+    [1,1.06,.75].forEach((dt,i)=>{const o=ac.createOscillator(),l=ac.createOscillator(),lg=ac.createGain();o.type="sawtooth";
+      o.frequency.setValueAtTime(150*dt,n);o.frequency.exponentialRampToValueAtTime(340*dt,n+d*.45);o.frequency.exponentialRampToValueAtTime(130*dt,n+d);
+      l.frequency.value=5+i;lg.gain.value=8;l.connect(lg);lg.connect(o.frequency);o.connect(lp);o.start(n);o.stop(n+d);l.start(n);l.stop(n+d);});}catch(e){}
+}
+/* crawling body appears: heartbeat thump and a scrape */
+function crawlSting(){
+  if(!ac) return;
+  heartbeat(.9);
+  try{const n=ac.currentTime,d=.6,buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),data=buf.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+    const s=ac.createBufferSource(),bp=ac.createBiquadFilter(),gn=ac.createGain();
+    s.buffer=buf;bp.type="bandpass";bp.Q.value=1.5;bp.frequency.setValueAtTime(400,n);bp.frequency.exponentialRampToValueAtTime(2500,n+d);
+    gn.gain.setValueAtTime(0,n);gn.gain.linearRampToValueAtTime(.25,n+.3);gn.gain.linearRampToValueAtTime(0,n+d);
+    s.connect(bp);bp.connect(gn);gn.connect(ac.destination);s.start(n);}catch(e){}
+}
+/* something yanks the body into the dark: fast descending scrape and chains */
+function dragSound(){
+  if(!ac) return;
+  try{const n=ac.currentTime,d=.7,buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),data=buf.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+    const s=ac.createBufferSource(),bp=ac.createBiquadFilter(),gn=ac.createGain();
+    s.buffer=buf;bp.type="bandpass";bp.Q.value=1.2;bp.frequency.setValueAtTime(3000,n);bp.frequency.exponentialRampToValueAtTime(200,n+d);
+    gn.gain.setValueAtTime(.5,n);gn.gain.exponentialRampToValueAtTime(.001,n+d);
+    s.connect(bp);bp.connect(gn);gn.connect(ac.destination);s.start(n);}catch(e){}
+  chainClink(0,.3,.05);chainClink(0,.22,.2);chainClink(0,.15,.35);
+}
+/* defeated Hades for the win screen: the same drawing as the burning skull jumpscare, eyes crossed out */
+function deadHades(c,W,H,top,f){
+  const s=Math.max(30,Math.min((W-20)/3,(H-top-24)/2.2));
+  c.save();c.translate(W/2,top+s*1.5);hadesFig(c,s,f*.1);
+  c.fillStyle="#000";[-1,1].forEach(q=>{c.beginPath();c.ellipse(q*s*.22,-s*.12,s*.17,s*.2,0,0,7);c.fill();});
+  c.strokeStyle="#8a1010";c.lineWidth=s*.035;
+  [-1,1].forEach(q=>{const x=q*s*.22,y=-s*.12,k=s*.07;c.beginPath();c.moveTo(x-k,y-k);c.lineTo(x+k,y+k);c.moveTo(x+k,y-k);c.lineTo(x-k,y+k);c.stroke();});
+  c.restore();
+}
+
 let raf=0,keyDown=null,keyUp=null;
 function showGame(on,endless){
   document.getElementById("gamebox").hidden=!on;
   document.getElementById("gexit").hidden=!(on&&endless);
   const sc=document.getElementById("scare"); sc.hidden=true; window.onresize=null;
-  cancelAnimationFrame(raf);bossMusic(false);
+  cancelAnimationFrame(raf);bossMusic(false);hzAmbient(false);
   if(keyDown){document.removeEventListener("keydown",keyDown);document.removeEventListener("keyup",keyUp);keyDown=keyUp=null;}
   if(!on) return;
   audio();
@@ -1578,13 +1946,13 @@ function showGame(on,endless){
   const fit=()=>{const r=st.getBoundingClientRect(),k=Math.min(r.width/GW,r.height/GH),q=Math.min(3,k*(devicePixelRatio||1));
     cv.style.width=Math.floor(GW*k)+"px";cv.style.height=Math.floor(GH*k)+"px";cv.width=Math.round(GW*q);cv.height=Math.round(GH*q);};
   fit(); window.onresize=fit;
-  const ctx=cv.getContext("2d"),sx=sc.getContext("2d"),keys=window.GK={},SCARE=100; let game=createGame(GW,GH),scare=0;
+  const ctx=cv.getContext("2d"),sx=sc.getContext("2d"),keys=window.GK={},SCARE=100; let game=createGame(GW,GH),scare=0,hscare=0;
   const clamp=x=>Math.max(game.pw/2,Math.min(GW-game.pw/2,x));
   const move=x=>{if(game.frozen>0)return;const r=cv.getBoundingClientRect();game.px=clamp((x-r.left)*GW/r.width);};
-  const restart=()=>{game=createGame(GW,GH);scare=0;sc.hidden=true;slither();};
-  cv.ontouchstart=cv.ontouchmove=e=>{e.preventDefault();audio();if(game.canRestart()){if(e.type==="touchstart")restart();return;}move(e.touches[0].clientX);};
+  const restart=()=>{game=createGame(GW,GH);scare=0;hscare=0;sc.hidden=true;hzAmbient(false);slither();};
+  cv.ontouchstart=cv.ontouchmove=e=>{e.preventDefault();audio();if(game.canRestart()){if(e.type==="touchstart")restart();return;}if(game.bs===6){const r=cv.getBoundingClientRect(),t0=e.touches[0];game.tpt={x:(t0.clientX-r.left)*GW/r.width,y:(t0.clientY-r.top)*GH/r.height};if(e.type==="touchstart")game.tapE=1;}move(e.touches[0].clientX);};cv.ontouchend=cv.ontouchcancel=()=>{game.tpt=null;};
   cv.onclick=()=>{if(game.canRestart())restart();};
-  keyDown=e=>{if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key)){e.preventDefault();keys[e.key]=1;}
+  keyDown=e=>{if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," ","e","E"].includes(e.key)){e.preventDefault();keys[e.key]=1;}
     if(e.key==="Enter"&&game.canRestart())restart();};
   keyUp=e=>{keys[e.key]=0;};
   document.addEventListener("keydown",keyDown);document.addEventListener("keyup",keyUp);
@@ -1595,6 +1963,11 @@ function showGame(on,endless){
   const tick=()=>{
     const d=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0); if(d&&!(game.frozen>0)) game.px=clamp(game.px+d*7);
     game.step();
+    if(game.hzDead&&game.hzDead()){   /* caught in the horror level: Hades burning skull + loud noise, then restart the mini-game */
+      if(hscare===0){sc.width=innerWidth;sc.height=innerHeight;sc.hidden=false;audio();hadesRoar();thunder(.9,0);}
+      hscare++;
+      if(hscare>=SCARE){hscare=0;sc.hidden=true;game.hzRevive();}
+    }
     if(game.over&&!game.ready){
       const zs=game.round>=2,ps=game.round>=3,hs=game.round>=4;
       if(scare===0){sc.width=innerWidth;sc.height=innerHeight;sc.hidden=false;audio();(hs?hadesRoar:ps?tidalRoar:zs?thunder:scream)();if(zs&&!ps)godblast();}
@@ -1605,6 +1978,7 @@ function showGame(on,endless){
   const loop=now=>{
     acc+=Math.max(0,Math.min(100,now-last));last=now;
     while(acc>=STEP){tick();acc-=STEP;}
+    if(hscare>0)hades(sx,sc.width,sc.height,hscare/SCARE,hscare);
     if(game.over&&!game.ready&&scare>0){const rd=game.round;(rd>=4?hades:rd>=3?poseidon:rd>=2?zeus:medusa)(sx,sc.width,sc.height,scare/SCARE,scare);}
     ctx.setTransform(cv.width/GW,0,0,cv.height/GH,0,0);game.draw(ctx);raf=requestAnimationFrame(loop);}; raf=requestAnimationFrame(loop);
 }
