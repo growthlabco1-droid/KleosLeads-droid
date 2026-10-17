@@ -212,18 +212,44 @@ function createGame(W,H){
   const cols=Math.max(10,Math.round((W-24)/36)),rows=7,bw=(W-24)/cols,bh=12,top=56,py=H-26,BASE=4.7,MAXS=7.0,
     colors=["#ef476f","#f78c40","#f9c74f","#90be6d","#43aa8b","#4d9de0","#9b7ede"];
   const g={W,H,score:0,lives:3,px:W/2,pw:Math.round(Math.min(100,60+(W-360)*.1)),over:false,ready:false,round:1,phase:"play",t:0,broken:0,frame:0,slowUntil:0,nextBolt:7,bolts:[],strikeIn:0,
-    bs:0,bt:0,u:Math.min(6,Math.max(3,Math.floor(W/80))),pm:-1,mult:1,php:3,bz:null,bb:[],pu:null,pz:null,carry:0,cx0:0,btime:0,bhits:0,nb:0,hurt:0,shotN:0,enraged:false,rage:0,bclock:0,bl:0,nextLaugh:20,laughUntil:0,
-    snakes:[],shots:[],laser:0,frozen:0,gaze:0,warn:0,gc:0,tick:0,hb:null,water:0,wl:0,sc:300,sw:0,surge:0,fwid:Math.round(Math.min(340,W*.46)),fpk:Math.max(top+rows*bh+30,Math.round(H*.5)),fs:0,ft:0,fc:1,fx:W/2,fy:H+999,fj:.9,fwarn:0,eaten:0};
+    bs:0,bt:0,u:Math.min(6,Math.max(3,Math.floor(W/80))),pm:-1,mult:1,php:3,bz:null,bb:[],pu:null,pz:null,carry:0,cx0:0,btime:0,bhits:0,nb:0,hurt:0,shotN:0,enraged:false,rage:0,bclock:0,nextLaugh:20,laughUntil:0,
+    snakes:[],shots:[],laser:0,frozen:0,gaze:0,warn:0,gc:0,tick:0,hb:null,water:0,wl:0,sc:300,sw:0,surge:0,fwid:Math.round(Math.min(340,W*.46)),fpk:Math.max(top+rows*bh+30,Math.round(H*.5)),fs:0,ft:0,fc:1,fx:W/2,fy:H+999,fj:.9,fwarn:0,eaten:0,chk:0,
+    arc:null,arcs:[]};
   const newBoard=()=>{
     g.alive=Array(rows*cols).fill(1); g.kind=Array(rows*cols).fill(0); g.left=rows*cols;
     const idx=[...Array(rows*cols).keys()].sort(()=>Math.random()-.5);
     [1,1,2,2,3,3,4,4,5,5].forEach((k,i)=>{g.kind[idx[i]]=k;});   // 1 clock, 2 bomb, 3 three balls, 4 extra ball, 5 extra life
     if(g.round===1){idx.slice(14,20).forEach(i=>{g.kind[i]=7;});} // Medusa only: 7 snake brick
+    if(g.round===2){g.kind[idx[10]]=8;}                           // Zeus only, just one: 8 lightning power-up
   };
   const serve=()=>{const a=Math.random()-.5; g.balls=[{x:W/2,y:H-60,vx:Math.sin(a),vy:-Math.cos(a)}];};
-  g.speed=()=>Math.min(MAXS*(g.round>1?1.05:1),BASE*(g.round>1?1.04:1)*(1+0.03*Math.floor(g.broken/3)))*(g.frame<g.slowUntil?0.5:1);
+  /* Ball speed. Round 1 is the same as before. Rounds 2 and 3 start a little faster than round 1 but
+     speed up slowly (+1.2% for every 4 bricks broken) and stop at a gentle cap, so they stay playable. */
+  g.speed=()=>{
+    const slow=g.frame<g.slowUntil?0.5:1;
+    if(g.round===1) return Math.min(MAXS,BASE*(1+0.03*Math.floor(g.broken/3)))*slow;
+    return Math.min(6,BASE*(1+.02*(g.round-1))*(1+.012*Math.floor(g.broken/4)))*slow;
+  };
   const dropSnake=i=>{g.snakes.push({x:12+(i%cols)*bw+bw/2,y:top+Math.floor(i/cols)*bh+bh/2,bad:Math.random()<.4,ph:Math.random()*6});};
   const kill=i=>{if(g.kind[i]===7) dropSnake(i);g.alive[i]=0;g.kind[i]=0;g.left--;g.broken++;g.score+=rows-Math.floor(i/cols);};
+  /* Zeus level lightning power-up: an electric current runs through 15 blocks, one after another */
+  const startArc=i=>{
+    const path=[],used=new Set([i]);let cur=i;
+    const D=[[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
+    while(path.length<15){
+      const r=Math.floor(cur/cols),c=cur%cols,orth=[],diag=[];
+      D.forEach(([dr,dc],q)=>{const nr=r+dr,nc=c+dc,j=nr*cols+nc;
+        if(nr>=0&&nr<rows&&nc>=0&&nc<cols&&g.alive[j]&&!used.has(j)) (q<4?orth:diag).push(j);});
+      let nx=-1;const pool=orth.length?orth:diag;
+      if(pool.length) nx=pool[Math.floor(Math.random()*pool.length)];
+      else{let best=1e9;g.alive.forEach((a,j)=>{if(a&&!used.has(j)){const d=Math.abs(Math.floor(j/cols)-r)*3+Math.abs(j%cols-c);if(d<best){best=d;nx=j;}}});}
+      if(nx<0) break;
+      used.add(nx);path.push(nx);cur=nx;
+    }
+    if(!path.length) return;
+    g.arc={list:path,from:i,k:0,cd:0};
+    zap();thunder(.2,0);
+  };
   g.hit=i=>{
     if(!g.alive[i]) return; const k=g.kind[i]; kill(i); ping(Math.floor(i/cols));
     if(k===1) g.slowUntil=g.frame+420;
@@ -236,11 +262,12 @@ function createGame(W,H){
     if(k===4&&g.balls.length&&g.balls.length<4){const b=g.balls[0],s=0.4;
       g.balls.push({x:b.x,y:b.y,vx:b.vx*Math.cos(s)-b.vy*Math.sin(s),vy:b.vx*Math.sin(s)+b.vy*Math.cos(s)});}
     if(k===5) g.lives++;
+    if(k===8){g.strikeIn=0;startArc(i);}   /* Zeus can't attack while the current is running; he starts again right after */
   };
-  /* Zeus level: lightning strikes empty spots and 3 new blocks appear */
+  /* Zeus level: lightning strikes empty spots and 2 new blocks appear */
   const strike=()=>{
     const e=[]; g.alive.forEach((a,i)=>{if(!a) e.push(i);});
-    e.sort(()=>Math.random()-.5).slice(0,3).forEach(i=>{
+    e.sort(()=>Math.random()-.5).slice(0,2).forEach(i=>{
       const r=Math.floor(i/cols),c=i%cols; g.alive[i]=1; g.kind[i]=0; g.left++;
       g.bolts.push({x:12+c*bw+bw/2,y:top+r*bh+bh/2,t:24});});
     if(e.length){zap();thunder(.35,.3);laugh(1.1,true);}
@@ -269,8 +296,8 @@ function createGame(W,H){
   const serveStuck=()=>{g.balls=[{x:g.px,y:py-5,vx:0,vy:-1,stuck:true,px0:g.px}];};
   const initBoss=()=>{
     g.bs=3;g.bt=0;g.btime=0;g.lives=3;g.php=3;
-    g.enraged=false;g.rage=0;g.bclock=0;g.bl=0;g.nextLaugh=20;g.laughUntil=0;
-    g.alive.fill(0);g.kind.fill(0);g.left=0;g.bolts=[];
+    g.enraged=false;g.rage=0;g.bclock=0;g.nextLaugh=20;g.laughUntil=0;
+    g.alive.fill(0);g.kind.fill(0);g.left=0;g.bolts=[];g.arc=null;g.arcs=[];
     g.bb=[];g.pu=null;g.mult=1;g.pm=-1;g.bhits=0;g.nb=80;g.hurt=0;g.carry=0;g.shotN=0;
     g.bz={x:W/2,y:22+7*g.u,hp:15,flash:0};
     g.px=W/2;serveStuck();zap();laugh(0,true);thunder(.25,.1);bossMusic(true);
@@ -281,7 +308,7 @@ function createGame(W,H){
     g.bt++;g.btime++;
     const z=g.bz,u=g.u,hw=7*u;
     if(z.flash>0) z.flash--; if(g.hurt>0) g.hurt--; if(g.rage>0) g.rage--;
-    const now=performance.now(); g.bclock+=g.bl?Math.min(.05,(now-g.bl)/1000):0; g.bl=now;
+    g.bclock+=1/60;   /* game seconds (the game always runs at 60 steps per second) */
     /* every 20 seconds Zeus laughs for about 6 seconds */
     if(g.bclock>=g.nextLaugh){g.nextLaugh+=20;laugh(0);laugh(2.9);g.laughUntil=g.bclock+6;}
     /* after a bit of damage: loud angry roar, lightning turns red, music gets harder */
@@ -291,7 +318,7 @@ function createGame(W,H){
     if(g.pm>=0&&b0){const d=z.x-b0.x; if(Math.abs(d)<120&&b0.y<H*.7) z.x+=(d>=0?1:-1)*2.8;}
     z.x=Math.max(hw+10,Math.min(W-hw-10,z.x));
     /* ball */
-    const sp=5.2;
+    const sp=4.8;
     for(const b of g.balls.slice()){
       if(b.stuck){b.x=g.px;b.y=py-5;
         if(Math.abs(g.px-b.px0)>=3){b.stuck=false;const a=(g.px>b.px0?1:-1)*.35;b.vx=Math.sin(a);b.vy=-Math.cos(a);ping(3);}
@@ -318,8 +345,8 @@ function createGame(W,H){
       }
     }
     g.balls=g.balls.filter(b=>b.y<=H);
-    /* Zeus throws lightning, a little faster every minute */
-    const mins=g.bclock/60,bsp=2.4+Math.min(2,mins*.45),iv=Math.max(55,Math.round(100-mins*9));
+    /* Zeus throws lightning, a little faster every minute (slow, gradual build-up) */
+    const mins=g.bclock/60,bsp=2.2+Math.min(1.6,mins*.3),iv=Math.max(70,Math.round(110-mins*8));
     if(g.bt>60&&--g.nb<=0){
       g.nb=iv;g.shotN++;const n=g.shotN%4===0?2:1;
       for(let i=0;i<n;i++){
@@ -408,19 +435,28 @@ function createGame(W,H){
     if(g.over) return; g.frame++;
     if(g.phase!=="play"){g.t++;
       if(g.phase==="win"&&g.round<3&&g.t>=340){g.phase="warn";g.t=0;rumble();if(g.round===2) bubbles(true); else laugh();}
-      else if(g.phase==="warn"&&g.t>=(g.round===2?230:160)){g.phase="play";g.round++;g.broken=0;g.slowUntil=0;g.nextBolt=7;g.bolts=[];g.strikeIn=0;g.lives=3;g.bs=0;g.snakes=[];g.shots=[];g.laser=0;g.frozen=0;g.gaze=0;g.warn=0;g.gc=0;g.water=0;g.wl=0;g.sc=300;g.sw=0;g.surge=0;g.fs=0;g.ft=0;g.fc=1;g.fy=H+999;g.fj=.9;g.fwarn=0;g.eaten=0;newBoard();serve();}
+      else if(g.phase==="warn"&&g.t>=(g.round===2?230:160)){g.phase="play";g.round++;g.broken=0;g.slowUntil=0;g.nextBolt=7;g.bolts=[];g.strikeIn=0;g.lives=3;g.bs=0;g.snakes=[];g.shots=[];g.laser=0;g.frozen=0;g.gaze=0;g.warn=0;g.gc=0;g.water=0;g.wl=0;g.sc=300;g.sw=0;g.surge=0;g.fs=0;g.ft=0;g.fc=1;g.fy=H+999;g.fj=.9;g.fwarn=0;g.eaten=0;g.arc=null;g.arcs=[];newBoard();serve();}
       return;}
     if(g.bs===1||g.bs===2){introStep();return;}
     if(g.bs===3){bossStep();return;}
     g.bolts.forEach(b=>b.t--); g.bolts=g.bolts.filter(b=>b.t>0);
-    /* Medusa level, every 45 seconds (2700 frames):
+    /* Zeus level lightning power-up: the current jumps from block to block (one block every 3 frames) */
+    if(g.arc){const a=g.arc;
+      if(--a.cd<=0){
+        const j=a.list[a.k],f0=a.k?a.list[a.k-1]:a.from;
+        g.arcs.push({x1:12+(f0%cols)*bw+bw/2,y1:top+Math.floor(f0/cols)*bh+bh/2,x2:12+(j%cols)*bw+bw/2,y2:top+Math.floor(j/cols)*bh+bh/2,t:14});
+        if(g.alive[j]) g.hit(j);
+        a.k++;a.cd=3;if(a.k>=a.list.length){g.arc=null;g.nextBolt=g.broken-g.broken%7+7;}   /* current finished: Zeus attacks again after 7 more bricks */
+      }}
+    g.arcs.forEach(s=>s.t--); g.arcs=g.arcs.filter(s=>s.t>0);
+    /* Medusa level, every 30 seconds (1800 frames):
        1) her eyes glow and a loud snake hiss warns you (about 1.5 s),
        2) her eyes flash, the screen goes pale yellow (about 1 s) and every ball turns to stone,
        3) the stone ball drops straight down until you catch it, then it is a normal ball again */
     if(g.round===1){
-      g.gc=(g.gc+1)%2700;const was=g.gaze,wasW=g.warn;
-      g.warn=g.gc>=2490&&g.gc<2580?1:0;
-      g.gaze=g.gc>=2580&&g.gc<2645?1:0;
+      g.gc=(g.gc+1)%1800;const was=g.gaze,wasW=g.warn;
+      g.warn=g.gc>=1590&&g.gc<1680?1:0;
+      g.gaze=g.gc>=1680&&g.gc<1745?1:0;
       if(g.warn&&!wasW) snakeHiss();
       if(g.gaze&&!was){g.balls.forEach(b=>{b.stone=1;b.vx=0;b.vy=1;});rumble();}
     }
@@ -480,10 +516,10 @@ function createGame(W,H){
       }
     }
     g.balls=g.balls.filter(b=>b.y<=H);
-    if(g.round===2&&!g.strikeIn&&g.left>0&&g.broken>=g.nextBolt){g.nextBolt=g.broken-g.broken%7+7;g.strikeIn=45;roar();}
+    if(g.round===2&&!g.arc&&!g.strikeIn&&g.left>0&&g.broken>=g.nextBolt){g.nextBolt=g.broken-g.broken%7+7;g.strikeIn=45;roar();}
     if(g.strikeIn>0&&--g.strikeIn===0&&g.left>0) strike();
     /* Zeus level: with one brick left the ball freezes and the boss fight begins */
-    if(g.round===2&&g.bs===0&&g.left<=1&&g.balls.length){g.bs=1;g.bt=0;g.strikeIn=0;g.bolts=[];return;}
+    if(g.round===2&&g.bs===0&&g.left<=1&&g.balls.length){g.bs=1;g.bt=0;g.strikeIn=0;g.bolts=[];g.arc=null;g.arcs=[];return;}
     if(g.left<=0){g.phase="win";g.t=0;g.balls=[];g.snakes=[];g.shots=[];g.laser=0;g.frozen=0;g.gaze=0;g.warn=0;victory();}
     else if(!g.balls.length){g.lives--; if(g.lives<=0) g.over=true; else serve();}
   };
@@ -504,6 +540,8 @@ function createGame(W,H){
       if(k===4){ctx.beginPath();ctx.arc(cx-3.2,cy,2.2,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(cx+1.2,cy);ctx.lineTo(cx+5.2,cy);ctx.moveTo(cx+3.2,cy-2);ctx.lineTo(cx+3.2,cy+2);ctx.stroke();}
       if(k===5){ctx.beginPath();ctx.arc(cx-1.8,cy-1,2,0,7);ctx.arc(cx+1.8,cy-1,2,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(cx-3.6,cy-.3);ctx.lineTo(cx+3.6,cy-.3);ctx.lineTo(cx,cy+3.8);ctx.closePath();ctx.fill();}
       if(k===7){ctx.strokeStyle="#fff";ctx.lineWidth=1.2;ctx.beginPath();for(let q=-4;q<=4;q++){const yy=cy+Math.sin(q)*2.4;if(q>-4)ctx.lineTo(cx+q,yy);else ctx.moveTo(cx+q,yy);}ctx.stroke();}
+      if(k===8){ctx.strokeStyle="#fff59d";ctx.lineWidth=1.6;rr(ctx,x+1,y+1,bw-2,bh-2,3);ctx.stroke();
+        ctx.fillStyle="#fff59d";ctx.beginPath();ctx.moveTo(cx+1.5,cy-5);ctx.lineTo(cx-3,cy+.5);ctx.lineTo(cx-.3,cy+.5);ctx.lineTo(cx-1.5,cy+5);ctx.lineTo(cx+3,cy-.5);ctx.lineTo(cx+.3,cy-.5);ctx.closePath();ctx.fill();}
     });
     g.bolts.forEach(b=>{const a=Math.min(1,b.t/12);
       ctx.globalAlpha=a;ctx.shadowColor="#8fb8ff";ctx.shadowBlur=10;ctx.strokeStyle="#eaf2ff";ctx.lineWidth=2.2;
@@ -511,6 +549,12 @@ function createGame(W,H){
       for(let y=29;y<b.y;y+=14) ctx.lineTo(b.x+(Math.random()-.5)*12,y);
       ctx.lineTo(b.x,b.y);ctx.stroke();ctx.shadowBlur=0;
       ctx.fillStyle="rgba(200,225,255,.6)";ctx.beginPath();ctx.arc(b.x,b.y,10*a+4,0,7);ctx.fill();ctx.globalAlpha=1;});
+    /* lightning power-up current jumping between blocks */
+    g.arcs.forEach(s=>{
+      ctx.globalAlpha=Math.min(1,s.t/8);ctx.shadowColor="#8fb8ff";ctx.shadowBlur=8;ctx.strokeStyle="#fff7b0";ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(s.x1,s.y1);
+      for(let q=1;q<4;q++) ctx.lineTo(s.x1+(s.x2-s.x1)*q/4+(Math.random()-.5)*8,s.y1+(s.y2-s.y1)*q/4+(Math.random()-.5)*8);
+      ctx.lineTo(s.x2,s.y2);ctx.stroke();ctx.shadowBlur=0;ctx.globalAlpha=1;});
     /* Medusa level: her eyes watch from the top, they glow before the flash and blaze during it */
     if(g.round===1){
       const ex=W/2,ey=24,lit=g.gaze?1:g.warn?.5+.5*Math.sin(g.frame*.8):0;
@@ -560,6 +604,7 @@ function createGame(W,H){
     if(g.frame<g.slowUntil){ctx.fillStyle="#f3e3b0";ctx.fillText("SLOW",W/2-14,38);}
     if(g.laser>0){ctx.fillStyle="#7dff6a";ctx.fillText("SERPENT LASER",W/2-40,50);}
     if(g.frozen>0){ctx.fillStyle=g.eaten?"#d9a8ff":"#bfeaff";ctx.fillText(g.eaten?"CAUGHT":"FROZEN",W/2-22,50);}
+    if(g.arc&&g.round===2){ctx.fillStyle="#fff59d";ctx.fillText("ZEUS STUNNED",W/2-40,50);}
     if(g.phase==="win"){const R=g.round,ty=Math.min(H*.2,110);
       ctx.fillStyle="rgba(5,8,16,.72)";ctx.fillRect(0,0,W,H);
       ctx.textAlign="center";ctx.fillStyle="#f3e3b0";
@@ -1249,9 +1294,10 @@ function showGame(on,endless){
   if(keyDown){document.removeEventListener("keydown",keyDown);document.removeEventListener("keyup",keyUp);keyDown=keyUp=null;}
   if(!on) return;
   audio();
-  const cv=document.getElementById("game"),st=document.getElementById("gstage"),sr=st.getBoundingClientRect(),asp=sr.width/Math.max(1,sr.height);
-  let GW=360,GH=420;
-  if(asp>=360/420){GW=Math.round(Math.max(360,Math.min(760,420*asp)));}else{GH=Math.round(Math.max(420,Math.min(720,360/asp)));}
+  const cv=document.getElementById("game"),st=document.getElementById("gstage");
+  /* The playfield is the same size on every device (phone, tablet, computer), so the layout, bricks and
+     paddle are identical everywhere. Only the zoom changes to fit the screen. */
+  const GW=360,GH=420;
   const fit=()=>{const r=st.getBoundingClientRect(),k=Math.min(r.width/GW,r.height/GH),q=Math.min(3,k*(devicePixelRatio||1));
     cv.style.width=Math.floor(GW*k)+"px";cv.style.height=Math.floor(GH*k)+"px";cv.width=Math.round(GW*q);cv.height=Math.round(GH*q);};
   fit(); window.onresize=fit;
@@ -1266,15 +1312,24 @@ function showGame(on,endless){
   keyUp=e=>{keys[e.key]=0;};
   document.addEventListener("keydown",keyDown);document.addEventListener("keyup",keyUp);
   slither();
-  const loop=()=>{const d=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0); if(d&&!(game.frozen>0)) game.px=clamp(game.px+d*7);
+  /* The game always runs at exactly 60 steps per second, whatever the screen's refresh rate
+     (60, 90, 120 or 144 Hz), so the speed is the same on a phone and on a computer. */
+  const STEP=1000/60; let last=performance.now(),acc=0;
+  const tick=()=>{
+    const d=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0); if(d&&!(game.frozen>0)) game.px=clamp(game.px+d*7);
     game.step();
     if(game.over&&!game.ready){
       const zs=game.round>=2,ps=game.round>=3;
       if(scare===0){sc.width=innerWidth;sc.height=innerHeight;sc.hidden=false;audio();(ps?tidalRoar:zs?thunder:scream)();if(zs&&!ps)godblast();}
-      scare++; (ps?poseidon:zs?zeus:medusa)(sx,sc.width,sc.height,scare/SCARE,scare);
+      scare++;
       if(scare>=SCARE){game.ready=true;sc.hidden=true;}
     }
-    ctx.setTransform(cv.width/GW,0,0,cv.height/GH,0,0);game.draw(ctx);raf=requestAnimationFrame(loop);}; loop();
+  };
+  const loop=now=>{
+    acc+=Math.max(0,Math.min(100,now-last));last=now;
+    while(acc>=STEP){tick();acc-=STEP;}
+    if(game.over&&!game.ready&&scare>0){const rd=game.round;(rd>=3?poseidon:rd>=2?zeus:medusa)(sx,sc.width,sc.height,scare/SCARE,scare);}
+    ctx.setTransform(cv.width/GW,0,0,cv.height/GH,0,0);game.draw(ctx);raf=requestAnimationFrame(loop);}; raf=requestAnimationFrame(loop);
 }
 function render(){
   const out=document.getElementById("out"); out.textContent="";
