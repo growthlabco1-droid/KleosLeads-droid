@@ -1,4 +1,4 @@
-<!doctype html>
+\<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Local Lead Finder</title>
@@ -726,7 +726,7 @@ function createGame(W,H){
     gate:688,MX:364,PX:250,hang:[232,380,515,626],
     dp:[[[162,172],[250,272]],[[306,316],[404,424]],[[448,456],[560,574]],[[586,598],[660,664]]],   /* door spots per room: [group A],[group B]. One real door and one locked decoy per room */
     ps:[56,76,96],   /* where the pomegranate can sit inside a room */
-    lore:[[70,"The river is cold. Small shoes sit on the bank."],[176,"Small bones. All of them are small."],[292,"Scratched in the wall: SHE KEPT ASKING FOR YOU."],[352,"Your reflection looks away from you."],[470,"A burnt drawing: two children holding hands."],[610,"Every grave bears the same name. Hers."],[130,"A child's hand print in the dust. Still wet."],[236,"You promised you would come back for her."],[410,"A torn page: THE RIVER TOOK HER. THE DARK KEPT HER."],[545,"Hades did not take her. She walked in, looking for you."],[664,"Four seeds. Four years. She counted every one."]],
+    lore:[[70,"The river is cold. Small shoes sit on the bank."],[176,"Small bones. All of them are small."],[292,"Scratched in the wall: SHE KEPT ASKING FOR YOU."],[352,"Your reflection looks away from you."],[470,"A burnt drawing: two children holding hands."],[610,"Every grave bears the same name. Hers."],[130,"A child's hand print in the dust. Still wet."],[236,"You promised you would come back for her."],[410,"A torn page: THE RIVER TOOK HER. THE DARK KEPT HER."],[545,"Hades did take her. He called it a rescue."],[664,"Four seeds. Four years. She counted every one."]],
     names:["A cold riverbank","The bone halls","The mirror hall","The fire cavern","The overgrown graveyard"]};
   HZ.decor=(()=>{let s=20261017;const r=()=>(s=(s*1664525+1013904223)>>>0)/4294967296,d=[],fy=()=>HZ.WB+8+r()*26;
     for(let i=0;i<26;i++)d.push([i%6===0?"skull":i%4===0?"rib":"bone",150+r()*135,fy()]);
@@ -741,7 +741,8 @@ function createGame(W,H){
     for(let i=0;i<12;i++)d.push(["wskull",146+r()*140,40+Math.floor(r()*50)]);
     for(let i=0;i<7;i++)d.push(["wcrack",446+r()*130,34+Math.floor(r()*60)]);
     return d;})();
-  const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
+  HZ.lore.push([96,"Hades whispered down the river: 'Come and see.' She listened."],[198,"These bones made a deal with him. He kept every one."],[262,"A ledger in his hand: ONE SMALL LIGHT, TAKEN."],[322,"Cut into the stone: HE LIKES IT WHEN THEY CRY."],[382,"Hades told her you had forgotten her. She believed him."],[440,"Chains. He bound her fear to the walls so it would last."],[505,"These flames burn on her tears. He keeps them fed."],[580,"He planted this garden. Every grave is a promise he broke."],[638,"A drawing of a king with a burning skull, holding a small hand."],[680,"The gate is forged from her crib. He is mocking you."]);
+const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
   const hzRoom=x=>x<140?0:x<290?1:x<440?2:x<580?3:4;
   const hzSafe=x=>HZ.fires.some(f=>Math.abs(x-f)<HZ.FR);
   const hzCamX=h=>hzCl(Math.round(h.x-HZ.VW/2),0,HZ.WW-HZ.VW);
@@ -762,10 +763,10 @@ function createGame(W,H){
     HZ.dp.forEach((gr,i)=>{const gi=Math.floor(Math.random()*2);h.doors.push({x:gr[gi][Math.floor(Math.random()*2)],i,locked:0},{x:gr[1-gi][Math.floor(Math.random()*2)],i,locked:1});});
     h.doors.push({x:[102,122][Math.floor(Math.random()*2)],i:4,locked:0});   /* the nursery, near the river */
     h.pp[3]=74;h.pp[4]=88;   /* the last pomegranate lies on the floor of the girl's room */
-    if(first)Object.assign(h,{t:0,seeds:0,got:[0,0,0,0],quiet:0,fake:0,slamDone:0,spawned:0,room:-1,toast:0,chase:0,ct:0,wh3:0,whR:60,crawlT:0,crawlDone:0,chDone:0,turnDone:0,pDone:0,dDone:0,fbDone:0,lw:[0,0,0,0,0,0,0,0,0,0,0],hw:[0,0,0],mir:{s:0,t:0}});
+    if(first)Object.assign(h,{t:0,seeds:0,got:[0,0,0,0],quiet:0,fake:0,slamDone:0,spawned:0,room:-1,toast:0,chase:0,ct:0,wh3:0,whR:60,crawlT:0,crawlDone:0,chDone:0,turnDone:0,pDone:0,dDone:0,fbDone:0,lw:Array(40).fill(0),hw:[0,0,0],mir:{s:0,t:0}});
     else{h.t=Math.max(h.t,3600);h.quiet=1;h.spawned=1;h.seeds=0;h.got=[0,0,0,0];h.chase=0;h.ct=0;h.wh3=0;h.chDone=0;h.hw[1]=0;h.hw[2]=0;hzSpawn();hzSay(h,({girl:"She only wanted someone to stay.",ghost:"They only wanted to be remembered.",hanger:"Some of them never stop falling.",dog:"He only guards what he loves."})[kk]||"The seeds are hidden again.",230);}   /* died: all pomegranates must be collected again */
     h.open=h.seeds>=4?1:0;};
-  const hzInit=()=>{g.hz={};hzReset(true);hzAmbient(true);hzSayQ(g.hz,[["Hades' halls. Take back the four seeds.",230],["Your little sister is somewhere in the dark.",230],["Do not let the candle die.",210]]);};
+  const hzInit=()=>{g.hz={};hzReset(true);hzAmbient(true);hzSayQ(g.hz,[["Hades' halls. Take back the four seeds.",230],["Your little sister is somewhere in the dark.",230],["Hades took her. Every tear in these halls is his doing.",230],["Do not let the candle die.",210]]);};
   g.hzDead=()=>g.bs===6&&!!g.hz&&g.hz.dead>0;
   g.hzRevive=()=>{hzReset(false);hzAmbLevel(.05);};
   const hzFinish=()=>hzThroneStart();   /* gate reached -> throne room */
@@ -779,7 +780,25 @@ function createGame(W,H){
     h.hg.forEach((q,i)=>{if(!q.d&&Math.abs(HZ.hang[i]-h.x)<=HZ.BR){q.d=2;for(let k=0;k<10;k++)h.pt.push({x:HZ.hang[i]+(Math.random()-.5)*5,y:HZ.CT+30+Math.random()*50,vx:(Math.random()-.5)*.8,vy:-.2-Math.random()*.5,l:35+Math.random()*20});}});
     if(h.cer&&Math.abs(h.cer.x-h.x)<=HZ.BR+20)h.cer.t=Math.max(h.cer.t,600);
     if(h.peek)h.peek=null;};
-  const hzExtra=(h,sec,safeP,near)=>{
+  const hzMore=(h,sec,safeP)=>{
+  const x=h.xs=h.xs||{eyes:0,hand:null,run:null,txt:"",tt:0,gl:0,d:{},vt:1800};
+  const once=(k,c,f)=>{if(!x.d[k]&&c){x.d[k]=1;f();}};
+  if(x.eyes>0)x.eyes--;if(x.tt>0)x.tt--;if(x.gl>0)x.gl--;
+  const flash=m=>{x.txt=m;x.tt=45;x.gl=16;thunder(.6,0);heartbeat(1);};
+  once("eyes",sec>=20,()=>{x.eyes=130;hadesGrowl(2,.3);hzSay(h,"Something very old is watching you.",170);});
+  once("hand",sec>=70&&!safeP&&h.walk>0,()=>{x.hand={t:0,x:W/2+h.dir*70};dragSound();heartbeat(1);});
+  once("run",sec>=95&&h.seeds>=1&&!safeP,()=>{x.run={t:0,s:Math.random()<.5?1:-1};thunder(.5,0);whisper(0,.3);});
+  once("s1",h.seeds>=1,()=>{flash("HADES DID THIS");hzSayQ(h,[["The river was his first lie.",200],["He promised her a quiet place.",200]]);});
+  once("s2",h.seeds>=2,()=>{h.skull=12;hadesGrowl(1.6,.5);hzSayQ(h,[["He took the name out of her mouth.",200],["Every locked door is a promise he broke.",200]]);});
+  once("s3",h.seeds>=3,()=>{x.eyes=130;hadesGrowl(2.2,.4);flash("HE IS CLOSE");hzSayQ(h,[["He fed on her crying. It made him stronger.",220]]);});
+  once("fire",h.room===3,()=>{h.skull=12;hadesGrowl(1.8,.6);});
+  once("mir",h.room===2&&h.mir.s>=2&&Math.abs(h.x-HZ.MX)<40,()=>{flash("HE STANDS BEHIND YOU");whisper(-h.dir,.35);});
+  if(sec>=60&&--x.vt<=0){x.vt=2200+Math.floor(Math.random()*1200);
+    const L=["Come closer.","She called for you for years. I let her.","Why did you leave her?","I only wanted company.","She is so quiet now."];
+    hzSay(h,L[Math.floor(Math.random()*L.length)],150);hadesGrowl(1.2,.2);whisper(Math.random()*2-1,.3);}
+};
+const hzExtra=(h,sec,safeP,near)=>{
+    hzMore(h,sec,safeP);
     if(h.face>0)h.face--;if(h.skull>0)h.skull--;if(h.nflash>0)h.nflash--;
     /* Cerberus howls far away at 3 points (1:15, second seed, start of the chase) */
     if(sec>=75&&!h.hw[0]){h.hw[0]=1;howl(-.7,.18);}
@@ -835,7 +854,25 @@ function createGame(W,H){
   const hzFace=(ctx,k)=>{const s=150+k*8,x=W/2+(Math.random()-.5)*14,y=H/2+(Math.random()-.5)*14;ctx.fillStyle=k%4<2?"#000":"#300";ctx.fillRect(0,0,W,H);
     ctx.fillStyle="#d9d9cf";ctx.beginPath();ctx.ellipse(x,y,s*.55,s*.8,0,0,7);ctx.fill();ctx.fillStyle="#000";
     [-1,1].forEach(q=>{ctx.beginPath();ctx.ellipse(x+q*s*.2,y-s*.2,s*.12,s*.2,0,0,7);ctx.fill();});ctx.beginPath();ctx.ellipse(x,y+s*.4,s*.18,s*.3,0,0,7);ctx.fill();};
-  const hzOverlays=(ctx,h)=>{
+  const hzMoreDraw=(ctx,h)=>{const x=h.xs;if(!x)return;
+  /* drawn in the same low-res 120x140 pixel buffer as the rest of the hall, then scaled up with no smoothing, dull colours only */
+  const VW=HZ.VW,VH=HZ.VH;if(!x.cv){x.cv=document.createElement("canvas");x.cv.width=VW;x.cv.height=VH;}
+  const c=x.cv.getContext("2d");c.clearRect(0,0,VW,VH);let used=0;
+  if(x.eyes>0&&(x.eyes%47)>5){used=1;c.globalAlpha=Math.min(1,x.eyes/30,(130-x.eyes)/20)*.85;
+    [-1,1].forEach(q=>{const ex=Math.round(VW/2+q*14);c.fillStyle="#2a0505";c.fillRect(ex-4,21,9,5);c.fillStyle="#6a1409";c.fillRect(ex-3,22,7,3);c.fillStyle="#b9a07a";c.fillRect(ex-1,22,3,3);c.fillStyle="#000";c.fillRect(ex,22,1,3);});c.globalAlpha=1;}
+  if(x.hand){const q=x.hand,k=q.t++;if(k>70)x.hand=null;else{used=1;const u=k<30?k/30:k<50?1:Math.max(0,1-(k-50)/20),hy=Math.round(VH-u*36),hx=Math.round(q.x/3);
+    c.fillStyle="#000";c.fillRect(hx-6,hy-9,12,VH);c.fillStyle="#5f5a4e";c.fillRect(hx-3,hy+9,6,VH);c.fillRect(hx-5,hy,10,9);
+    for(let i=0;i<5;i++){const fx=hx-5+Math.round(i*2.25);c.fillStyle="#000";c.fillRect(fx-1,hy-9-(i%3)*2,3,10);c.fillStyle="#6f6a5c";c.fillRect(fx,hy-8-(i%3)*2,2,9);}}}
+  if(x.run){const r=x.run,k=r.t++;if(k>38)x.run=null;else{used=1;const px=Math.round(r.s>0?-20+k*(VW+40)/38:VW+20-k*(VW+40)/38);
+    c.fillStyle="#2a2024";c.fillRect(px-10,41,20,72);c.fillRect(px-7,31,14,12);c.fillStyle="#050304";c.fillRect(px-9,42,18,70);c.fillRect(px-6,32,12,10);
+    c.fillStyle="#d8d8cc";c.fillRect(px-3,36,2,1);c.fillRect(px+2,36,2,1);}}
+  if(x.gl>0){used=1;for(let i=0;i<7;i++){c.fillStyle=i%3?"rgba(0,0,0,.6)":"rgba(110,110,105,.2)";c.fillRect(0,Math.floor(Math.random()*VH),VW,1+Math.floor(Math.random()*3));}}
+  if(used){ctx.imageSmoothingEnabled=false;ctx.drawImage(x.cv,0,0,VW,VH,0,0,W,H);
+    for(let i=0;i<50;i++){ctx.fillStyle="rgba(0,0,0,.25)";ctx.fillRect(Math.floor(Math.random()*W/3)*3,Math.floor(Math.random()*H/3)*3,3,3);}}
+  if(x.tt>0){ctx.textAlign="center";ctx.font=fitFont(ctx,x.txt,"%px Cinzel,Georgia,serif",W-30,20);ctx.fillStyle=(x.tt%7<5)?"rgba(120,12,12,"+Math.min(.9,x.tt/15)+")":"rgba(60,6,6,.3)";ctx.fillText(x.txt,W/2+(Math.random()-.5)*3,H/2+(Math.random()-.5)*3);ctx.textAlign="left";}
+};
+const hzOverlays=(ctx,h)=>{
+  hzMoreDraw(ctx,h);
     if(h.face>0)hzFace(ctx,14-h.face);
     if(h.skull>0)hades(ctx,W,H,.7,h.skull);   /* the Hades skull flash (does not kill you) */
     if(h.nflash>0){ctx.fillStyle="rgba(255,255,255,"+h.nflash/8+")";ctx.fillRect(0,0,W,H);}
@@ -858,6 +895,11 @@ function createGame(W,H){
     const T=h.th,K=window.GK||{};T.t++;
     const e=!!(K.e||K.E||g.tapE);g.tapE=0;const press=e&&!T.e0;T.e0=e;
     T.emb.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.l--;});T.emb=T.emb.filter(p=>p.l>0);
+    T.bl=T.bl||[];T.bl.forEach(p=>{if(p.st)return;p.x+=p.vx;p.y+=p.vy;p.vy+=.07;p.l--;if(p.y>=134){p.y=134+Math.floor(Math.random()*4);p.vx=0;p.vy=0;p.st=1;p.l=9999;}});T.bl=T.bl.filter(p=>p.l>0);
+    if(T.stab&&T.stab<170&&T.bl.length<1500){const n=T.stab===1?0:T.stab<40?14:T.stab<110?7:3;
+      for(let i=0;i<n;i++){const an=-Math.PI/2+(Math.random()-.5)*2.2,sp=.8+Math.random()*2.4;
+        T.bl.push({x:60+(Math.random()-.5)*14,y:70+Math.random()*16,vx:Math.cos(an)*sp,vy:Math.sin(an)*sp,l:200,k:Math.random()<.55,b:Math.random()<.2});}
+      if(T.stab%5===0)plop();}
     if(T.stab){T.stab++;if(T.stab===2){thunder(.7,0);hadesGrowl(1.8,.8);}
       if(T.stab>18&&T.stab<170){const c=(T.stab-18)/150;for(let i=0;i<3;i++)T.emb.push({x:60+(Math.random()-.5)*26,y:74-60*(1-c)+Math.random()*6,vx:(Math.random()-.5)*.3,vy:-.2-Math.random()*.5,l:60+Math.random()*50});}
       if(T.stab>=260)hzWin();return;}
@@ -880,6 +922,7 @@ function createGame(W,H){
     c.fillStyle="#0c0406";c.fillRect(44,8,32,50);[46,58,70].forEach(x=>c.fillRect(x,0,3,10));c.fillStyle="#5a1216";c.fillRect(48,14,24,3);
     [[14,72],[106,72],[14,122],[106,122]].forEach((p,i)=>hzFire(c,p[0],p[1],true,t+i*7));
     hzHades(c,60,74,T.stab>20?Math.min(1,(T.stab-20)/150):0,t);
+    (T.bl||[]).forEach(p=>{c.fillStyle=p.k?"#8a0a0a":"#4a0404";c.fillRect(Math.round(p.x),Math.round(p.y),p.b?2:1,p.b?2:1);});
     if(!T.armed)hzSword(c,60,100,t);
     hzMan(c,Math.round(T.x),Math.round(T.y),T.walk,T.foot);
     if(T.armed){const sx=Math.round(T.x)+4,sy=Math.round(T.y)-8;c.fillStyle="#ffd05a";c.fillRect(sx,sy-12,1,12);c.fillStyle="#ff5a14";c.fillRect(sx-1,sy-14-(t>>1)%3,3,3);}
@@ -892,6 +935,8 @@ function createGame(W,H){
     if(T.pr&&!T.stab){ctx.textAlign="center";ctx.font="bold 15px Cinzel,Georgia,serif";ctx.fillStyle="#fff";ctx.shadowColor="#000";ctx.shadowBlur=4;ctx.fillText("Press E",T.x*W/V,(T.y-16)*H/VH);ctx.shadowBlur=0;ctx.textAlign="left";}
     if(T.stab&&T.stab<26){ctx.fillStyle="rgba(255,255,255,"+(1-T.stab/26)+")";ctx.fillRect(0,0,W,H);}
     if(t<60){ctx.fillStyle="rgba(0,0,0,"+(1-t/60)+")";ctx.fillRect(0,0,W,H);}
+    if(t>=60){const m=T.stab>60?"Her light is free.":T.stab?"":T.armed?"Burn him for every tear.":"He did this. Take the flame sword.";
+      ctx.textAlign="center";ctx.font="11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(230,200,150,.85)";ctx.fillText(m,W/2,24);ctx.textAlign="left";}
   };
   const hzKill=(h,k)=>{h.dead=1;h.killer=k;h.slam=null;h.silent=0;h.br=0;hzAmbLevel(0);};
   /* inside a room: walk left/right, touch the pomegranate to take it, ENTER at the door to leave.
@@ -926,7 +971,7 @@ function createGame(W,H){
     if(enter&&R.x<30){   /* leave: any ghost waiting right at the door is pushed back a little */
       h.souls.forEach(s=>{if(Math.abs(s.x-h.x)<50)s.x=hzCl(h.x+(s.x>=h.x?1:-1)*60,26,HZ.WW-6);});
       h.inRoom=null;h.en0=true;hzAmbLevel(h.chase?.09:.05);plop();
-      if(h.pend){h.pend=0;hzSayQ(h,[["She is still screaming your name.",150],["The gate is open. RUN!",200]]);hzChase(h);}}};
+      if(h.pend){h.pend=0;hzSayQ(h,[["She is still screaming your name.",150],["Hades is laughing. This is what he wanted.",150],["The gate is open. RUN!",200]]);hzChase(h);}}};
   const hzStep=()=>{
     const h=g.hz,K=window.GK||{};
     if(h.th){hzThroneStep(h);return;}
