@@ -1,4 +1,4 @@
-\<!doctype html>
+<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Local Lead Finder</title>
@@ -771,7 +771,14 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
   g.hzRevive=()=>{hzReset(false);hzAmbLevel(.05);};
   const hzFinish=()=>hzThroneStart();   /* gate reached -> throne room */
   const startDark=()=>{g.cutDone=1;g.bs=6;g.dt=0;g.balls=[];g.burn=[];g.embers=[];g.souls=[];g.hz=null;g.tpt=null;thunder(.5,0);rumble();angryRoar();};
-  const darkStep=()=>{g.dt++;if(g.dt<150)return;if(!g.hz)hzInit();hzStep();};
+  const darkStep=()=>{g.dt++;if(g.dt<150)return;
+    if(!g.hz){   /* 5 seconds of black, then the manual. ENTER (or a tap) starts the mini-game */
+      if(g.dt<450){g.tapE=0;return;}
+      const K=window.GK||{},e=!!K.Enter||!!g.tapE;g.tapE=0;
+      if(!g.mr){if(!e)g.mr=1;return;}
+      if(e){g.mr=0;hzInit();}
+      return;}
+    hzStep();};
   /* last pomegranate: lights go out, Hades skull flashes, EVERY ghost now moves toward you whether you look or not, the gate is open */
   const hzChase=h=>{h.chase=1;h.ct=0;h.dark=50;h.skull=14;h.hw[2]=1;thunder(.8,0);rumble();howl(0,.3);for(let i=0;i<3;i++)hzSpawn();hzAmbLevel(.09);};
   /* SPACE: the candle flares. Ghosts, ceiling hangers and Cerberus in range are destroyed / driven off */
@@ -998,9 +1005,9 @@ const hzOverlays=(ctx,h)=>{
     if(h.bcd>0)h.bcd--;
     if(h.dark>0){h.dark--;h.fl=0;h.flTarget=0;}
     else if(h.br>0){h.br--;h.fl=1;if(h.br===0)h.dim=100;}
-    else{if(--h.flT<=0){h.flT=3+Math.floor(Math.random()*6);const r=Math.random();h.flTarget=r<.05?.1:r<.22?.6:r<.5?.88:1;}h.fl+=(h.flTarget-h.fl)*.35;
-      if(h.dim>0){h.dim--;h.fl=Math.min(h.fl,.2+.1*Math.sin(h.t*1.1));}}
-    h.L=(24+2*Math.sin(h.t*.7))*(.5+.5*h.fl)*(h.chase?.85:1);
+    else{if(--h.flT<=0){h.flT=3+Math.floor(Math.random()*6);const r=Math.random();h.flTarget=r<.04?.45:r<.2?.75:r<.45?.92:1;}h.fl+=(h.flTarget-h.fl)*.35;
+      if(h.dim>0){h.dim--;h.fl=Math.min(h.fl,.4+.1*Math.sin(h.t*1.1));}}
+    h.L=(34+2*Math.sin(h.t*.7))*(.6+.4*h.fl)*(h.chase?.88:1);
     const rm=hzRoom(h.x);if(rm!==h.room){h.room=rm;h.toast=150;}if(h.toast>0)h.toast--;
     const safeP=hzSafe(h.x);
     /* ghosts: only move while the candle is NOT on them. Fires slow them right down. */
@@ -1193,16 +1200,16 @@ const hzOverlays=(ctx,h)=>{
     a.globalCompositeOperation="source-over";b.globalCompositeOperation="source-over";b.fillStyle="#000";b.fillRect(0,0,V,VH);b.globalCompositeOperation="destination-out";
     if(Rm){
       hzRoomDraw(a,h);
-      if(!(Rm.bk>0)){hzHole(b,Rm.x+Rm.dir*5,FY-13,40,1);hzHole(b,13,FY-30,18,.8);if(Rm.i<4&&!h.got[Rm.i])hzHole(b,h.pp[Rm.i],Rm.i===3?116:104,12,.85);
+      if(!(Rm.bk>0)){hzHole(b,Rm.x+Rm.dir*5,FY-13,56,1);hzHole(b,Rm.x+Rm.dir*5,FY-13,34,1);hzHole(b,13,FY-30,18,.8);if(Rm.i<4&&!h.got[Rm.i])hzHole(b,h.pp[Rm.i],Rm.i===3?116:104,12,.85);
         if(Rm.i===4){if(h.nur.st===4&&!h.key)hzHole(b,70,116,10,.8);if(h.nur.st===0)hzHole(b,88,104,9,.45);}}
       b.globalCompositeOperation="source-over";a.drawImage(h.B,0,0);
     }else{
       hzWorld(a,cam,h);
-      const sx=h.x-cam,lx=sx+h.dir*5,ly=FY-13,rad=h.br>0?28+34*Math.sin(Math.PI*(1-h.br/40)):h.L+7;
-      if(h.fl>.2||h.br>0)hzHole(b,lx,ly,rad,Math.min(1,h.fl));
+      const sx=h.x-cam,lx=sx+h.dir*5,ly=FY-13,rad=h.br>0?34+38*Math.sin(Math.PI*(1-h.br/40)):h.L+16;
+      if(h.fl>.2||h.br>0){hzHole(b,lx,ly,rad,Math.min(1,h.fl));hzHole(b,lx,ly,rad*.62,Math.min(1,h.fl));}
       if(h.br<=0){b.globalCompositeOperation="source-over";b.fillStyle="#000";const e=Math.round(sx);if(h.dir>0)b.fillRect(0,0,e-2,VH);else b.fillRect(e+3,0,V-e,VH);b.globalCompositeOperation="destination-out";}   /* behind you is dark */
-      hzHole(b,sx,FY-9,10,.6);
-      HZ.fires.forEach(f=>hzHole(b,f-cam,FY-6,(h.chase?24:32)+Math.sin(h.t*.3+f)*2,.95));
+      hzHole(b,sx,FY-9,15,.8);
+      HZ.fires.forEach(f=>hzHole(b,f-cam,FY-6,(h.chase?30:38)+Math.sin(h.t*.3+f)*2,.95));
       if(h.open)hzHole(b,HZ.gate-cam,FY-30,30,.9);
       if(h.cer)hzHole(b,h.cer.x-cam,FY-10,13,.7);
       b.globalCompositeOperation="source-over";a.drawImage(h.B,0,0);
@@ -1210,14 +1217,14 @@ const hzOverlays=(ctx,h)=>{
       if(h.t>1500)h.eyes.slice(0,2+h.seeds*2).forEach(e=>{const ex=Rd(e.x-cam);if(ex<-4||ex>V+4)return;const dxe=e.x-h.x;
         if(h.fl>.35&&dxe*h.dir>=-3&&Math.abs(dxe)<=h.L+2)return;if((h.t+e.ph)%240<8)return;a.fillStyle="#e8e8d8";a.fillRect(ex,e.y,2,1);a.fillRect(ex+4,e.y,2,1);});
       if(h.fl>.2){a.save();a.beginPath();if(h.br>0)a.rect(0,0,V,VH);else if(h.dir>0)a.rect(Math.round(sx),0,V,VH);else a.rect(0,0,Math.round(sx),VH);a.clip();
-        a.globalCompositeOperation="lighter";const g2=a.createRadialGradient(lx,ly,1,lx,ly,rad);g2.addColorStop(0,"rgba(255,170,70,"+(.22*Math.min(1,h.fl))+")");g2.addColorStop(1,"rgba(255,170,70,0)");a.fillStyle=g2;a.beginPath();a.arc(lx,ly,rad,0,7);a.fill();a.restore();}
+        a.globalCompositeOperation="lighter";const g2=a.createRadialGradient(lx,ly,1,lx,ly,rad);g2.addColorStop(0,"rgba(255,170,70,"+(.3*Math.min(1,h.fl))+")");g2.addColorStop(1,"rgba(255,170,70,0)");a.fillStyle=g2;a.beginPath();a.arc(lx,ly,rad,0,7);a.fill();a.restore();}
       /* a locked door bangs open and a figure stares (drawn on top of the dark) */
       if(h.ds){const dx=Rd(h.ds.x-cam);a.fillStyle="#000";a.fillRect(dx-9,60,18,46);if(h.ds.t>6){a.fillStyle="#050505";a.fillRect(dx-3,70,6,34);a.fillRect(dx-4,64,8,8);a.fillStyle="#fff";a.fillRect(dx-3,67,2,2);a.fillRect(dx+1,67,2,2);}}
     }
     a.globalCompositeOperation="source-over";
     ctx.imageSmoothingEnabled=false;ctx.drawImage(h.A,0,0,V,VH,0,0,W,H);
     for(let i=0;i<90;i++){ctx.fillStyle=Math.random()<.5?"rgba(255,255,255,.06)":"rgba(0,0,0,.18)";ctx.fillRect(Math.floor(Math.random()*W/3)*3,Math.floor(Math.random()*H/3)*3,3,3);}   /* grain */
-    const vg=ctx.createRadialGradient(W/2,H/2,H*.18,W/2,H/2,H*.62);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.9)");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);   /* edges fade to black */
+    const vg=ctx.createRadialGradient(W/2,H/2,H*.26,W/2,H/2,H*.72);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.8)");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);   /* edges fade to black */
     if(h.br>0){ctx.fillStyle="rgba(255,235,190,"+.35*Math.sin(Math.PI*(1-h.br/40))+")";ctx.fillRect(0,0,W,H);}   /* candle flare */
     ctx.textAlign="center";ctx.font="11px Cinzel,Georgia,serif";
     if(!Rm&&h.toast>0){ctx.fillStyle="rgba(200,190,170,"+Math.min(.7,h.toast/40)+")";ctx.fillText(HZ.names[h.room],W/2,24);}
@@ -1239,11 +1246,36 @@ const hzOverlays=(ctx,h)=>{
     if(h.slam&&h.slam.t>=100)hzFace(ctx,h.slam.t-100);
     hzOverlays(ctx,h);if(h.out>0){ctx.fillStyle="rgba(0,0,0,"+Math.min(1,h.out/90)+")";ctx.fillRect(0,0,W,H);ctx.textAlign="center";ctx.fillStyle="rgba(255,150,60,"+Math.min(1,h.out/90)+")";ctx.fillText("The gate opens...",W/2,H/2);ctx.textAlign="left";}
   };
+  const hzManual=(ctx,t)=>{
+    const a=Math.min(1,(t-450)/40),cx=W/2;ctx.save();ctx.globalAlpha=a;ctx.textAlign="center";
+    ctx.fillStyle="#000";ctx.fillRect(0,0,W,H);
+    ctx.font="bold 17px Cinzel,Georgia,serif";ctx.fillStyle="rgb(200,160,110)";ctx.fillText("THE HALLS OF HADES",cx,36);
+    const wrap=(txt,y,font,col,lh)=>{ctx.font=font;ctx.fillStyle=col;let line="";
+      txt.split(" ").forEach(w=>{const tt=line?line+" "+w:w;if(ctx.measureText(tt).width>W-48&&line){ctx.fillText(line,cx,y);y+=lh;line=w;}else line=tt;});
+      ctx.fillText(line,cx,y);return y+lh;};
+    const B="10px Cinzel,Georgia,serif",C="rgb(190,178,155)",D="rgb(150,140,125)",G="bold 11px Cinzel,Georgia,serif",R="rgb(215,190,150)";
+    let y=66;
+    y=wrap("Hades took your little sister. Take back the four seeds, find her in the dark, and end him.",y,B,D,13)+8;
+    ctx.font=G;ctx.fillStyle=R;ctx.fillText("CONTROLS",cx,y);y+=16;
+    y=wrap("ARROW KEYS: walk",y,B,C,13);
+    y=wrap("ENTER: open a door, or leave a room",y,B,C,13);
+    y=wrap("SPACE: flare the candle. Ghosts close to you turn to dust",y,B,C,13);
+    y=wrap("At the throne: press E",y,B,C,13);
+    y=wrap("Phone: drag to walk, tap bottom-left for ENTER, bottom-right for the candle",y,B,D,13)+8;
+    ctx.font=G;ctx.fillStyle=R;ctx.fillText("HOW TO SURVIVE",cx,y);y+=16;
+    y=wrap("Ghosts only move when your candle is NOT on them. Keep them in the light.",y,B,C,13);
+    y=wrap("Stand near a fire to be safe. Their light is the only mercy here.",y,B,C,13);
+    y=wrap("Take the seed inside each real door. Some doors are locked. Do not knock.",y,B,C,13);
+    y=wrap("Something hangs from the ceiling. Flare the candle before you walk under it.",y,B,C,13);
+    y=wrap("After the last seed, the gate opens. RUN.",y,B,C,13)+4;
+    ctx.font="bold 13px Cinzel,Georgia,serif";ctx.fillStyle="rgba(255,230,170,"+(.55+.35*Math.sin(t*.08))+")";
+    ctx.fillText("Press ENTER to continue",cx,Math.min(H-14,y+14));
+    ctx.restore();};
   const darkDraw=ctx=>{
     const t=g.dt;
     if(t<150){baseDraw(ctx);drawHades(ctx);if(t>20&&t%14<4){ctx.fillStyle="rgba(0,0,0,.6)";ctx.fillRect(0,0,W,H);}
       ctx.fillStyle="rgba(0,0,0,"+Math.min(1,t/130)+")";ctx.fillRect(0,0,W,H);return;}
-    hzDraw(ctx);
+    hzDraw(ctx);if(!g.hz&&t>=450)hzManual(ctx,t);
   };
   /* Hades round visuals: chains on the walls, burning blocks, chained ball, embers, souls, lava, heat wave */
   const drawHades=ctx=>{
