@@ -754,12 +754,23 @@ HZ.lore.push([142,"SIGN: The dolls watch the door. Do not move when they look."]
  HZ.wlo=HZ.dp[1][0][0]-60;HZ.whi=HZ.dp[1][1][1]+50;HZ.wallx=800;HZ.cold=[[880,970],[1100,1190]];HZ.wax=[90,150,210,330,430,520,600,660,690].map(q);HZ.wax.push(70,380,740,960,1120,1250,1490,1580);
  HZ.lore.push([690,"SIGN: The crypt remembers a pattern. Light the stands in that order."],[1310,"SIGN: The chapel is flooded. Something down there holds on. Pull free."]);HZ.signs.push(690,1310);HZ.closets=[368,625,850];HZ.gl={T:[31,4,4,4,4,4,4],H:[17,17,17,31,17,17,17],I:[14,4,4,4,4,4,14],S:[15,16,16,14,1,1,30],P:[30,17,17,30,16,16,16],L:[16,16,16,16,16,16,31],A:[14,17,17,31,17,17,17],C:[14,17,16,16,16,17,14],E:[31,16,16,30,16,16,31],O:[14,17,17,17,17,17,14],N:[17,25,21,21,19,17,17],W:[17,17,17,21,21,27,17],M:[17,27,21,21,17,17,17]};HZ.props=[120,330,430,495,770,870,1000,1250,1420,1560].map((x,i)=>[x,i%3,i%2]);HZ.lore.push([200,"Scratched in the wall: NOT EVERY SEED IS A SEED. LIGHT SHOWS WHAT IS HUNGRY."]);
  /* SPACING: stretch the whole hall again so doors, ghosts and items are far apart. No campfires: only candles you place are safe. */
- {const Z=2,z=v=>Math.round(v*Z);HZ.Z=Z;HZ.KS*=Z;HZ.fires=[];HZ.WW=z(HZ.WW);HZ.gate=z(HZ.gate);HZ.MX=z(HZ.MX);HZ.PX=z(HZ.PX);HZ.hang=HZ.hang.map(z);HZ.dp=HZ.dp.map(gr=>gr.map(pp=>pp.map(z)));
+ {const Z=2.8,z=v=>Math.round(v*Z); /* CHANGED: was Z=2, hall is now 1.4x longer */HZ.Z=Z;HZ.KS*=Z;HZ.fires=[];HZ.WW=z(HZ.WW);HZ.gate=z(HZ.gate);HZ.MX=z(HZ.MX);HZ.PX=z(HZ.PX);HZ.hang=HZ.hang.map(z);HZ.dp=HZ.dp.map(gr=>gr.map(pp=>pp.map(z)));
   HZ.lore=HZ.lore.map(l=>[z(l[0]),l[1]]);HZ.signs=HZ.signs.map(z);HZ.decor=HZ.decor.map(d=>[d[0],z(d[1]),d[2]]);HZ.wd=HZ.wd.map(d=>[d[0],z(d[1]),d[2]]);
   HZ.wlo=z(HZ.wlo);HZ.whi=z(HZ.whi);HZ.wallx=z(HZ.wallx);HZ.cold=HZ.cold.map(a=>a.map(z));HZ.closets=HZ.closets.map(z);HZ.props=HZ.props.map(pp=>[z(pp[0]),pp[1],pp[2]]);
-  {let sd=987;const rr=()=>(sd=(sd*1664525+1013904223)>>>0)/4294967296,N=30;HZ.wax=Array.from({length:N},(_,i)=>Math.round(120+i*(HZ.WW-300)/(N-1)+(rr()-.5)*50));}
-  HZ.dp=[[[470,494],[810,834]],[[1320,1344],[1760,1784]],[[2240,2264],[2560,2584]],[[2720,2744],[2880,2904]]];
-  HZ.wlo=HZ.dp[1][0][0]-140;HZ.whi=HZ.dp[1][1][1]+80;HZ.closets=[1235,1412,1680];HZ.dx={n:300,c:980,b:2400,d:640,w:1480,a:1920,r:1150,p:2080};}}
+  {let sd=987;const rr=()=>(sd=(sd*1664525+1013904223)>>>0)/4294967296,N=14;HZ.wax= /* CHANGED: wax on the floor is now rare (was 40 stubs). Most wax is hidden in drawers below. */Array.from({length:N},(_,i)=>Math.round(120+i*(HZ.WW-300)/(N-1)+(rr()-.5)*50));}
+  /* CHANGED: every position below is the old value x 1.4 */
+  HZ.dp=[[[658,692],[1134,1168]],[[1848,1882],[2464,2498]],[[3136,3170],[3584,3618]],[[3808,3842],[4032,4066]]];
+  HZ.wlo=HZ.dp[1][0][0]-196;HZ.whi=HZ.dp[1][1][1]+112;HZ.closets=[800,1729,1977,2352,3000,3320]; /* CHANGED: 3 new closets (800, 3000, 3320), each near a room. The nursery, crypt and altar stay without one. */
+  HZ.dx={n:420,c:1372,b:3360,d:896,w:2072,a:2688,r:1610,p:2912};
+  HZ.cold=[[2500,2680],[3116,3296]]; /* CHANGED: same 180 px width as before, just moved */
+  HZ.gate=4380; /* CHANGED: keeps the last-door-to-gate run about the same length as before */
+  /* CHANGED: objects rebalanced. 4 sit close to a room door (340, 1010, 1470, 2150), the other 6 stand in the open hall. None sit on a door or the gate. */
+  HZ.props=[340,1010,1200,1470,2150,2420,2800,3500,3976,4240].map((x,i)=>[x,i%3,i%2]);
+  /* CHANGED: DRAWERS. Most of the wax is hidden here. ENTER at a drawer opens it. 16 drawers: 13 wax in total, 4 are empty. Kept 34-60 px away from doors, closets, signs, the bone wall and the gate (the crowded room area gets the tighter margin). */
+  {const bad=[];HZ.dp.forEach(g=>g.forEach(r=>bad.push(r[0],r[1])));Object.values(HZ.dx).forEach(v=>bad.push(v));HZ.closets.forEach(v=>bad.push(v));HZ.signs.forEach(v=>bad.push(v));bad.push(HZ.wallx,HZ.MX,HZ.gate);
+   const ok=(x,m)=>x>110&&x<HZ.gate-80&&bad.every(b=>Math.abs(b-x)>=m),give=[1,1,0,2,1,0,1,1,0,1,2,1,0,1,1,0],ND=give.length;let sd=4417;const rr=()=>(sd=(sd*1664525+1013904223)>>>0)/4294967296;HZ.dw=[];
+   for(let i=0;i<ND;i++){let x=Math.round(220+i*(HZ.gate-420)/(ND-1)+(rr()-.5)*60);let fin=0;for(const m of [60,46,34]){for(let k=0;k<50&&!fin;k++){const sh=(k%2?1:-1)*Math.ceil(k/2)*20;if(ok(x+sh,m)&&HZ.dw.every(d=>Math.abs(d[0]-x-sh)>=100)){x+=sh;fin=1;}}if(fin)break;}HZ.dw.push([x,give[i]]);}HZ.dw.sort((u,v)=>u[0]-v[0]);}
+  }}
 const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
   const hzRoom=x=>x<140*HZ.KS?0:x<290*HZ.KS?1:x<440*HZ.KS?2:x<580*HZ.KS?3:4;
   const hzCan=(h,x,r)=>!!(h&&h.cp&&h.cp.some(c=>Math.abs(x-c.x)<r));
@@ -775,7 +786,7 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
   const hzSayQ=(h,a)=>{const f=a.shift();hzSay(h,f[0],f[1]);h.q=a;};   /* several lines, one after the other */
   /* start / restart. first=true: full reset. false: after dying, back at the river and every pomegranate must be collected again */
   const hzReset=first=>{const h=g.hz;const kk=h.killer||"";
-    Object.assign(h,{cn:2,cp:[],c0:0,wg:HZ.wax.map(()=>0),pl:0,x:40,dir:1,walk:0,stepAcc:0,foot:0,peek:null,dead:0,fl:1,flT:0,flTarget:1,hbT:0,whT:240,slam:null,silent:0,out:0,dark:0,fkT:0,catch:0,souls:[],spCd:0,L:24,crawl:null,cer:null,face:0,skull:0,nflash:0,pa:0,hg:HZ.hang.map(()=>({d:0})),
+    Object.assign(h,{cn:2,cp:[],c0:0,wg:HZ.wax.map(()=>0),dwo:HZ.dw.map(()=>0),woR:60,wom:0,pl:0,x:40,dir:1,walk:0,stepAcc:0,foot:0,peek:null,dead:0,fl:1,flT:0,flTarget:1,hbT:0,whT:240,slam:null,silent:0,out:0,dark:0,fkT:0,catch:0,souls:[],spCd:0,L:24,crawl:null,cer:null,face:0,skull:0,nflash:0,pa:0,hg:HZ.hang.map(()=>({d:0})),
       br:0,bcd:0,dim:0,rq:[],pt:[],inRoom:null,hid:null,en0:false,sp0:false,msg:"",mt:0,ds:null,killer:"",cryT:0,pend:0,q:[],fb:null,echo:0,echoT:1500,key:0,nur:{w:0,st:0,t:0},eyes:Array.from({length:10},()=>({x:100+Math.random()*(HZ.WW-120),y:36+Math.floor(Math.random()*58),ph:Math.floor(Math.random()*240)})),
       doors:[],pp:[0,0,0,0].map(()=>HZ.ps[Math.floor(Math.random()*HZ.ps.length)])});
     /* every attempt: in each room one real door (pomegranate inside) and one locked decoy, at new random spots */
@@ -824,6 +835,7 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
     hzSay(h,L[Math.floor(Math.random()*L.length)],150);hadesGrowl(1.2,.2);whisper(Math.random()*2-1,.3);}
   const w=h.wf=h.wf||{x:HZ.wlo+40,dir:1,p:0,k:0};w.k++;
   if(w.hunt>0){w.hunt--;w.dir=h.x>w.x?1:-1;w.x+=w.dir*.95;if(Math.abs(w.x-h.x)<7)hzKill(h,"figure");}else if(w.p>0)w.p--;else{if(hzCan(h,w.x+w.dir*16,10)){w.dir*=-1;w.p=50;}w.x+=w.dir*.38;if(w.x>=HZ.whi){w.x=HZ.whi;w.dir=-1;w.p=110;}else if(w.x<=HZ.wlo){w.x=HZ.wlo;w.dir=1;w.p=110;}if(w.k%22===0&&Math.abs(w.x-h.x)<260)plopAt(0,44+Math.random()*10);}
+  once("drw",!h.hid&&HZ.dw.some((d,i)=>!h.dwo[i]&&Math.abs(d[0]-h.x)<40),()=>hzSay(h,"A drawer. ENTER to search it. Wax is hidden in drawers.",200));   /* CHANGED */
   once("clo",!h.hid&&HZ.closets.some(q=>Math.abs(q-h.x)<60),()=>hzSay(h,"A wardrobe. ENTER to hide. When he passes, HOLD SPACE to hold your breath.",220));
   if(h.hid){const q=h.hid,near=Math.abs(w.x-q.x)<48&&!(w.hunt>0);
     const hold=!!(window.GK||{})[" "]||!!(g.tpt&&g.tpt.y>H*.8&&g.tpt.x>W*.65);q.near=near;
@@ -875,7 +887,13 @@ const hzExtra=(h,sec,safeP,near)=>{
     if(!h.dDone&&sec>=45){const d=h.doors.find(d=>d.locked&&Math.abs(d.x-h.x)<18);if(d){h.dDone=1;h.ds={x:d.x,t:0};thunder(.7,0);h.nflash=6;}}
     if(h.ds&&++h.ds.t>55)h.ds=null;
     /* story: things you find as you walk through the halls */
-    HZ.lore.forEach((l,i)=>{if(!h.lw[i]&&Math.abs(h.x-l[0])<10){h.lw[i]=1;hzSay(h,l[1],240);whisper(0,.1);}});
+    /* CHANGED: story lines are spaced out. Signs show at their board; other lines wait until no message is showing and a short gap has passed. */
+    if(h.loreCd>0)h.loreCd--;
+    {let bi=-1,bd=1e9;
+      HZ.lore.forEach((l,i)=>{if(h.lw[i])return;const d=Math.abs(h.x-l[0]);
+        if(d<10&&l[1].startsWith("SIGN")){bi=i;bd=-1;}
+        else if(bd>=0&&d<90&&d<bd){bi=i;bd=d;}});
+      if(bi>=0&&(bd<0||(!(h.loreCd>0)&&h.mt<=0&&!h.q.length))){h.lw[bi]=1;h.loreCd=420;hzSay(h,HZ.lore[bi][1],bd<0?300:260);whisper(0,.1);}}
     /* NEW jumpscare 3: a body drops from the ceiling right in front of you and swings (no danger) */
     if(!h.fbDone&&sec>=80&&h.room>=3&&h.walk>0&&!safeP){h.fbDone=1;h.fb={x:hzCl(h.x+h.dir*22,30,HZ.WW-30),t:0};thunder(.5,0);heartbeat(1);h.nflash=3;}
     if(h.fb&&++h.fb.t>150)h.fb=null;
@@ -1148,6 +1166,13 @@ const hzOverlays=(ctx,h)=>{
     h.cp.forEach(c=>{if(c.t===200){whisper(0,.2);windClick();}});
     if(hzCan(h,h.x,20)){h.bcd=0;if(h.dim>0)h.dim=0;if(!h.rch){h.rch=1;hzSay(h,"Standing in your own candle light restores the flare.",170);}}
     HZ.wax.forEach((wx,i)=>{if(!h.wg[i]&&Math.abs(h.x-wx)<7){h.wg[i]=1;h.cn++;seedChime();hzSay(h,"A stub of wax. +1 candle.",110);}});
+    /* CHANGED: NO WAX = THE CANDLE IS OUT. The flare and the light stop working, it is dark but you can still make out shapes, and loud whispers keep going until you find wax. */
+    if(h.cn<=0){h.dark=Math.max(h.dark,2);
+      if(!h.wom){h.wom=1;h.woR=20;hzSay(h,"Your candle is out. Collect wax.",220);heartbeat(1);whisper(-1,.6);whisper(1,.6);}
+      else if(h.mt<=0&&!h.q.length&&(h.t%900)===0)hzSay(h,"Your candle is out. Collect wax.",200);
+      if(space)hzSay(h,"Your candle is out. Collect wax.",110);
+      if(!h.silent&&--h.woR<=0){h.woR=22+Math.floor(Math.random()*40);const k=1+Math.floor(Math.random()*3);for(let i=0;i<k;i++)whisper(Math.random()*2-1,.5+Math.random()*.3);if(Math.random()<.35)heartbeat(.8);}}
+    else if(h.wom){h.wom=0;hzSay(h,"The flame catches. The voices fade.",150);}
     {const inz=!h.chase&&HZ.cold.some(z=>h.x>=z[0]&&h.x<=z[1])&&!hzCan(h,h.x,44);
      if(inz){h.dark=Math.max(h.dark,3);if(!h.zn){h.zn=1;hzSay(h,"The cold drinks your candle. Leave wax burning here.",170);whisper(0,.25);}}else h.zn=0;}
     /* the candle: flickers, and SPACE flares it bright (then it burns low for a moment) */
@@ -1186,6 +1211,11 @@ const hzOverlays=(ctx,h)=>{
       if(h.wall.d%3===0){hzSpawn();whisper(Math.random()*2-1,.3);hzSay(h,"The noise carries. Something heard you.",110);}
       else hzSay(h,"Digging... "+h.wall.d+"/10",50);
       if(h.wall.d>=10){h.wall.open=1;rumble();hzSay(h,"The bones collapse. The way is open.",160);}}
+    /* CHANGED: ENTER at a drawer. Wax is hidden inside. */
+    if(enter&&!h.hid){const di=HZ.dw.findIndex((d,i)=>!h.dwo[i]&&Math.abs(d[0]-h.x)<12);
+      if(di>=0){enter=false;h.dwo[di]=1;const n=HZ.dw[di][1];windClick();
+        if(n>0){h.cn+=n;seedChime();hzSay(h,n>1?"Two stubs of wax, tucked behind old cloth. +"+n+" candles.":"A stub of wax in the back of the drawer. +1 candle.",150);}
+        else{whisper(0,.14);hzSay(h,["Empty. Only dust.","Empty. A child's tooth.","Empty. Scratches on the inside.","Empty. Somebody was here first."][di%4],120);}}}
     /* ENTER: open the door you are standing at */
     if(enter){const dr=h.doors.find(d=>Math.abs(d.x-h.x)<11);
       if(dr){if(!dr.locked&&hzWatch(h,dr)){hzKill(h,"figure");return;}if(dr.locked){hzSay(h,["Locked.","Locked. Something scratches inside.","Locked. A soft laugh, very close.","Locked. Don't knock."][Math.floor(Math.random()*4)],110);whisper(0,.12);}
@@ -1337,6 +1367,12 @@ const hzOverlays=(ctx,h)=>{
       else if(k==="grass"){c.fillStyle="#2c4a25";c.fillRect(sx,sy-3,1,3);c.fillRect(sx+1,sy-4,1,4);c.fillRect(sx+2,sy-2,1,2);}});
     HZ.signs.forEach(sg=>{const x=R(sg-cam);if(x<-12||x>V+12)return;c.fillStyle="#2a1f14";c.fillRect(x,80,2,26);c.fillStyle="#4a3a22";c.fillRect(x-7,72,16,11);c.fillStyle="#1a1209";c.fillRect(x-6,73,14,9);c.fillStyle="#b9a05a";c.fillRect(x-5,75,12,1);c.fillRect(x-5,77,9,1);c.fillRect(x-5,79,11,1);});
     HZ.cold.forEach(z=>{for(let fx=z[0];fx<z[1];fx+=9){const x=R(fx-cam);if(x<-4||x>V+4)continue;c.fillStyle="rgba(150,180,200,.22)";c.fillRect(x,WB+10+hzH(fx,5)%24,3,1);}});
+    /* CHANGED: drawers (a small dresser with a pull-out drawer) */
+    HZ.dw.forEach((d,i)=>{const x=R(d[0]-cam);if(x<-8||x>V+8)return;const op=h.dwo[i];
+      c.fillStyle="#1a120b";c.fillRect(x-6,FY-16,12,16);c.fillStyle="#3a2918";c.fillRect(x-5,FY-15,10,14);c.fillStyle="#241810";c.fillRect(x-5,FY-8,10,1);
+      c.fillStyle="#120c07";c.fillRect(x-5,FY-1,1,2);c.fillRect(x+4,FY-1,1,2);
+      if(op){c.fillStyle="#120c07";c.fillRect(x-4,FY-7,8,3);c.fillStyle="#2a1d12";c.fillRect(x-4,FY-7,8,1);}
+      else{c.fillStyle="#b9a05a";c.fillRect(x-1,FY-12,2,1);c.fillRect(x-1,FY-5,2,1);}});
     HZ.wax.forEach((wx,i)=>{if(h.wg[i])return;const x=R(wx-cam);if(x<-6||x>V+6)return;c.fillStyle="#e9e2c8";c.fillRect(x-1,FY-3,3,3);c.fillStyle="#b9b19a";c.fillRect(x-1,FY,3,1);});
     (h.cp||[]).forEach(cd=>{const x=R(cd.x-cam);if(x<-8||x>V+8)return;c.fillStyle="#e9e2c8";c.fillRect(x-1,FY-5,3,6);c.fillStyle="#b9b19a";c.fillRect(x-2,FY+1,5,1);if(cd.t>90){c.fillStyle=(t>>2)%2?"#ffd05a":"#ffb347";c.fillRect(x,FY-9-((t>>3)%2),1,3);c.fillStyle="#fff3b0";c.fillRect(x,FY-8,1,1);}});
     if(h.wall&&!h.wall.open){const x=R(HZ.wallx-cam);if(x>-30&&x<V+30){const hh=Math.round(46*(1-h.wall.d/12));c.fillStyle="#1a1612";c.fillRect(x-12,WB-hh+2,24,hh+4);c.fillStyle="#b9b19a";for(let k=0;k<14;k++){const bx=x-11+(k*5)%22,by=WB+2-(k*7)%Math.max(8,hh);if(by>WB-hh){c.fillRect(bx,by,4,1);c.fillRect(bx,by-1,1,3);}}if(hh>20){c.fillStyle="#cfc7ae";c.fillRect(x-4,WB-hh+6,5,4);c.fillStyle="#000";c.fillRect(x-3,WB-hh+8,1,1);c.fillRect(x-1,WB-hh+8,1,1);}}}
@@ -1522,7 +1558,7 @@ const hzOverlays=(ctx,h)=>{
     const V=HZ.VW,VH=HZ.VH,FY=HZ.FY,Rd=Math.round,Rm=h.inRoom;
     if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
     const a=h.A.getContext("2d"),b=h.B.getContext("2d"),cam=hzCamX(h);
-    a.globalCompositeOperation="source-over";b.globalCompositeOperation="source-over";b.fillStyle="#000";b.fillRect(0,0,V,VH);b.globalCompositeOperation="destination-out";
+    a.globalCompositeOperation="source-over";b.globalCompositeOperation="source-over";b.fillStyle=(!Rm&&h.cn<=0)?"rgba(3,6,16,.88)":"#000";b.fillRect(0,0,V,VH);b.globalCompositeOperation="destination-out";   /* CHANGED: with no wax the dark is thinner and blue, like moonlight: you can just make out shapes */
     if(Rm){
       hzRoomDraw(a,h);
       if(!(Rm.bk>0)){hzHole(b,Rm.x+Rm.dir*5,FY-13,56,1);hzHole(b,Rm.x+Rm.dir*5,FY-13,34,1);hzHole(b,13,FY-30,18,.8);if(Rm.i<4&&!h.got[Rm.i])hzHole(b,h.pp[Rm.i],Rm.i===3?116:104,12,.85);
@@ -1533,7 +1569,7 @@ const hzOverlays=(ctx,h)=>{
       hzWorld(a,cam,h);
       const sx=h.x-cam,lx=sx+h.dir*5,ly=FY-13,rad=h.br>0?34+38*Math.sin(Math.PI*(1-h.br/40)):h.L+16;
       if(h.fl>.2||h.br>0){hzHole(b,lx,ly,rad,Math.min(1,h.fl));hzHole(b,lx,ly,rad*.62,Math.min(1,h.fl));}
-      if(h.br<=0){b.globalCompositeOperation="source-over";b.fillStyle="#000";const e=Math.round(sx);if(h.dir>0)b.fillRect(0,0,e-2,VH);else b.fillRect(e+3,0,V-e,VH);b.globalCompositeOperation="destination-out";}   /* behind you is dark */
+      if(h.br<=0&&h.cn>0){b.globalCompositeOperation="source-over";b.fillStyle="#000";const e=Math.round(sx);if(h.dir>0)b.fillRect(0,0,e-2,VH);else b.fillRect(e+3,0,V-e,VH);b.globalCompositeOperation="destination-out";}   /* behind you is dark */
       hzHole(b,sx,FY-9,15,.8);
       HZ.fires.forEach(f=>hzHole(b,f-cam,FY-6,(h.chase?30:38)+Math.sin(h.t*.3+f)*2,.95));
       if(h.open)hzHole(b,HZ.gate-cam,FY-30,30,.9);
@@ -1601,7 +1637,7 @@ const hzOverlays=(ctx,h)=>{
     }else{
       ctx.font=G;ctx.fillStyle=R;ctx.fillText("HOW TO SURVIVE",cx,y);y+=18;
       y=wrap("Ghosts only move when your candle is NOT on them. Keep them in the light.",y,B,C,13)+3;
-      y=wrap("Wax stubs lie in the halls. A placed candle freezes ghosts, recharges your flare and beats the cold. Two close together make a ward.",y,B,C,13)+3;
+      y=wrap("Wax is hidden in drawers (ENTER) and an odd stub lies on the floor. No wax: your candle goes out. A placed candle freezes ghosts, recharges your flare and beats the cold. Two close together make a ward.",y,B,C,13)+3;
       y=wrap("There are no safe fires. A candle you place (C, costs 1 wax) is the only safe spot, and the flare also costs wax. No wax: no flare, no safe spot. ENTER at a wardrobe hides you from the tall man: HOLD SPACE as he passes.",y,B,C,13)+3;
       y=wrap("Seeds hide behind real doors. Any seed may be a mimic: SPACE shines your candle to test one. Some rooms are traps, some are mercy.",y,B,C,13)+3;
       y=wrap("A watcher walks the halls. Open doors only when his back is turned.",y,B,C,13)+3;
