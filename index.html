@@ -740,7 +740,7 @@ function createGame(W,H){
 HZ.lore.push([20,"Hades did not break her. He waited until she broke herself."],[110,"He wrote her letters in your handwriting. She answered every one."],[155,"A music box wound by cold fingers. He keeps all her lullabies."],[220,"The first lie was a kindness. The second, a door. The third, a grave."],[337,"He told her you had forgotten her. He told you she was safe. Both lies."],[396,"Hades feeds on the gap between two people who love each other."],[488,"Every ghost here begged him once. He listened. He liked it."],[525,"The dog was a boy. Hades gave him teeth so he would never leave."],[565,"These bars are not to keep her in. They are to keep you out."],[625,"There is no king under the mountain. Only a hunger with a crown."],[695,"At the end of the hall he waits. Make him pay for every night."],
  [52,"SIGN: Keep the light on them. They only move in the dark."],[246,"SIGN: A watcher walks these doors. Wait until his back is turned."],[306,"SIGN: The cellar door shuts behind you. If it starts running, RUN."],[426,"SIGN: Look up. Flare your candle before you walk under it."],[456,"SIGN: The dog remembers your scent. Place a candle and wait beside it."],[596,"SIGN: The dark room is honest. It tells you what he told her. Cross it."],[650,"SIGN: Four seeds open the gate. Hades keeps no other promises."]);
 HZ.signs=[52,246,306,426,456,596,650,142,370,515];
-HZ.lore.push([142,"SIGN: The dolls watch the door. Do not move when they look."],[370,"SIGN: The well remembers everyone it drowned."],[515,"SIGN: Three flames wake the last door."]);
+HZ.lore.push([142,"SIGN: Some words only show in the dark. Shine your candle on them."],[370,"SIGN: The well remembers everyone it drowned."],[515,"SIGN: Three flames wake the last door."]);
 /* stretch the whole hall 1.8x so the doors and seeds are far apart, and add a few fires so it stays survivable */
 {const KS=1.8,q=v=>Math.round(v*KS);HZ.KS=KS;HZ.WW=1700;HZ.fires=HZ.fires.map(q);[0,1,2,4].forEach(i=>HZ.fires.push(Math.round((HZ.fires[i]+HZ.fires[i+1])/2)));HZ.fires.push(1380,1520);
  HZ.gate=1640;HZ.MX=q(HZ.MX);HZ.PX=q(HZ.PX);HZ.hang=HZ.hang.map(q);HZ.dp=HZ.dp.map(gr=>gr.map(pp=>pp.map(q)));HZ.lore=HZ.lore.map(l=>[q(l[0]),l[1]]);HZ.signs=HZ.signs.map(q);
@@ -795,7 +795,7 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
     h.pp[3]=74;h.pp[4]=88;
     h.mm=[0,1,2].map(i=>Math.random()<(i===0?.3:.45)?1:0);h.mmd=[0,0,0,0];   /* mimic seeds in the first three rooms */   /* the last pomegranate lies on the floor of the girl's room */
     if(first)Object.assign(h,{t:0,seeds:0,got:[0,0,0,0],quiet:1,fake:0,wall:{d:0,open:0},alt:[0,0,0],slamDone:0,spawned:0,room:-1,toast:0,chase:0,ct:0,wh3:0,whR:60,crawlT:0,crawlDone:0,chDone:0,turnDone:0,pDone:0,dDone:0,fbDone:0,lw:Array(40).fill(0),hw:[0,0,0],mir:{s:0,t:0}});
-    else{h.t=Math.max(h.t,3600);h.quiet=1;h.spawned=1;h.seeds=0;h.got=[0,0,0,0];h.chase=0;h.ct=0;h.wh3=0;h.chDone=0;h.hw[1]=0;h.hw[2]=0;hzSpawn();hzSay(h,({girl:"She only wanted someone to stay.",ghost:"They only wanted to be remembered.",hanger:"Some of them never stop falling.",dog:"He only guards what he loves.",mimic:"Some seeds are hungry."})[kk]||"The seeds are hidden again.",230);}   /* died: all pomegranates must be collected again */
+    else{h.t=Math.max(h.t,3600);h.quiet=1;h.spawned=1;h.seeds=0;h.got=[0,0,0,0];h.chase=0;h.ct=0;h.wh3=0;h.chDone=0;h.hw[1]=0;h.hw[2]=0;hzSpawn();hzSay(h,({girl:"She only wanted someone to stay.",ghost:"They only wanted to be remembered.",hanger:"Some of them never stop falling.",dog:"He only guards what he loves.",mimic:"Some seeds are hungry.",figure:"He walks the halls for a reason.",crawler:"It was a child once.",drowned:"The water remembers everyone it takes."})[kk]||"The seeds are hidden again.",230);h.q=[[({girl:"She is still waiting where you left her.",ghost:"Hades remembers every one of them.",hanger:"Look up before you walk under them.",dog:"Drop a candle. Make him wait.",mimic:"Shine your light before you reach for anything.",figure:"Wait until his back is turned.",crawler:"Do not let it reach you in the dark.",drowned:"Pull free. Do not stop pulling."})[kk]||"Every seed must be taken again.",230]];}   /* died: all pomegranates must be collected again */
     h.open=h.seeds>=4?1:0;};
   const hzInit=()=>{g.hz={};hzReset(true);hzAmbient(true);hzSayQ(g.hz,[["Hades' halls. Take back the four seeds.",230],["Your little sister is somewhere in the dark.",230],["Hades took her. Every tear in these halls is his doing.",230],["She is not lost. He took her a little at a time.",230],["Signs mark the halls. Read them. They are all you have.",230],["Do not let the candle die.",210]]);};
   g.hzDead=()=>g.bs===6&&!!g.hz&&g.hz.dead>0;
@@ -911,7 +911,7 @@ const hzExtra=(h,sec,safeP,near)=>{
       else if(e.t<1200||h.chase){if(h.chase)h.cp.forEach(c=>{if(Math.abs(e.x-c.x)<26)c.t=Math.min(c.t,150);});e.x+=Math.sign(ex)*(hzCan(h,e.x,26)?.12:.68);if(d<6&&(h.chase||!safeP)){h.catch=1;h.killer="dog";}}
       else{e.x-=Math.sign(ex)*.8;if(d>110||e.t>1400)h.cer=null;}}
   };
-  const hzFace=(ctx,k)=>{ghoulFace(ctx,W,H,Math.min(1.2,(k+4)/10),k+4,hzFV%2);};
+  const hzFace=(ctx,k)=>{if(((k>>2)&1)===0)ghoulFace(ctx,W,H,1,k+4,hzFV%2);};   /* two quick pops */
   const hzMoreDraw=(ctx,h)=>{const x=h.xs;if(!x)return;
   /* drawn in the same low-res 120x140 pixel buffer as the rest of the hall, then scaled up with no smoothing, dull colours only */
   const VW=HZ.VW,VH=HZ.VH;if(!x.cv){x.cv=document.createElement("canvas");x.cv.width=VW;x.cv.height=VH;}
@@ -933,7 +933,7 @@ const hzOverlays=(ctx,h)=>{
     if(q.near){ctx.fillStyle="rgba(130,20,20,.85)";ctx.fillRect(bx,by+11,bw*Math.min(1,q.ns/70),3);}ctx.textAlign="left";}
     if(h.face>0||h.skull>0){if(!h.fvOn){h.fvOn=1;hzFV++;}}else h.fvOn=0;
     if(h.face>0)hzFace(ctx,14-h.face);
-    if(h.skull>0)ghoulFace(ctx,W,H,.7,h.skull,hzFV%2);   /* the Hades skull flash (does not kill you) */
+    if(h.skull>0&&((h.skull>>2)&1)===0)ghoulFace(ctx,W,H,1,h.skull,hzFV%2);   /* the Hades skull flash (does not kill you) */
     if(h.nflash>0){ctx.fillStyle="rgba(255,255,255,"+h.nflash/8+")";ctx.fillRect(0,0,W,H);}
     if(h.chase&&h.ct<240){ctx.textAlign="center";ctx.font="bold 15px Cinzel,Georgia,serif";ctx.fillStyle="rgba(255,50,40,"+Math.min(.9,(240-h.ct)/60)+")";ctx.fillText("RUN TO THE GATE",W/2+(Math.random()-.5)*3,48);ctx.font="11px Cinzel,Georgia,serif";ctx.fillText("C: drop a candle behind you to stall the dog",W/2,66);ctx.textAlign="left";}
   };
@@ -1038,12 +1038,14 @@ const hzOverlays=(ctx,h)=>{
       if(!x.dr&&R.x>=86){x.dr=1;x.df=0;thunder(1,0);noiseHit();h.nflash=8;hzAmbLevel(.02);}
       if(x.dr)x.df++;
       if(x.dr&&enter&&R.x>=88){h.bdone=1;hzLeave(h);hzSayQ(h,[["The dark room was the only place he stopped lying.",200],["She was alone in there for four years.",200]]);return true;}
-    }else if(R.i===7){   /* THE DOLL ROOM: red light, green light. Move only while they look away. */
-      if(!x.i){x.i=1;x.st=0;x.tm=140;x.got=0;hzSay(h,"Rows of dolls face the wall. Do not move when they turn.",210);hzAmbLevel(0);}
-      if(--x.tm<=0){if(x.st===0){x.st=1;x.tm=70;heartbeat(.8);thunder(.2,0);whisper(0,.3);}else{x.st=0;x.tm=130+Math.floor(Math.random()*90);}}
-      if(x.st===0&&x.tm===40){chainClink(0,.3,0);whisper(0,.18);}
-      if(x.st===1&&R.walk>0){hzKill(h,"dolls");return true;}
-      if(!x.got&&R.x>=98){x.got=1;h.cn+=3;seedChime();hzSayQ(h,[["Three stubs of wax in the last doll's hands. +3 candles.",200],["Every doll wears a child's face. Hades kept the faces.",200]]);}
+    }else if(R.i===7){   /* THE WRITING ROOM: words in blood on the wall. Shine your candle on them. Nothing here can kill you. */
+      if(!x.i){x.i=1;x.rd=0;x.fl=0;x.ft=0;x.got=0;hzSay(h,"Words on the wall, written in blood. They are still wet.",210);hzAmbLevel(0);whisper(0,.2);}
+      if(!x.rd&&R.x>=50){x.rd=1;hzSayQ(h,[["THIS PLACE IS NOT WHAT IT SEEMS.",180],["Shine your candle on the wall. SPACE.",190]]);heartbeat(.6);whisper(0,.3);}
+      if(h.rsp&&!x.fl&&R.x>=40&&R.x<=104){x.fl=1;x.ft=0;R.bk=100;hzSay(h,"The flame dies.",90);}   /* the light goes out, a face flashes at 50, then the wall changes */
+      if(x.fl&&!x.got){x.ft++;
+        if(x.ft===60)whisper(0,.5);
+        if(x.ft===100){x.got=1;h.cn+=3;seedChime();thunder(.5,0);hzSayQ(h,[["The writing changed.",150],["Three stubs of wax fall from the wall. +3 candles.",200],["Something is standing in the corner. It was always there.",210]]);}}
+      else if(x.got&&x.ft<400){x.ft++;if(x.ft%90===0)whisper(Math.random()*2-1,.3);}
       if(enter&&R.x<30){if(x.got)h.dolldone=1;hzLeave(h);return true;}
     }else if(R.i===8){   /* THE WELL */
       if(!x.i){x.i=1;x.lk=0;x.lock=0;hzSay(h,"A well. The water is perfectly still.",190);hzAmbLevel(0);}
@@ -1476,6 +1478,11 @@ const hzOverlays=(ctx,h)=>{
     if(U.st===4&&!h.key){const pu=.6+.4*Math.sin(t*.2);c.fillStyle="rgb("+Math.round(180+60*pu)+","+Math.round(190+60*pu)+","+Math.round(200+55*pu)+")";c.fillRect(68,116,4,2);c.fillRect(66,115,3,4);c.fillRect(70,118,1,2);c.fillRect(72,118,1,1);}
     c.fillStyle="#5a2a2a";c.fillRect(24,118,4,4);c.fillStyle="#2a3a5a";c.fillRect(100,118,4,4);};
   /* the inside of a room */
+  /* blood writing on a wall: lines = [[text,x,y]...]. Pixel letters from HZ.gl, a few darker pixels, drips that grow with time t */
+  const hzBlood=(c,lines,t,al)=>{if(!HZ.gl.Y)Object.assign(HZ.gl,{Y:[17,17,10,4,4,4,4],U:[17,17,17,17,17,17,14]});
+    c.globalAlpha=al;lines.forEach(([txt,x0,y0])=>{[...txt].forEach((ch,ci)=>{const gg=HZ.gl[ch];if(!gg)return;
+      for(let ry=0;ry<7;ry++)for(let rx=0;rx<5;rx++)if(gg[ry]>>(4-rx)&1){c.fillStyle=hzH(ci*5+rx,ry+y0)%6===0?"#4a0606":"#8a0e0e";c.fillRect(x0+ci*6+rx,y0+ry,1,1);}
+      const k=hzH(ci,y0+3);if(k%3===0){const ln=Math.min(2+k%9,2+Math.floor(t/20));c.fillStyle="#6a0a0a";c.fillRect(x0+ci*6+(k%5),y0+7,1,ln);c.fillStyle="#8a0e0e";c.fillRect(x0+ci*6+(k%5),y0+7+ln,1,1);}});});c.globalAlpha=1;};
   const hzRoomDraw2=(c,h)=>{const V=HZ.VW,VH=HZ.VH,WB=HZ.WB,CT=HZ.CT,FY=HZ.FY,R=h.inRoom,x=R.q||{},t=R.t,i=R.i;
     c.fillStyle="#000";c.fillRect(0,0,V,VH);
     if(i!==6){
@@ -1498,13 +1505,10 @@ const hzOverlays=(ctx,h)=>{
       if(off<64){hzGhost(c,105+sw,by+26,t,0,0);}
       else{c.fillStyle="#8d8f89";c.fillRect(92,FY-4,18,4);c.fillRect(88,FY-6,6,6);c.fillStyle="#050505";c.fillRect(88,FY-5,5,2);c.fillStyle="#fff";c.fillRect(88,FY-4,2,1);c.fillRect(91,FY-4,2,1);}
     }else if(i===7){
-      c.fillStyle="#3a2a1a";c.fillRect(28,84,86,2);c.fillRect(28,106,86,2);c.fillRect(28,86,2,20);c.fillRect(112,86,2,20);
-      const warn=x.st===0&&x.tm<40,look=x.st===1;
-      for(let r=0;r<2;r++)for(let k=0;k<7;k++){const dx=34+k*11+(r?5:0),by=r?106:84;
-        c.fillStyle="#3a2c34";c.fillRect(dx,by-9,5,9);c.fillStyle=look?"#d8d0c0":"#14100f";c.fillRect(dx,by-15,5,6);
-        if(look){c.fillStyle="#000";c.fillRect(dx+1,by-13,1,2);c.fillRect(dx+3,by-13,1,2);c.fillStyle="#b31010";c.fillRect(dx+1,by-12,1,1);c.fillRect(dx+3,by-12,1,1);}
-        else if(warn&&(t>>2)%2){c.fillStyle="#7a1010";c.fillRect(dx+1,by-13,3,1);}}
-      if(!x.got){c.fillStyle="#e9e2c8";c.fillRect(100,FY-4,3,4);c.fillRect(105,FY-4,3,4);c.fillRect(110,FY-3,3,3);}
+      /* the writing room: blood on the wall, a pool on the floor, and after the flare something stands in the corner */
+      c.fillStyle="#2a0606";c.fillRect(30,FY-4,64,3);c.fillRect(38,FY-6,44,2);c.fillStyle="#4a0a0a";c.fillRect(44,FY-4,20,1);
+      if(!x.got)hzBlood(c,[["THIS PLACE",34,56],["IS NOT WHAT",34,67],["IT SEEMS",34,78]],t,1);
+      else{hzBlood(c,[["NOW IT SEES",34,60],["YOU",34,74]],t+200,(t>>2)%7!==0?1:.4);hzGhost(c,110,FY,t,0,0);}
     }else if(i===8){
       c.fillStyle="#2a2a30";c.fillRect(46,76,28,3);c.fillRect(48,78,2,24);c.fillRect(70,78,2,24);c.fillStyle="#3a3a42";c.fillRect(44,100,32,14);c.fillStyle="#55555e";c.fillRect(44,100,32,2);c.fillStyle="#06090c";c.fillRect(48,102,24,5);
       c.fillStyle=(t>>4)%2?"#1a3040":"#142634";c.fillRect(50,104,20,2);c.fillStyle="#3a3028";c.fillRect(60,79,1,16);c.fillStyle="#4a3a22";c.fillRect(58,95,5,4);
@@ -1563,7 +1567,7 @@ const hzOverlays=(ctx,h)=>{
       hzRoomDraw(a,h);
       if(!(Rm.bk>0)){hzHole(b,Rm.x+Rm.dir*5,FY-13,56,1);hzHole(b,Rm.x+Rm.dir*5,FY-13,34,1);hzHole(b,13,FY-30,18,.8);if(Rm.i<4&&!h.got[Rm.i])hzHole(b,h.pp[Rm.i],Rm.i===3?116:104,12,.85);
         if(Rm.i===4){if(h.nur.st===4&&!h.key)hzHole(b,70,116,10,.8);if(h.nur.st===0)hzHole(b,88,104,9,.45);}
-        if(Rm.i===9&&h.alt)[34,62,90].forEach((sx,j)=>{if(h.alt[j])hzHole(b,sx,100,22,.9);});if(Rm.i===8)hzHole(b,60,104,16,.5);}
+        if(Rm.i===9&&h.alt)[34,62,90].forEach((sx,j)=>{if(h.alt[j])hzHole(b,sx,100,22,.9);});if(Rm.i===8)hzHole(b,60,104,16,.5);if(Rm.i===7)hzHole(b,68,78,46,.7);}
       b.globalCompositeOperation="source-over";a.drawImage(h.B,0,0);
     }else{
       hzWorld(a,cam,h);
@@ -1633,7 +1637,7 @@ const hzOverlays=(ctx,h)=>{
     }else if(pg===2){
       ctx.font=G;ctx.fillStyle=R;ctx.fillText("YOUR TASKS",cx,y);y+=16;
       y=wrap("Nothing is shown on screen while you play. Remember these.",y,"9px Cinzel,Georgia,serif",D,12)+4;
-      ["Take the four seeds","Wake the music box","Find the silver key","Light the three-candle altar","Dig through the bones","Slip past the watcher","Survive the cellar","Cross the black room","Walk past the dolls","Look into the well","Wake the candle crypt","Take the drowned lantern","Run to the gate"].forEach((q,i)=>{ctx.font="10px Cinzel,Georgia,serif";ctx.fillStyle=C;ctx.fillText((i+1)+".  "+q,cx,y);y+=15;});
+      ["Take the four seeds","Wake the music box","Find the silver key","Light the three-candle altar","Dig through the bones","Slip past the watcher","Survive the cellar","Cross the black room","Read the writing on the wall","Look into the well","Wake the candle crypt","Take the drowned lantern","Run to the gate"].forEach((q,i)=>{ctx.font="10px Cinzel,Georgia,serif";ctx.fillStyle=C;ctx.fillText((i+1)+".  "+q,cx,y);y+=15;});
     }else{
       ctx.font=G;ctx.fillStyle=R;ctx.fillText("HOW TO SURVIVE",cx,y);y+=18;
       y=wrap("Ghosts only move when your candle is NOT on them. Keep them in the light.",y,B,C,13)+3;
@@ -2540,6 +2544,19 @@ function heartbeat(v){
     o.connect(gn);gn.connect(ac.destination);o.start(n);o.stop(n+.18);});}catch(e){}
 }
 /* whisper from one side: pan -1 (left) .. 1 (right) */
+/* slow, ragged breathing: a rough inhale, then a lower exhale. v = volume */
+function breathe(v){
+  if(!ac) return;
+  try{const n=ac.currentTime,d=2.2,buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),data=buf.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+    const s=ac.createBufferSource(),bp=ac.createBiquadFilter(),am=ac.createGain(),lf=ac.createOscillator(),lg=ac.createGain(),gn=ac.createGain();
+    s.buffer=buf;bp.type="bandpass";bp.Q.value=1.1;
+    bp.frequency.setValueAtTime(900,n);bp.frequency.linearRampToValueAtTime(1500,n+.7);bp.frequency.linearRampToValueAtTime(500,n+1.2);bp.frequency.linearRampToValueAtTime(350,n+d);
+    am.gain.value=.7;lf.frequency.value=19;lg.gain.value=.3;lf.connect(lg);lg.connect(am.gain);
+    gn.gain.setValueAtTime(0,n);gn.gain.linearRampToValueAtTime(v,n+.65);gn.gain.linearRampToValueAtTime(v*.15,n+.9);gn.gain.linearRampToValueAtTime(v*1.1,n+1.25);gn.gain.linearRampToValueAtTime(0,n+d);
+    s.connect(bp);bp.connect(am);am.connect(gn);gn.connect(ac.destination);s.start(n);lf.start(n);lf.stop(n+d);
+  }catch(e){}
+}
 function whisper(pan,v){
   if(!ac) return;
   try{const n=ac.currentTime,d=1.1,buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),data=buf.getChannelData(0);
@@ -2695,43 +2712,27 @@ function deadHades(c,W,H,top,f){
 }
 
 let hzFV=0;
-/* Hades mini-game jumpscare faces. v=0: long-haired ghoul with blank white eyes. v=1: grainy pale face in the black with huge eyes. They take turns (hzFV). */
-function ghoulFace(c,w,h,t,f,v){v=0;
-  const s=Math.max(Math.min(w,h)*.5,Math.min(w*.7,h*.45))*Math.min(1,.3+t*4)*(1+t*.2),R=Math.random;
+/* Hades mini-game jumpscare face: the pixel monster (150x150 cells, each row stored as alternating run lengths: black, white, black, white...).
+   Same name and same arguments as before, so every place that used the old white face now shows this one. */
+const HADES_FACE_N=150;
+const HADES_FACE_ROWS=[[150],[150],[150],[75,1,74],[75,1,74],[75,1,74],[74,2,10,1,63],[72,7,5,3,63],[71,10,3,3,63],[69,14,1,3,63],[66,17,1,2,1,1,62],[64,21,2,1,62],[64,21,2,2,61],[61,29,1,1,58],[58,34,58],[58,34,58],[57,8,3,25,57],[55,4,2,2,1,1,4,25,56],[54,6,9,26,55],[53,4,1,1,10,28,53],[53,4,1,1,10,28,53],[49,8,13,17,1,10,3,1,48],[48,7,15,2,2,12,2,4,2,8,48],[48,7,15,2,2,12,2,4,2,8,48],[47,7,15,3,2,12,1,3,4,9,47],[47,3,1,2,16,3,2,12,1,3,5,9,46],[47,3,1,1,18,2,2,16,8,6,46],[48,2,20,1,2,14,12,6,45],[48,3,19,1,2,10,1,3,13,5,45],[47,3,2,2,7,2,7,1,1,12,1,2,14,3,46],[46,3,3,2,7,2,9,11,2,1,15,3,46],[45,3,4,2,18,12,1,1,16,3,45],[45,3,4,2,18,12,18,3,45],[44,3,2,2,1,1,20,10,19,4,44],[44,2,3,2,1,1,20,10,21,2,44],[44,2,2,6,16,1,1,11,1,1,8,1,10,3,43],[44,2,2,6,15,2,1,11,1,1,7,2,10,3,43],[44,2,2,6,1,1,13,2,1,11,1,2,7,1,9,3,44],[44,1,3,5,2,1,11,1,1,2,1,14,17,3,44],[44,1,5,3,2,2,1,1,7,20,17,2,45],[44,1,5,4,1,2,1,1,7,19,17,2,46],[44,1,6,6,1,1,3,1,3,19,17,2,46],[44,1,6,4,1,1,1,1,3,1,2,20,16,3,46],[44,1,4,1,2,3,1,1,1,1,2,2,2,10,1,9,1,1,13,4,46],[49,1,3,1,2,3,2,2,2,10,1,3,1,7,12,5,46],[49,1,3,1,2,4,1,2,2,1,1,8,1,2,2,7,12,5,1,2,43],[49,1,7,3,1,2,1,2,2,1,3,6,1,9,1,1,6,1,2,1,1,7,42],[49,1,4,1,3,2,1,2,1,2,7,17,5,2,2,1,2,6,42],[49,1,4,2,2,5,1,1,4,1,8,13,4,2,2,1,2,1,2,3,42],[49,1,4,2,3,3,7,2,3,1,5,11,4,2,1,2,5,2,43],[49,1,4,2,4,1,8,2,3,1,6,10,1,1,2,2,1,2,5,2,43],[49,1,5,3,2,1,8,2,2,3,7,8,1,1,1,6,4,3,43],[55,3,5,1,4,3,2,3,2,2,8,3,1,1,1,5,4,3,44],[56,2,4,2,2,1,1,3,2,3,2,2,8,5,1,4,5,3,44],[56,2,4,2,2,1,1,2,3,3,2,2,2,2,5,3,1,4,3,1,2,3,44],[56,2,4,2,4,2,3,3,2,2,2,2,2,2,2,2,7,2,3,2,44],[51,1,4,1,1,1,3,2,4,1,4,3,2,2,1,3,2,2,10,2,4,1,45],[51,1,4,1,1,1,4,1,4,1,4,2,3,1,2,3,1,3,1,2,6,3,4,1,45],[51,2,5,1,14,2,3,1,2,2,2,2,2,2,1,1,4,2,5,1,45],[51,2,5,3,13,1,3,1,2,2,2,2,2,2,1,1,4,2,5,1,45],[51,2,5,3,13,1,3,1,2,2,2,2,2,2,2,1,3,2,5,1,45],[51,2,6,2,13,1,3,1,2,2,2,1,3,1,2,2,3,2,5,1,45],[51,2,6,3,16,1,2,1,3,1,3,1,2,2,4,1,5,1,45],[51,2,6,3,16,1,2,1,3,1,6,1,5,1,5,1,45],[51,2,6,3,16,1,2,1,3,1,5,1,6,1,5,1,45],[38,1,12,2,7,4,14,1,2,1,9,1,12,1,45],[37,3,11,2,7,1,1,2,14,1,2,1,9,1,12,1,45],[36,4,11,2,7,1,2,1,14,1,11,2,12,1,45],[36,7,8,1,8,1,2,1,14,1,11,2,58],[35,9,7,1,8,1,2,3,12,1,11,2,58],[33,6,2,5,14,1,2,2,22,1,2,2,58],[32,4,5,6,3,2,8,1,2,2,22,1,2,2,58],[32,4,5,6,3,2,8,1,2,2,22,1,1,3,58],[31,5,8,9,7,1,2,2,2,1,19,1,1,3,58],[29,5,14,5,10,2,2,1,18,1,2,3,58],[27,5,18,3,10,2,2,1,18,1,1,3,59],[27,5,18,3,10,2,2,1,18,1,1,2,60],[27,4,20,3,10,2,1,1,16,1,3,2,60],[26,4,22,3,9,2,2,1,1,2,9,1,2,1,2,2,61],[26,4,22,3,9,2,2,1,1,2,9,1,2,1,2,2,61],[25,3,12,4,9,3,8,2,2,1,1,2,9,2,1,1,2,1,3,1,30,1,27],[23,4,12,5,9,3,8,3,3,2,9,2,3,2,3,1,28,4,26],[23,4,12,5,9,3,8,3,3,2,9,2,3,2,2,2,28,4,26],[22,4,10,8,10,3,7,4,2,2,9,2,3,1,3,2,26,7,25],[21,5,7,11,11,2,7,4,2,2,3,1,2,2,1,2,2,2,3,2,20,13,25],[20,6,6,7,1,4,11,2,7,5,1,2,3,1,2,2,1,2,2,2,3,2,20,8,1,4,25],[19,6,4,9,3,4,11,2,6,1,1,3,2,1,3,1,2,2,2,1,1,3,23,10,3,3,24],[19,5,2,10,6,4,10,2,6,1,2,2,2,1,2,2,2,2,4,2,19,11,2,3,3,3,23],[19,4,1,9,9,4,10,2,6,1,2,2,2,1,2,2,2,2,4,1,20,6,9,2,3,3,22],[17,14,13,3,9,2,9,2,5,2,2,2,3,2,1,1,18,3,13,1,3,4,21],[17,14,13,3,10,1,9,2,5,2,2,2,3,2,1,1,18,3,13,2,3,3,21],[17,12,16,3,19,2,1,1,3,2,2,2,3,4,17,4,14,1,3,4,20],[17,10,18,5,15,1,1,4,4,1,2,1,3,5,16,4,15,2,4,3,19],[15,11,20,4,15,1,1,4,11,5,16,3,17,2,3,3,19],[15,5,1,5,1,1,18,5,14,1,1,4,11,5,15,4,17,2,3,3,19],[15,4,1,16,11,4,14,1,1,1,1,2,10,2,1,2,16,4,18,2,2,3,19],[15,24,9,4,17,3,9,2,1,2,15,3,20,3,2,2,19],[15,3,1,21,9,3,17,3,1,1,7,2,1,2,14,3,22,6,19],[14,12,8,6,10,3,16,3,1,1,7,2,1,2,13,3,24,6,18],[14,12,8,6,10,3,15,1,1,2,1,1,5,1,1,2,1,2,13,2,25,7,17],[14,3,1,9,10,3,11,2,15,1,1,2,1,1,4,2,1,2,1,2,12,3,12,1,13,7,16],[13,3,2,10,10,3,10,2,15,1,1,2,1,1,4,5,2,1,10,4,11,4,14,6,15],[13,3,2,6,1,4,9,4,9,2,15,1,1,2,1,1,2,1,1,5,13,4,11,7,11,8,13],[13,2,3,5,3,5,8,3,9,2,15,1,2,3,2,1,1,5,13,3,10,12,8,9,12],[13,2,3,4,4,5,8,3,9,2,15,1,2,3,2,1,1,4,14,3,10,12,8,3,1,5,12],[13,2,3,4,5,6,6,4,8,2,18,3,2,1,1,4,14,2,8,1,1,5,1,14,1,3,1,5,12],[13,2,3,2,8,7,5,5,6,2,19,3,1,1,1,2,1,1,14,2,7,6,6,15,2,4,12],[13,1,4,3,10,5,5,4,6,2,19,3,1,4,4,1,11,2,7,4,14,9,2,4,12],[12,2,3,4,10,4,6,4,6,2,19,3,1,4,4,1,11,2,7,4,17,6,3,2,13],[12,2,3,3,12,3,7,3,6,2,18,4,1,4,4,1,11,1,8,3,19,5,3,2,13],[12,2,3,2,13,2,9,3,5,2,18,5,1,2,4,2,11,1,7,3,18,8,2,2,13],[11,2,3,3,13,2,9,3,25,8,3,3,11,1,6,3,18,9,3,1,13],[11,2,3,3,13,2,9,3,22,1,3,7,3,3,1,2,14,4,11,17,2,2,12],[11,2,2,4,13,2,10,2,20,4,2,7,3,6,14,4,10,10,3,6,1,1,13],[11,2,2,4,13,3,9,3,17,6,3,6,3,6,14,4,9,7,7,9,12],[11,2,1,5,14,3,9,2,17,2,2,3,3,3,1,1,3,5,15,3,8,1,1,3,10,10,12],[11,1,2,6,13,3,9,2,22,2,4,1,2,1,3,4,16,3,8,5,9,11,12],[11,1,2,6,13,4,8,2,23,1,4,1,2,1,3,4,15,4,8,4,10,12,11],[11,1,3,6,13,3,9,1,23,1,4,1,2,1,3,3,16,3,10,3,8,6,2,6,11],[11,1,2,8,13,2,9,1,19,1,8,1,2,1,4,1,17,2,9,1,1,2,8,6,4,6,10],[11,1,2,8,13,3,8,1,17,4,7,1,2,1,7,2,12,2,10,4,6,4,9,5,10],[11,1,2,9,13,2,8,1,17,4,10,1,7,3,11,2,10,2,7,4,10,4,11],[11,1,2,3,1,5,13,2,7,1,18,4,10,1,7,3,11,2,9,3,7,4,10,3,12],[11,1,2,2,2,5,13,2,25,5,4,1,5,1,6,5,10,2,8,4,7,4,9,4,12],[14,2,2,7,11,2,7,1,17,6,3,1,5,1,6,5,10,2,8,4,8,2,10,2,1,1,12],[14,2,2,2,1,4,11,1,8,1,14,3,3,3,2,2,5,1,5,8,9,1,8,3,9,2,9,5,12],[14,1,3,2,2,3,11,1,8,1,12,5,4,2,2,2,9,1,1,9,8,1,8,3,8,2,10,3,14],[14,1,3,2,2,3,11,1,20,5,5,1,4,1,9,12,17,2,8,2,10,3,14],[14,1,3,2,2,3,11,1,20,4,6,1,4,1,9,4,4,4,18,1,8,2,9,4,14],[14,1,3,2,2,3,11,1,20,3,7,1,4,1,9,4,4,4,18,1,8,2,8,5,14],[19,2,3,1,31,4,12,1,10,2,7,3,17,1,8,2,8,3,16],[19,2,3,1,31,3,7,1,17,1,7,2,18,1,8,2,8,3,16],[19,2,2,3,29,3,7,2,25,2,18,1,8,2,9,2,16],[19,2,3,2,29,3,6,3,13,2,10,2,18,1,8,2,9,2,16],[19,2,3,2,29,1,8,3,13,3,4,1,4,2,18,1,9,1,9,2,16],[19,2,4,1,26,2,9,4,14,3,1,4,3,2,3,2,13,1,9,2,9,1,16],[19,2,3,2,26,2,8,5,15,2,2,4,2,3,2,3,22,2,9,1,16],[19,2,3,2,26,1,7,5,21,4,3,2,1,4,22,1,10,1,16],[19,2,4,1,26,1,7,4,22,4,3,2,1,4,22,1,10,1,16],[19,2,4,1,24,2,7,5,22,4,4,6,22,1,10,1,16],[19,2,4,1,25,1,7,5,22,4,5,5,22,1,10,1,16],[19,2,4,1,31,7,22,3,7,4,33,1,16],[25,1,31,6,23,3,7,4,33,1,16],[25,1,31,6,6,2,2,1,9,1,1,4,9,3,32,1,16],[25,1,31,5,7,2,2,2,8,6,10,3,31,1,16],[57,1,1,3,11,3,7,7,9,3,48],[59,3,11,3,7,2,2,3,10,2,48],[59,3,12,2,7,1,3,3,10,2,48],[59,3,12,2,7,1,4,2,11,1,48],[59,3,12,2,7,1,5,1,11,1,48]];
+let hadesFaceCv=null;
+function hadesFaceBitmap(){
+  if(hadesFaceCv) return hadesFaceCv;
+  const N=HADES_FACE_N,cv=document.createElement("canvas");cv.width=cv.height=N;
+  const c=cv.getContext("2d"),id=c.createImageData(N,N),a=id.data;
+  for(let y=0;y<N;y++){let x=0,w=0;for(const n of HADES_FACE_ROWS[y]){
+    for(let i=0;i<n;i++,x++){const p=(y*N+x)*4,v=w?255:0;a[p]=a[p+1]=a[p+2]=v;a[p+3]=255;}w^=1;}}
+  c.putImageData(id,0,0);return hadesFaceCv=cv;
+}
+function ghoulFace(c,w,h,t,f,v){
+  /* the image is shown still: whole image fitted to the screen, no growing, no shake, no flicker */
   c.save();
-  if(v===0){
-    const bg=c.createLinearGradient(0,0,0,h);bg.addColorStop(0,"#8c8c8a");bg.addColorStop(.55,"#5c5c5a");bg.addColorStop(1,"#030303");
-    c.fillStyle=bg;c.fillRect(0,0,w,h);
-    for(let i=0;i<140;i++){c.fillStyle=R()<.5?"rgba(20,20,20,.22)":"rgba(225,225,225,.12)";c.fillRect(R()*w,R()*h*.75,2+R()*5,2+R()*3);}
-    c.translate(w/2+(R()-.5)*10,h*.46+(R()-.5)*10);
-    c.fillStyle="#0c0706";c.beginPath();c.moveTo(0,-s*.8);c.bezierCurveTo(s*.75,-s*.78,s*.95,-s*.1,s*.9,s*1.8);c.lineTo(-s*.9,s*1.8);c.bezierCurveTo(-s*.95,-s*.1,-s*.75,-s*.78,0,-s*.8);c.fill();
-    for(let i=0;i<46;i++){const sd=i%2?1:-1,a=R()*.45,x0=sd*s*(.08+R()*.3);c.strokeStyle=R()<.4?"rgba(120,55,32,.55)":"rgba(28,14,10,.9)";c.lineWidth=1+R()*2;c.beginPath();c.moveTo(x0*.3,-s*.78);c.quadraticCurveTo(sd*s*(.55+a),-s*.1,sd*s*(.5+R()*.4),s*(1+R()*.7));c.stroke();}
-    const fg=c.createRadialGradient(0,-s*.25,s*.05,0,0,s*.7);fg.addColorStop(0,"#ece6e0");fg.addColorStop(.7,"#aaa39d");fg.addColorStop(1,"#5e5753");
-    c.fillStyle=fg;c.beginPath();c.ellipse(0,0,s*.41,s*.56,0,0,7);c.fill();
-    c.fillStyle="rgba(95,35,50,.4)";[[-.2,-.12,.17,.1],[.2,-.12,.17,.1],[-.1,-.42,.12,.08],[.25,-.36,.07,.05],[-.28,.12,.1,.06]].forEach(q=>{c.beginPath();c.ellipse(q[0]*s,q[1]*s,q[2]*s,q[3]*s,0,0,7);c.fill();});
-    for(let i=0;i<150;i++){const a=R()*6.283,r=Math.sqrt(R());c.fillStyle=R()<.7?"rgba(35,30,30,.55)":"rgba(110,45,40,.5)";c.fillRect(Math.cos(a)*r*s*.4,Math.sin(a)*r*s*.54,1+R()*3,1+R()*3);}
-    [-1,1].forEach(q=>{const x=q*s*.2,y=-s*.12;c.fillStyle="rgba(30,12,22,.85)";c.beginPath();c.ellipse(x,y,s*.14,s*.085,q*.12,0,7);c.fill();c.fillStyle="#f2f2f0";c.beginPath();c.ellipse(x,y,s*.105,s*.055,q*.12,0,7);c.fill();c.strokeStyle="rgba(40,30,30,.7)";c.lineWidth=s*.008;c.stroke();});
-    c.fillStyle="rgba(25,15,15,.7)";[-1,1].forEach(q=>{c.beginPath();c.ellipse(q*s*.045,s*.17,s*.025,s*.018,0,0,7);c.fill();});
-    c.strokeStyle="rgba(40,25,25,.4)";c.lineWidth=s*.02;c.beginPath();c.moveTo(0,-s*.05);c.lineTo(-s*.03,s*.15);c.stroke();
-    const mh=s*(.22+.05*Math.sin(f*.8));c.fillStyle="#050202";c.beginPath();c.ellipse(0,s*.38,s*.13,mh,0,0,7);c.fill();
-    c.strokeStyle="rgba(50,12,18,.55)";c.lineWidth=s*.035;c.beginPath();c.moveTo(s*.2,s*.1);c.quadraticCurveTo(s*.26,s*.4,s*.18,s*.62);c.stroke();
-    const dg=c.createLinearGradient(0,s*.2,0,s*1.1);dg.addColorStop(0,"rgba(0,0,0,0)");dg.addColorStop(1,"rgba(0,0,0,.92)");c.fillStyle=dg;c.fillRect(-w,s*.2,w*2,h);
-    for(let i=0;i<60;i++){c.fillStyle="rgba(200,200,200,.35)";c.fillRect((R()-.5)*s*1.8,(R()-.2)*s*1.5,1+R()*2,1+R()*2);}
-  }else{
-    c.fillStyle="#000";c.fillRect(0,0,w,h);
-    c.translate(w*.47+(R()-.5)*10,h*.5+(R()-.5)*10);
-    const fg=c.createLinearGradient(-s*.45,0,s*.5,0);fg.addColorStop(0,"#c9c9c3");fg.addColorStop(.55,"#7d7d79");fg.addColorStop(1,"#1a1a1a");
-    c.save();c.beginPath();c.ellipse(0,0,s*.43,s*.62,0,0,7);c.clip();
-    c.fillStyle=fg;c.fillRect(-s,-s,s*2,s*2);
-    for(let i=0;i<900;i++){c.fillStyle=R()<.5?"rgba(0,0,0,.4)":"rgba(255,255,255,.28)";c.fillRect((R()-.5)*s*.9,(R()-.5)*s*1.3,2+R()*2,2+R()*2);}
-    c.fillStyle="#000";c.beginPath();c.ellipse(-s*.2,-s*.1,s*.19,s*.17,0,0,7);c.fill();c.beginPath();c.ellipse(s*.2,-s*.08,s*.2,s*.19,0,0,7);c.fill();
-    c.fillStyle="#e8e8e4";c.beginPath();c.ellipse(-s*.2,-s*.1,s*.11,s*.125,0,0,7);c.fill();c.fillStyle="#000";c.beginPath();c.arc(-s*.19,-s*.1,s*.018,0,7);c.fill();
-    c.fillStyle="#b9b9b4";c.beginPath();c.ellipse(s*.2,-s*.08,s*.08,s*.12,0,0,7);c.fill();c.fillStyle="#000";c.beginPath();c.arc(s*.19,-s*.08,s*.014,0,7);c.fill();
-    c.fillStyle="#111";c.beginPath();c.ellipse(-s*.03,s*.18,s*.035,s*.02,0,0,7);c.fill();c.fillRect(-s*.12,s*.36,s*.26,s*.02);
-    c.restore();
-  }
+  c.fillStyle="#000";c.fillRect(0,0,w,h);
+  const s=Math.min(w,h)*(1+.25*(1-Math.min(1,t)));   /* t<1 = the quick pop at the start of the death scare (bigger, then settles). t=1 = still */
+  c.imageSmoothingEnabled=false;
+  c.drawImage(hadesFaceBitmap(),Math.round(w/2-s/2),Math.round(h/2-s/2),Math.round(s),Math.round(s));
   c.restore();
-  if(f%7<2){c.fillStyle="rgba(0,0,0,.45)";c.fillRect(0,0,w,h);}
 }
 let raf=0,keyDown=null,keyUp=null;
 function showGame(on,endless){
@@ -2749,7 +2750,7 @@ function showGame(on,endless){
   const fit=()=>{const r=st.getBoundingClientRect(),k=Math.min(r.width/GW,r.height/GH),q=Math.min(3,k*(devicePixelRatio||1));
     cv.style.width=Math.floor(GW*k)+"px";cv.style.height=Math.floor(GH*k)+"px";cv.width=Math.round(GW*q);cv.height=Math.round(GH*q);};
   fit(); window.onresize=fit;
-  const ctx=cv.getContext("2d"),sx=sc.getContext("2d"),keys=window.GK={},SCARE=100; let game=createGame(GW,GH),scare=0,hscare=0,ckR=1,ckD=0,mb=0,pX=0,hD=0;   /* ckR: checkpoint round (1 = none), ckD: deaths since that checkpoint, mb: game mode at the last step (3 Zeus fight, 5 Poseidon fight, 6 horror = mini games) */
+  const ctx=cv.getContext("2d"),sx=sc.getContext("2d"),keys=window.GK={},SCARE=100,HSCARE=330; let game=createGame(GW,GH),scare=0,hscare=0,ckR=1,ckD=0,mb=0,pX=0,hD=0;   /* ckR: checkpoint round (1 = none), ckD: deaths since that checkpoint, mb: game mode at the last step (3 Zeus fight, 5 Poseidon fight, 6 horror = mini games) */
   const clamp=x=>Math.max(game.pw/2,Math.min(GW-game.pw/2,x));
   const move=x=>{if(game.frozen>0)return;const r=cv.getBoundingClientRect();game.px=clamp((x-r.left)*GW/r.width);};
   const restart=()=>{
@@ -2782,7 +2783,11 @@ function showGame(on,endless){
     if(game.hzDead&&game.hzDead()){   /* caught in the horror level: Hades burning skull + loud noise, then restart the mini-game */
       if(hscare===0){sc.width=innerWidth;sc.height=innerHeight;sc.hidden=false;audio();hzFV++;const kk=game.hz&&game.hz.killer;if(kk==="girl"){girlScream();thunder(.9,0);}else{hadesRoar();thunder(.9,0);if(kk==="dog")howl(0,.9);}}
       hscare++;
-      if(hscare>=SCARE){hscare=0;sc.hidden=true;game.hzRevive();}
+      if(hscare>20&&(hscare-20)%24===0)heartbeat(.9);   /* a thump every time the face blinks back on */
+      if(hscare%40===25)whisper(Math.random()*2-1,.5);
+      if(hscare%100===30)breathe(.55);
+      if(hscare===150)hadesGrowl(2.6,.45);
+      if(hscare>=HSCARE){hscare=0;sc.hidden=true;game.hzRevive();}
     }
     if(game.over&&!game.ready){
       const zs=game.round>=2,ps=game.round>=3,hs=game.round>=4;
@@ -2794,7 +2799,8 @@ function showGame(on,endless){
   const loop=now=>{
     acc+=Math.max(0,Math.min(100,now-last));last=now;
     while(acc>=STEP){tick();acc-=STEP;}
-    if(hscare>0){ghoulFace(sx,sc.width,sc.height,hscare/SCARE,hscare,hzFV%2);}
+    if(hscare>0){const on=hscare<20||((hscare-20)%24)<15;   /* first 20 steps: the pop. Then the face stays still and blinks for the rest of the 5.5 s */
+      if(on)ghoulFace(sx,sc.width,sc.height,Math.min(1,hscare/20),hscare,hzFV%2);else{sx.fillStyle="#000";sx.fillRect(0,0,sc.width,sc.height);}}
     if(game.over&&!game.ready&&scare>0){const rd=game.round;(rd>=4?hades:rd>=3?poseidon:rd>=2?zeus:medusa)(sx,sc.width,sc.height,scare/SCARE,scare);}
     ctx.setTransform(cv.width/GW,0,0,cv.height/GH,0,0);game.draw(ctx);raf=requestAnimationFrame(loop);}; raf=requestAnimationFrame(loop);
 }
