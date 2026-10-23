@@ -768,14 +768,33 @@ HZ.lore.push([142,"SIGN: Some words only show in the dark. Shine your candle on 
   HZ.props=[340,1010,1200,1470,2150,2420,2800,3500,3976,4240].map((x,i)=>[x,i%3,i%2]);
   /* CHANGED: DRAWERS. Most of the wax is hidden here. ENTER at a drawer opens it. 16 drawers: 13 wax in total, 4 are empty. Kept 34-60 px away from doors, closets, signs, the bone wall and the gate (the crowded room area gets the tighter margin). */
   {const bad=[];HZ.dp.forEach(g=>g.forEach(r=>bad.push(r[0],r[1])));Object.values(HZ.dx).forEach(v=>bad.push(v));HZ.closets.forEach(v=>bad.push(v));HZ.signs.forEach(v=>bad.push(v));bad.push(HZ.wallx,HZ.MX,HZ.gate);
-   const ok=(x,m)=>x>110&&x<HZ.gate-80&&bad.every(b=>Math.abs(b-x)>=m),give=[1,1,0,2,1,0,1,1,0,1,2,1,0,1,1,0],ND=give.length;let sd=4417;const rr=()=>(sd=(sd*1664525+1013904223)>>>0)/4294967296;HZ.dw=[];
+   const ok=(x,m)=>x>110&&x<HZ.gate-80&&bad.every(b=>Math.abs(b-x)>=m),give=[0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,1],ND=give.length;let sd=4417;const rr=()=>(sd=(sd*1664525+1013904223)>>>0)/4294967296;HZ.dw=[];
    for(let i=0;i<ND;i++){let x=Math.round(220+i*(HZ.gate-420)/(ND-1)+(rr()-.5)*60);let fin=0;for(const m of [60,46,34]){for(let k=0;k<50&&!fin;k++){const sh=(k%2?1:-1)*Math.ceil(k/2)*20;if(ok(x+sh,m)&&HZ.dw.every(d=>Math.abs(d[0]-x-sh)>=100)){x+=sh;fin=1;}}if(fin)break;}HZ.dw.push([x,give[i]]);}HZ.dw.sort((u,v)=>u[0]-v[0]);}
   }}
+/* CHANGED (Hades pacing): the hall is stretched again, NOT evenly. Long empty stretches now sit between doors, so you can walk a minute with only the dark and your footsteps. The order of everything is kept. The last door stays close to the gate so the dog chase is as long as before. */
+{const Z=6.0,SEG=[[1015,1400],[1270,600],[1500,600],[1740,600],[1970,1800],[2270,0],[2590,600],[2800,600],[3030,1800],[3260,600],[3480,600],[3700,1200]],LAST=3700;
+ const f=v=>{let r=Math.min(v,LAST)*Z;for(const q of SEG)if(v>q[0])r+=q[1];if(v>LAST)r+=v-LAST;return Math.round(r);};
+ HZ.rb=[140,290,440,580].map(v=>f(v*HZ.KS));
+ HZ.WW=f(HZ.WW);HZ.gate=f(HZ.gate);HZ.MX=f(HZ.MX);HZ.PX=f(HZ.PX);HZ.hang=HZ.hang.map(f);HZ.dp=HZ.dp.map(gr=>gr.map(pp=>pp.map(f)));
+ HZ.lore=HZ.lore.map(l=>[f(l[0]),l[1]]);HZ.signs=HZ.signs.map(f);HZ.decor=HZ.decor.map(d=>[d[0],f(d[1]),d[2]]);HZ.wd=HZ.wd.map(d=>[d[0],f(d[1]),d[2]]);
+ HZ.wlo=f(HZ.wlo);HZ.whi=f(HZ.whi);HZ.wallx=f(HZ.wallx);HZ.closets=HZ.closets.map(f);HZ.props=HZ.props.map(pp=>[f(pp[0]),pp[1],pp[2]]);
+ for(const k in HZ.dx)HZ.dx[k]=f(HZ.dx[k]);HZ.dw=HZ.dw.map(d=>[f(d[0]),d[1]]);
+ /* wax is VERY rare now: 2 stubs on the floor (drawers hold 6 more). It only keeps your candle alive. */
+ {const bad=[];HZ.dp.forEach(q=>q.forEach(r=>bad.push(r[0],r[1])));Object.values(HZ.dx).forEach(v=>bad.push(v));HZ.closets.forEach(v=>bad.push(v));HZ.dw.forEach(d=>bad.push(d[0]));HZ.props.forEach(p=>bad.push(p[0]));HZ.signs.forEach(v=>bad.push(v));
+  HZ.wax=[.33,.58].map(r=>{const x=Math.round(HZ.gate*r);for(let k=0;k<80;k++){const sh=(k%2?1:-1)*Math.ceil(k/2)*25;if(bad.every(b=>Math.abs(b-(x+sh))>=90))return x+sh;}return x;});}
+ /* the longer hall gets more floor and wall marks so it does not look empty */
+ {let sd=31337;const rr=()=>(sd=(sd*1664525+1013904223)>>>0)/4294967296;
+  for(let i=0;i<140;i++)HZ.decor.push(["stain",60+rr()*(HZ.WW-120),HZ.WB+9+rr()*24]);
+  for(let i=0;i<120;i++)HZ.decor.push(["fcrack",50+rr()*(HZ.WW-100),HZ.WB+7+rr()*26]);
+  for(let i=0;i<140;i++)HZ.wd.push(["wcrk",50+rr()*(HZ.WW-100),34+Math.floor(rr()*52)]);
+  HZ.decor.sort((a,b)=>a[2]-b[2]);}
+ /* the 4 roaming ghosts: where each one lives and how far it paces */
+ HZ.gh=[.24,.44,.62,.80].map(r=>Math.round(HZ.gate*r));HZ.GR=800;}
 const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
   /* NEW: where the rotten floorboards are (far from every door, closet, drawer, sign, prop and wax stub) */
   {const bad=[];HZ.dp.forEach(g=>g.forEach(r=>bad.push(r[0],r[1])));Object.values(HZ.dx).forEach(v=>bad.push(v));HZ.closets.forEach(v=>bad.push(v));HZ.signs.forEach(v=>bad.push(v));HZ.dw.forEach(d=>bad.push(d[0]));HZ.props.forEach(p=>bad.push(p[0]));HZ.wax.forEach(v=>bad.push(v));bad.push(HZ.wallx,HZ.MX,HZ.gate);
    let bx=1500,bd=-1;for(let x=1250;x<=1640;x+=5){const d=Math.min(...bad.map(b=>Math.abs(b-x)));if(d>bd){bd=d;bx=x;}}HZ.fx=bx;}
-  const hzRoom=x=>x<140*HZ.KS?0:x<290*HZ.KS?1:x<440*HZ.KS?2:x<580*HZ.KS?3:4;
+  const hzRoom=x=>x<HZ.rb[0]?0:x<HZ.rb[1]?1:x<HZ.rb[2]?2:x<HZ.rb[3]?3:4;
   const hzCan=(h,x,r)=>!!(h&&h.cp&&h.cp.some(c=>Math.abs(x-c.x)<r));
   /* NEW: the last door (the fourth seed) stays shut until every task is done and every scripted scare has played. Missing scares are played for you, one per ENTER. */
   const hzGate=h=>{
@@ -783,36 +802,21 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
     if(miss.length){hzSay(h,"The last door will not open. Unfinished: "+miss[0]+(miss.length>1?" and "+(miss.length-1)+" more":"")+".",230);whisper(0,.15);return true;}
     const x=h.xs;if(!x)return true;
     if(h.crawl||h.slam||h.fb||h.ds||h.fsCd>0){hzSay(h,"The halls are not finished with you. Wait.",90);return true;}
-    const sc=[
-      [()=>!x.d.eyes,()=>{x.d.eyes=1;x.eyes=130;hadesGrowl(2,.3);}],
-      [()=>!x.d.hand,()=>{x.d.hand=1;x.hand={t:0,x:W/2+h.dir*70};dragSound();heartbeat(1);}],
-      [()=>!x.d.fire,()=>{x.d.fire=1;h.skull=12;hadesGrowl(1.8,.6);}],
-      [()=>!x.d.mir,()=>{x.d.mir=1;h.mir.s=2;x.txt="HE STANDS BEHIND YOU";x.tt=45;x.gl=16;thunder(.6,0);heartbeat(1);whisper(-h.dir,.35);}],
-      [()=>!h.pDone,()=>{h.pDone=1;h.face=14;scream();}],
-      [()=>!h.dDone,()=>{h.dDone=1;const d=h.doors.find(q=>q.locked)||{x:h.x+30};h.ds={x:d.x,t:0};thunder(.7,0);h.nflash=6;}],
-      [()=>!h.fbDone,()=>{h.fbDone=1;h.fb={x:hzCl(h.x+h.dir*22,30,HZ.WW-30),t:0};thunder(.5,0);heartbeat(1);h.nflash=3;}],
-      [()=>!h.turnDone,()=>{h.turnDone=1;h.souls.push({x:hzCl(h.x+h.dir*14,30,HZ.WW-8),lit:1,ch:0,tr:[],dis:0});h.face=14;noiseHit();}],
-      [()=>!h.crawlDone,()=>{h.crawl={x:h.x+h.dir*20,ux:-h.dir,s:0,t:0,d:20};crawlSting();}],
-      [()=>!h.fake,()=>{h.fake=1;h.dark=14;h.fkT=18;whisper(1,.3);heartbeat(.7);}],
-      [()=>!h.slamDone,()=>{h.slam={t:0};h.silent=1;hzAmbLevel(0);}]];
-    for(const q of sc){if(q[0]()){q[1]();h.fsCd=170;hzSay(h,"The halls are not finished with you yet.",160);return true;}}
+    /* CHANGED: the last door no longer plays a pile of forced scares. It only checks the tasks. */
     return false;};
   const hzSafe=x=>HZ.fires.some(f=>Math.abs(x-f)<HZ.FR)||hzCan(g.hz,x,18);
   const hzCamX=h=>hzCl(Math.round(h.x-HZ.VW/2),0,HZ.WW-HZ.VW);
   /* THE LIGHT CHECK: the candle is held out in front of you. A ghost is "lit" (frozen) only if it is in front of you, inside the candle's reach. Behind you is dark. */
   const hzLit=(h,x)=>{if(h.fl<=.35)return false;const dx=x-h.x;return dx*h.dir>=-3&&Math.abs(dx)<=h.L;};
-  const hzSpawn=(ch,force)=>{const h=g.hz;if(!force&&h.spCd>0)return;h.spCd=1800;for(let i=0;i<40;i++){const sd=Math.random()<.5?-1:1,x=h.x+sd*(160+Math.random()*90);
-    if(x<30||x>HZ.WW-8||HZ.fires.some(f=>Math.abs(x-f)<HZ.FR+8))continue;
-    h.souls.push({x,lit:0,ch:ch?1:0,tr:[],dis:0});return;}
-    h.souls.push({x:hzCl(h.x+(h.x<HZ.WW/2?1:-1)*190,30,HZ.WW-8),lit:0,ch:ch?1:0,tr:[],dis:0});};
+  const hzSpawn=()=>{};   /* CHANGED: ghosts no longer spawn at random. The 4 that exist are placed once in hzReset and roam. */
   const hzSay=(h,m,t)=>{h.msg=m;h.mt=t||190;};   /* a line of story text at the top of the screen */
   const hzSayQ=(h,a)=>{const f=a.shift();hzSay(h,f[0],f[1]);h.q=a;};   /* several lines, one after the other */
   /* start / restart. first=true: full reset. false: after dying, back at the river and every pomegranate must be collected again */
   const hzReset=first=>{const h=g.hz;const kk=h.killer||"";
     /* NEW: the third seed sets a spawn point. Die after that and you wake there with everything you did kept. Die before it and the whole run starts again. */
     const keep=(!first&&h.spx!=null)?{doors:h.doors,pp:h.pp,mm:h.mm,mmd:h.mmd,wg:h.wg,dwo:h.dwo,cn:Math.max(2,h.cn||0),key:h.key,nur:h.nur}:null;
-    Object.assign(h,{cn:2,cp:[],c0:0,wg:HZ.wax.map(()=>0),dwo:HZ.dw.map(()=>0),woR:60,wom:0,pl:0,x:40,dir:1,walk:0,stepAcc:0,foot:0,peek:null,dead:0,fl:1,flT:0,flTarget:1,hbT:0,whT:240,slam:null,silent:0,out:0,dark:0,fkT:0,catch:0,souls:[],spCd:0,L:24,crawl:null,cer:null,face:0,skull:0,nflash:0,pa:0,hg:HZ.hang.map(()=>({d:0})),
-      br:0,bcd:0,dim:0,rq:[],pt:[],inRoom:null,hid:null,en0:false,sp0:false,msg:"",mt:0,ds:null,killer:"",cryT:0,pend:0,q:[],fb:null,echo:0,echoT:1500,key:0,nur:{w:0,st:0,t:0},eyes:Array.from({length:10},()=>({x:100+Math.random()*(HZ.WW-120),y:36+Math.floor(Math.random()*58),ph:Math.floor(Math.random()*240)})),
+    Object.assign(h,{cn:2,cp:[],c0:0,wg:HZ.wax.map(()=>0),dwo:HZ.dw.map(()=>0),woR:60,wom:0,oc:0,pl:0,x:40,dir:1,walk:0,stepAcc:0,foot:0,peek:null,dead:0,fl:1,flT:0,flTarget:1,hbT:0,whT:240,slam:null,silent:0,out:0,dark:0,fkT:0,catch:0,souls:[],spCd:0,L:24,crawl:null,cer:null,face:0,skull:0,nflash:0,pa:0,hg:HZ.hang.map(()=>({d:0})),
+      br:0,bcd:0,dim:0,rq:[],pt:[],inRoom:null,hid:null,en0:false,sp0:false,msg:"",mt:0,ds:null,killer:"",cryT:0,pend:0,q:[],fb:null,echo:0,echoT:7200,key:0,nur:{w:0,st:0,t:0},eyes:Array.from({length:10},()=>({x:100+Math.random()*(HZ.WW-120),y:36+Math.floor(Math.random()*58),ph:Math.floor(Math.random()*240)})),
       doors:[],fall:null,kt:null,rmsg:null,pp:[0,0,0,0].map(()=>HZ.ps[Math.floor(Math.random()*HZ.ps.length)])});
     /* every attempt: in each room one real door (pomegranate inside) and one locked decoy, at new random spots */
     HZ.dp.forEach((gr,i)=>{const gi=Math.floor(Math.random()*2);h.doors.push({x:gr[gi][Math.floor(Math.random()*2)],i,locked:0},{x:gr[1-gi][Math.floor(Math.random()*2)],i,locked:1});});
@@ -820,13 +824,16 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
     h.pp[3]=74;h.pp[4]=88;
     h.mm=[0,1,2].map(i=>Math.random()<(i===0?.3:.45)?1:0);h.mmd=[0,0,0,0];   /* mimic seeds in the first three rooms */   /* the last pomegranate lies on the floor of the girl's room */
     if(keep)Object.assign(h,keep);
-    if(first)Object.assign(h,{spx:null,kitDone:0,fHint:0,fsCd:0,gf:0,cdone:0,bdone:0,dolldone:0,welldone:0,sig:0,crypt:0,chap:0,rel:0,t:0,seeds:0,got:[0,0,0,0],quiet:1,fake:0,wall:{d:0,open:0},alt:[0,0,0],slamDone:0,spawned:0,room:-1,toast:0,chase:0,ct:0,wh3:0,whR:60,crawlT:0,crawlDone:0,chDone:0,turnDone:0,pDone:0,dDone:0,fbDone:0,lw:Array(40).fill(0),hw:[0,0,0],mir:{s:0,t:0}});
+    if(first)Object.assign(h,{spx:null,kitDone:0,fHint:0,fsCd:0,gf:0,cdone:0,bdone:0,dolldone:0,welldone:0,sig:0,crypt:0,chap:0,rel:0,t:0,seeds:0,got:[0,0,0,0],quiet:1,fake:0,wall:{d:0,open:1},alt:[0,0,0],slamDone:0,spawned:0,room:-1,toast:0,chase:0,ct:0,wh3:0,whR:60,crawlT:0,crawlDone:0,chDone:0,turnDone:0,pDone:0,dDone:0,fbDone:0,lw:Array(40).fill(0),hw:[0,0,0],mir:{s:0,t:0}});
     else{
       if(keep){h.x=h.spx;h.seeds=3;h.got=[1,1,1,0];h.chase=0;h.ct=0;h.hw[2]=0;h.t=Math.max(h.t,3600);h.quiet=1;h.spawned=1;h.fsCd=0;h.gf=0;hzSpawn();}
-      else{Object.assign(h,{t:0,seeds:0,got:[0,0,0,0],quiet:1,fake:0,wall:{d:0,open:0},alt:[0,0,0],slamDone:0,spawned:0,room:-1,toast:0,chase:0,ct:0,wh3:0,whR:60,crawlT:0,crawlDone:0,chDone:0,turnDone:0,pDone:0,dDone:0,fbDone:0,lw:Array(40).fill(0),hw:[0,0,0],mir:{s:0,t:0},
+      else{Object.assign(h,{t:0,seeds:0,got:[0,0,0,0],quiet:1,fake:0,wall:{d:0,open:1},alt:[0,0,0],slamDone:0,spawned:0,room:-1,toast:0,chase:0,ct:0,wh3:0,whR:60,crawlT:0,crawlDone:0,chDone:0,turnDone:0,pDone:0,dDone:0,fbDone:0,lw:Array(40).fill(0),hw:[0,0,0],mir:{s:0,t:0},
         cdone:0,bdone:0,dolldone:0,welldone:0,sig:0,crypt:0,chap:0,rel:0,cl:0,cb:0,spx:null,xs:null,wf:null,loreCd:0,fsCd:0,gf:0,ds:null,kitDone:0,fHint:0});}hzSay(h,({girl:"She only wanted someone to stay.",ghost:"They only wanted to be remembered.",hanger:"Some of them never stop falling.",dog:"He only guards what he loves.",mimic:"Some seeds are hungry.",figure:"He walks the halls for a reason.",crawler:"It was a child once.",drowned:"The water remembers everyone it takes."})[kk]||"The seeds are hidden again.",230);h.q=[[({girl:"She is still waiting where you left her.",ghost:"Hades remembers every one of them.",hanger:"Look up before you walk under them.",dog:"Drop a candle. Make him wait.",mimic:"Shine your light before you reach for anything.",figure:"Wait until his back is turned.",crawler:"Do not let it reach you in the dark.",drowned:"Pull free. Do not stop pulling."})[kk]||"Every seed must be taken again.",230]];}   /* died: all pomegranates must be collected again */
+    /* CHANGED: exactly 4 ghosts in the whole game. They roam their own stretch of the hall like the tall man. No random spawns. */
+    h.souls=HZ.gh.map((gx,i)=>({x:gx,lit:0,ch:i===2?1:0,tr:[],dis:0,rm:1,home:gx,rng:HZ.GR,dir:i%2?1:-1,p:Math.floor(Math.random()*300),st:0}));
+    h.souls.forEach(q=>{if(Math.abs(q.home-h.x)<q.rng+800){q.home=hzCl(h.x+(q.home>=h.x?1:-1)*(q.rng+1000),q.rng+60,HZ.WW-q.rng-60);q.x=q.home;}});
     h.open=h.seeds>=4?1:0;};
-  const hzInit=()=>{g.hz={};hzReset(true);hzAmbient(true);hzSayQ(g.hz,[["Hades' halls. Take back the four seeds.",230],["Your little sister is somewhere in the dark.",230],["Hades took her. Every tear in these halls is his doing.",230],["She is not lost. He took her a little at a time.",230],["Signs mark the halls. Read them. They are all you have.",230],["Do not let the candle die.",210]]);};
+  const hzInit=()=>{g.hz={};hzReset(true);hzAmbient(true);hzSayQ(g.hz,[["Hades' halls. Take back the four seeds.",230],["Your little sister is somewhere in the dark.",230],["Do not let the candle die.",210]]);};
   g.hzDead=()=>g.bs===6&&!!g.hz&&g.hz.dead>0;
   g.hzRevive=()=>{hzReset(false);hzAmbLevel(.05);};
   const hzFinish=()=>hzThroneStart();   /* gate reached -> throne room */
@@ -841,43 +848,41 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
     hzStep();};
   /* last pomegranate: lights go out, Hades skull flashes, EVERY ghost now moves toward you whether you look or not, the gate is open */
   const hzChase=h=>{h.chase=1;h.ct=0;h.cn=Math.max(h.cn,2);h.dark=50;h.skull=14;h.hw[2]=1;thunder(.8,0);rumble();howl(0,.3);hzAmbLevel(.09);};
-  /* SPACE: the candle flares. Ghosts, ceiling hangers and Cerberus in range are destroyed / driven off */
+  /* SPACE: the candle flares. Ceiling hangers and Cerberus in range are driven off. CHANGED: ghosts are NOT destroyed any more. */
   const hzBurst=h=>{zap();hzAmbLevel(.08);
-    h.souls.forEach(s=>{if(!s.dis&&Math.abs(s.x-h.x)<=HZ.BR){s.dis=1;for(let i=0;i<10;i++)h.pt.push({x:s.x+(Math.random()-.5)*5,y:HZ.FY-4-Math.random()*16,vx:(Math.random()-.5)*.8,vy:-.3-Math.random()*.6,l:35+Math.random()*20});}});
     h.hg.forEach((q,i)=>{if(!q.d&&Math.abs(HZ.hang[i]-h.x)<=HZ.BR){q.d=2;for(let k=0;k<10;k++)h.pt.push({x:HZ.hang[i]+(Math.random()-.5)*5,y:HZ.CT+30+Math.random()*50,vx:(Math.random()-.5)*.8,vy:-.2-Math.random()*.5,l:35+Math.random()*20});}});
     if(h.cer&&Math.abs(h.cer.x-h.x)<=HZ.BR+20)h.cer.fl=130;
     if(h.peek)h.peek=null;};
   const hzMore=(h,sec,safeP)=>{
-  const x=h.xs=h.xs||{eyes:0,hand:null,run:null,txt:"",tt:0,gl:0,d:{},vt:1800,dg:1500,rs:3000};
+  const x=h.xs=h.xs||{eyes:0,hand:null,run:null,txt:"",tt:0,gl:0,d:{},vt:9000,dg:1500,rs:3000};
   const once=(k,c,f)=>{if(!x.d[k]&&c){x.d[k]=1;f();}};
+  /* CHANGED: hint text and signs show only when nothing else is on screen and 25 s have passed since the last one, otherwise they wait (a sign stays unread until you walk past it again) */
+  if(h.tipCd>0)h.tipCd--;
+  const tip=(m,t)=>{if(h.mt>0||h.q.length||h.tipCd>0||h.loreCd>0)return false;hzSay(h,m,t);h.tipCd=2400;h.loreCd=Math.max(h.loreCd,1500);return true;};
+  const once2=(k,c,f)=>{if(!x.d[k]&&c){if(f()!==false)x.d[k]=1;}};
   if(x.eyes>0)x.eyes--;if(x.tt>0)x.tt--;if(x.gl>0)x.gl--;
   const flash=m=>{x.txt=m;x.tt=45;x.gl=16;thunder(.6,0);heartbeat(1);};
-  once("eyes",sec>=20,()=>{x.eyes=130;hadesGrowl(2,.3);hzSay(h,"Something very old is watching you.",170);});
-  once("hand",sec>=70&&!safeP&&h.walk>0,()=>{x.hand={t:0,x:W/2+h.dir*70};dragSound();heartbeat(1);});
   once("s1",h.seeds>=1,()=>{flash("HADES DID THIS");hzSayQ(h,[["The river was his first lie.",200],["He promised her a quiet place.",200]]);});
   once("s2",h.seeds>=2,()=>{h.skull=12;hadesGrowl(1.6,.5);hzSayQ(h,[["He took the name out of her mouth.",200],["Every locked door is a promise he broke.",200]]);});
   once("s3",h.seeds>=3,()=>{x.eyes=130;hadesGrowl(2.2,.4);flash("HE IS CLOSE");hzSayQ(h,[["He fed on her crying. It made him stronger.",220]]);});
   once("fire",h.room===3,()=>{h.skull=12;hadesGrowl(1.8,.6);});
   once("mir",h.room===2&&h.mir.s>=2&&Math.abs(h.x-HZ.MX)<40,()=>{flash("HE STANDS BEHIND YOU");whisper(-h.dir,.35);});
-  if(sec>=60&&--x.vt<=0){x.vt=2200+Math.floor(Math.random()*1200);
+  if(sec>=240&&--x.vt<=0){x.vt=9000+Math.floor(Math.random()*5400);
     const L=["Come closer.","She called for you for years. I let her.","Why did you leave her?","I only wanted company.","She is so quiet now."];
-    hzSay(h,L[Math.floor(Math.random()*L.length)],150);hadesGrowl(1.2,.2);whisper(Math.random()*2-1,.3);}
+    if(h.mt<=0&&!h.q.length)hzSay(h,L[Math.floor(Math.random()*L.length)],150);hadesGrowl(1.2,.2);whisper(Math.random()*2-1,.3);}
   const w=h.wf=h.wf||{x:HZ.wlo+40,dir:1,p:0,k:0};w.k++;
   if(w.hunt>0){w.hunt--;w.dir=h.x>w.x?1:-1;w.x+=w.dir*.95;if(Math.abs(w.x-h.x)<7)hzKill(h,"figure");}else if(w.p>0)w.p--;else{if(hzCan(h,w.x+w.dir*16,10)){w.dir*=-1;w.p=50;}w.x+=w.dir*.38;if(w.x>=HZ.whi){w.x=HZ.whi;w.dir=-1;w.p=110;}else if(w.x<=HZ.wlo){w.x=HZ.wlo;w.dir=1;w.p=110;}if(w.k%22===0&&Math.abs(w.x-h.x)<260)plopAt(0,44+Math.random()*10);}
-  once("drw",!h.hid&&HZ.dw.some((d,i)=>!h.dwo[i]&&Math.abs(d[0]-h.x)<40),()=>hzSay(h,"A drawer. ENTER to search it. Wax is hidden in drawers.",200));   /* CHANGED */
-  once("clo",!h.hid&&HZ.closets.some(q=>Math.abs(q-h.x)<60),()=>hzSay(h,"A wardrobe. ENTER to hide from ghosts and from him. When he passes, HOLD SPACE.",220));
+  once2("drw",!h.hid&&HZ.dw.some((d,i)=>!h.dwo[i]&&Math.abs(d[0]-h.x)<40),()=>tip("A drawer. ENTER to search it. Wax is hidden in drawers.",200));   /* CHANGED */
+  once2("clo",!h.hid&&HZ.closets.some(q=>Math.abs(q-h.x)<60),()=>tip("A wardrobe. ENTER to hide from ghosts and from him. When he passes, HOLD SPACE.",220));
   if(h.hid){const q=h.hid,near=Math.abs(w.x-q.x)<48&&!(w.hunt>0);
     const hold=!!(window.GK||{})[" "]||!!(g.tpt&&g.tpt.y>H*.8&&g.tpt.x>W*.65);q.near=near;
     if(near&&!q.gasp){if(h.t%40===0)heartbeat(.6);
       if(hold){q.br-=.27;q.ns=Math.max(0,q.ns-1.2);}else{q.ns+=1.4;q.br=Math.min(100,q.br+.15);}
       if(q.br<=0||q.ns>=70){q.gasp=1;h.nflash=3;whisper(0,.6);heartbeat(1);thunder(.35,0);hzSay(h,"You gasp. He heard.",150);w.hunt=260;w.p=0;}}
     else if(!q.gasp){q.br=Math.min(100,q.br+.5);q.ns=Math.max(0,q.ns-1);}}
-  once("wsee",Math.abs(w.x-h.x)<90,()=>{hzSay(h,"Something tall is walking the hall.",170);whisper(0,.2);});
-  once("wall",!h.wall.open&&h.x>HZ.wallx-90,()=>hzSay(h,"A wall of bones blocks the hall. Dig with ENTER. It is loud.",200));
+  once2("wsee",Math.abs(w.x-h.x)<90,()=>{if(!tip("Something tall is walking the hall.",170))return false;whisper(0,.2);});
   h.hg.forEach((q,i)=>{if(!q.d&&hzCan(h,HZ.hang[i],20))q.d=2;});
   if(h.cer&&h.t%110===0)howl(hzCl((h.cer.x-h.x)/60,-1,1),.28);
-  if(sec>=120&&!safeP&&--x.rs<=0){x.rs=2200+Math.floor(Math.random()*2200);const r=Math.floor(Math.random()*3);
-    if(r===0){h.face=14;noiseHit();}else if(r===1){x.eyes=130;hadesGrowl(1.8,.35);}else{h.dark=40;whisper(-h.dir,.4);heartbeat(1);}}
 };
 const hzExtra=(h,sec,safeP,near)=>{
     hzMore(h,sec,safeP);
@@ -888,9 +893,8 @@ const hzExtra=(h,sec,safeP,near)=>{
     /* once three pomegranates are taken you can hear someone crying behind the last door */
     if(h.seeds>=3&&!h.got[3]){const gd=h.doors.find(d=>d.i===3&&!d.locked),dd=Math.abs(gd.x-h.x);if(dd<220&&--h.cryT<=0){h.cryT=150;cry(hzCl((gd.x-h.x)/80,-1,1),hzCl(.28-dd/900,.04,.25));}}
     /* chained ghost: first pomegranate. You hear the chain long before you see it, and it comes straight at you */
-    if(h.seeds>=1&&!h.chDone){h.chDone=1;hzSpawn(1,1);}
-    h.souls.forEach(s=>{if(!s.ch||s.dis)return;if(h.t%5===0){s.tr.push(s.x);if(s.tr.length>8)s.tr.shift();}
-      const d=Math.abs(s.x-h.x);if(!(--s.ck>0)){s.ck=22+Math.floor(Math.random()*26);if(!h.silent)chainClink(hzCl((s.x-h.x)/50,-1,1),hzCl(.34-d/260,.05,.3),0);}});
+    h.souls.forEach(s=>{if(!s.ch||s.dis||h.seeds<1)return;if(h.t%5===0){s.tr.push(s.x);if(s.tr.length>8)s.tr.shift();}
+      const d=Math.abs(s.x-h.x);if(!(--s.ck>0)){s.ck=22+Math.floor(Math.random()*26);if(!h.silent&&d<420)chainClink(hzCl((s.x-h.x)/50,-1,1),hzCl(.34-d/260,.05,.3),0);}});
     /* ceiling hangers: you hear a whisper as you get close. Walk under one and it drops on you, unless you flare the candle (SPACE) first */
     HZ.hang.forEach((p,i)=>{const q=h.hg[i];if(q.d)return;const dx=Math.abs(h.x-p);
       if(dx<36&&!q.w){q.w=1;whisper(0,.2);}
@@ -898,37 +902,33 @@ const hzExtra=(h,sec,safeP,near)=>{
     /* mirror hall: your reflection copies you, then moves wrong, then becomes a ghost (only progresses while the candle is on the mirror) */
     const m=h.mir;
     if(h.room===2&&m.s<2&&sec>=60&&Math.abs(h.x-HZ.MX)<26&&hzLit(h,HZ.MX)&&++m.t>150){m.t=0;m.s++;
-      if(m.s===1){whisper(0,.25);heartbeat(.7);}else{h.souls.push({x:HZ.MX,lit:1,ch:0,tr:[],dis:0});heartbeat(.9);whisper(0,.3);h.nflash=4;}}
+      if(m.s===1){whisper(0,.25);heartbeat(.7);}else{heartbeat(.9);whisper(0,.3);h.nflash=4;}}
     /* third pomegranate: creepy whispering starts, then a crawling body is yanked into the dark (does not kill you) */
-    if(h.wh3&&!h.silent&&--h.whR<=0){h.whR=50+Math.floor(Math.random()*130);whisper(Math.random()*2-1,.34+Math.random()*.2);if(Math.random()<.5)whisper(Math.random()*2-1,.28);}
+    if(h.wh3&&!h.silent&&--h.whR<=0){h.whR=240+Math.floor(Math.random()*420);whisper(Math.random()*2-1,.34+Math.random()*.2);if(Math.random()<.5)whisper(Math.random()*2-1,.28);}
     if(h.wh3&&!h.crawlDone&&!h.crawl&&!h.silent&&--h.crawlT<=0){
       if(!safeP&&h.fl>.5){h.crawl={x:h.x+h.dir*20,ux:-h.dir,s:0,t:0,d:20};crawlSting();}else h.crawlT=30;}
     if(h.crawl){const k=h.crawl;k.t++;
       if(k.s===0){k.x+=k.ux*.3;k.d-=.3;if(k.d<=9){k.s=1;dragSound();}}
       else{k.x-=k.ux*2.6;k.d+=2.6;if(k.d>90){h.crawl=null;h.crawlDone=1;}}}
-    /* a ghost right in front of you when you turn around (once, it freezes in your candle light) */
-    if(h.t%30===0)h.pa=h.dir;
-    if(!h.turnDone&&h.seeds>=2&&sec>=100&&!safeP&&h.walk>0&&h.pa&&h.pa!==h.dir){const x=h.x+h.dir*14;
-      if(x>30&&x<HZ.WW-8&&!HZ.fires.some(f=>Math.abs(x-f)<HZ.FR+8)){h.turnDone=1;h.souls.push({x,lit:1,ch:0,tr:[],dis:0});h.face=14;noiseHit();}}
     /* NEW jumpscare 1: walk past the old portrait and it screams (no danger) */
     if(!h.pDone&&sec>=25&&h.walk>0&&Math.abs(h.x-HZ.PX)<16){h.pDone=1;h.face=14;scream();}
     /* NEW jumpscare 2: a locked door bangs open and a dark figure stares at you for a moment (no danger) */
-    if(!h.dDone&&sec>=45){const d=h.doors.find(d=>d.locked&&Math.abs(d.x-h.x)<18);if(d){h.dDone=1;h.ds={x:d.x,t:0};thunder(.7,0);h.nflash=6;}}
+    if(!h.dDone&&sec>=240){const d=h.doors.find(d=>d.locked&&Math.abs(d.x-h.x)<18);if(d){h.dDone=1;h.ds={x:d.x,t:0};thunder(.7,0);h.nflash=6;}}
     if(h.ds&&++h.ds.t>55)h.ds=null;
     /* story: things you find as you walk through the halls */
     /* CHANGED: story lines are spaced out. Signs show at their board; other lines wait until no message is showing and a short gap has passed. */
     if(h.loreCd>0)h.loreCd--;
     {let bi=-1,bd=1e9;
-      HZ.lore.forEach((l,i)=>{if(h.lw[i])return;const d=Math.abs(h.x-l[0]);
-        if(d<10&&l[1].startsWith("SIGN")){bi=i;bd=-1;}
+      HZ.lore.forEach((l,i)=>{if(h.lw[i]||(i%3&&!l[1].startsWith("SIGN")))return;const d=Math.abs(h.x-l[0]);
+        if(d<40&&l[1].startsWith("SIGN")){bi=i;bd=-1;}
         else if(bd>=0&&d<90&&d<bd){bi=i;bd=d;}});
-      if(bi>=0&&(bd<0||(!(h.loreCd>0)&&h.mt<=0&&!h.q.length))){h.lw[bi]=1;h.loreCd=420;hzSay(h,HZ.lore[bi][1],bd<0?300:260);whisper(0,.1);}}
+      if(bi>=0&&!(h.loreCd>0)&&h.mt<=0&&!h.q.length){h.lw[bi]=1;h.loreCd=bd<0?1500:2400;hzSay(h,HZ.lore[bi][1],bd<0?300:260);whisper(0,.1);}}
     /* NEW jumpscare 3: a body drops from the ceiling right in front of you and swings (no danger) */
-    if(!h.fbDone&&sec>=80&&h.room>=3&&h.walk>0&&!safeP){h.fbDone=1;h.fb={x:hzCl(h.x+h.dir*22,30,HZ.WW-30),t:0};thunder(.5,0);heartbeat(1);h.nflash=3;}
+    if(!h.fbDone&&sec>=300&&h.room>=3&&h.walk>0&&!safeP){h.fbDone=1;h.fb={x:hzCl(h.x+h.dir*22,30,HZ.WW-30),t:0};thunder(.5,0);heartbeat(1);h.nflash=3;}
     if(h.fb&&++h.fb.t>150)h.fb=null;
     /* something walks behind you: your footsteps get a second, lower set, then a whisper right at your back */
     if(h.echo>0){if(--h.echo===0)whisper(-h.dir,.3);}
-    else if(sec>=50&&--h.echoT<=0){h.echo=720;h.echoT=2400+Math.floor(Math.random()*1800);}
+    else if(sec>=120&&--h.echoT<=0){h.echo=720;h.echoT=9000+Math.floor(Math.random()*6000);}
     /* the chase: events are timed from the moment the last pomegranate is taken */
     if(h.chase){h.ct++;
       if(h.ct===400){h.dark=12;whisper(1,.3);heartbeat(.8);}          /* fake scare */
@@ -962,7 +962,7 @@ const hzOverlays=(ctx,h)=>{
     if(q.near){ctx.fillStyle="rgba(130,20,20,.85)";ctx.fillRect(bx,by+11,bw*Math.min(1,q.ns/70),3);}ctx.textAlign="left";}
     if(h.face>0||h.skull>0){if(!h.fvOn){h.fvOn=1;hzFV++;}}else h.fvOn=0;
     if(h.face>0)hzFace(ctx,14-h.face);
-    if(h.gf>0&&((h.gf>>2)&1)===0)girlFace(ctx,W,H,.25,h.gf);   /* the hanging girl's face */
+    if(h.gf>0&&((h.gf>>2)&1)===0)ghoulFace(ctx,W,H,1,h.gf,hzFV%2);   /* the hanging girl's face */
     if(h.skull>0&&((h.skull>>2)&1)===0)ghoulFace(ctx,W,H,1,h.skull,hzFV%2);   /* the Hades skull flash (does not kill you) */
     if(h.nflash>0){ctx.fillStyle="rgba(255,255,255,"+h.nflash/8+")";ctx.fillRect(0,0,W,H);}
     if(h.chase&&h.ct<240){ctx.textAlign="center";ctx.font="bold 15px Cinzel,Georgia,serif";ctx.fillStyle="rgba(255,50,40,"+Math.min(.9,(240-h.ct)/60)+")";ctx.fillText("RUN TO THE GATE",W/2+(Math.random()-.5)*3,48);ctx.font="11px Cinzel,Georgia,serif";ctx.fillText("C: drop a candle behind you to stall the dog",W/2,66);ctx.textAlign="left";}
@@ -1204,7 +1204,7 @@ const hzOverlays=(ctx,h)=>{
       if(h.rsp&&!x.fl&&R.x>=40&&R.x<=104){x.fl=1;x.ft=0;R.bk=100;hzSay(h,"The flame dies.",90);}   /* the light goes out, a face flashes at 50, then the wall changes */
       if(x.fl&&!x.got){x.ft++;
         if(x.ft===60)whisper(0,.5);
-        if(x.ft===100){x.got=1;h.cn+=3;seedChime();thunder(.5,0);hzSayQ(h,[["The writing changed.",150],["Three stubs of wax fall from the wall. +3 candles.",200],["Something is standing in the corner. It was always there.",210]]);}}
+        if(x.ft===100){x.got=1;h.cn+=1;seedChime();thunder(.5,0);hzSayQ(h,[["The writing changed.",150],["A stub of wax falls from the wall.",200],["Something is standing in the corner. It was always there.",210]]);}}
       else if(x.got&&x.ft<400){x.ft++;if(x.ft%90===0)whisper(Math.random()*2-1,.3);}
       if(enter&&R.x<30){if(x.got)h.dolldone=1;hzLeave(h);return true;}
     }else if(R.i===8){   /* THE WELL */
@@ -1218,7 +1218,7 @@ const hzOverlays=(ctx,h)=>{
     }else if(R.i===9){   /* THE ALTAR: three candles open the sealed door */
       if(!x.i){x.i=1;hzSay(h,h.sig?"The altar is already lit.":"Three cold stands. Each wants a flame. Press C beside one.",200);hzAmbLevel(0);}
       if(h.pl&&!h.sig){const k=[34,62,90].findIndex((sx,j)=>!h.alt[j]&&Math.abs(R.x-sx)<12);
-        if(k>=0&&h.cn>0){h.cn--;h.alt[k]=1;windClick();seedChime();whisper(0,.22+.15*h.alt.filter(Boolean).length);
+        if(k>=0&&h.cn>0){h.alt[k]=1;windClick();seedChime();whisper(0,.22+.15*h.alt.filter(Boolean).length);
           if(h.alt.every(Boolean)){h.sig=1;thunder(.9,0);h.face=14;noiseHit();h.nflash=6;hzSayQ(h,[["The flames bend toward you. The last door unseals.",200],["A name in the ash: his own. He signed his sin here.",210]]);}}
         else if(k>=0)hzSay(h,"You have no wax. Search the halls.",120);}
       if(enter&&R.x<30){hzLeave(h);return true;}
@@ -1227,10 +1227,10 @@ const hzOverlays=(ctx,h)=>{
       const SX=[40,60,80,100];
       if(x.ph===0){if(--x.tm<=0){if(x.n<3){x.fl=x.sq[x.n++];x.tm=60;windClick();whisper(0,.15);}else{x.ph=1;x.n=0;x.fl=-1;hzSay(h,"Now you. Press C beside a stand. Each try costs wax.",190);}}else if(x.tm<22)x.fl=-1;}
       else if(x.ph===1&&h.pl){const k=SX.findIndex(sx=>Math.abs(R.x-sx)<9);
-        if(k>=0&&h.cn>0){h.cn--;windClick();
+        if(k>=0&&h.cn>0){windClick();
           if(k===x.sq[x.n]){x.lit[k]=1;x.n++;seedChime();whisper(0,.2);
             if(x.n>=3){x.ph=2;h.crypt=1;h.rel=(h.rel||0)+1;thunder(.7,0);hzSayQ(h,[["The stands burn together. A cold hand opens and drops a rib charm.",210],["The first offering. Hades fed on every candle lit here.",200]]);}}
-          else{x.lit=[0,0,0,0];x.n=0;x.ph=0;x.tm=150;h.nflash=5;noiseHit();hzSpawn();hzSay(h,"Wrong. The flames drown. Something woke. Watch again.",200);}}
+          else{x.lit=[0,0,0,0];x.n=0;x.ph=0;x.tm=150;h.nflash=5;noiseHit();hzSpawn();hzSay(h,"Wrong. The flames drown. Watch again.",200);}}
         else if(k>=0)hzSay(h,"You have no wax. Search the halls.",120);}
       if(enter&&R.x<30){hzLeave(h);return true;}
     }else if(R.i===11){   /* THE DROWNED CHAPEL: hands drag you under. Mash ENTER to break free. */
@@ -1260,7 +1260,7 @@ const hzOverlays=(ctx,h)=>{
     if(h.got[R.i])return false;
     if(h.rsp&&x.fc<=0){x.fc=240;
       if(Math.abs(R.x-mx)<=62){
-        if(live){h.mmd[R.i]=1;h.cn++;thunder(.5,0);whisper(0,.5);heartbeat(1);h.nflash=2;hzSayQ(h,[["The seed shudders. A shadow hand recoils into the wall.",200],["It was a mimic. The real seed lies beneath. +1 candle.",190]]);}
+        if(live){h.mmd[R.i]=1;h.cn++;thunder(.5,0);whisper(0,.5);heartbeat(1);h.nflash=2;hzSayQ(h,[["The seed shudders. A shadow hand recoils into the wall.",200],["It was a mimic. The real seed lies beneath. Something waxy is stuck to it.",190]]);}
         else hzSay(h,"The light finds nothing wrong.",110);}
       else hzSay(h,"The light finds nothing.",80);return false;}
     if(live&&Math.abs(R.x-mx)<6){x.g=130;x.m=0;x.gx=R.x;crawlSting();heartbeat(1);whisper(0,.5);h.nflash=4;hzSay(h,"IT IS NOT A SEED",120);return true;}
@@ -1283,7 +1283,6 @@ const hzOverlays=(ctx,h)=>{
         else if(U.st===3&&U.t>=60){U.st=4;U.t=0;hzSay(h,"Something small fell to the floor.",170);hzAmbLevel(.02);}}
       else if(U.st===4&&!h.key&&Math.abs(R.x-70)<6){h.key=2;U.st=5;seedChime();hzSay(h,"A small silver key. It is still warm.",210);}}
     if(R.i<4&&!h.got[R.i]&&Math.abs(R.x-h.pp[R.i])<6){h.got[R.i]=1;h.seeds++;seedChime();hzSpawn();if(h.seeds===3){h.spx=h.x;h.q=[["A flame is left burning here. If you fall, you wake at this spot.",230]];}
-      h.souls.forEach(s=>{if(!s.dis&&!s.lit){const d=Math.abs(h.x-s.x);if(d>45)s.x+=Math.sign(h.x-s.x)*10;}});   /* ghosts get closer */
       if(h.seeds===1)hzSay(h,"The first seed. A chain rattles in the dark.",210);
       else if(h.seeds===2){hzSay(h,"The second seed. Something howls, far away.",210);R.bk=90;}
       else if(h.seeds===3){hzSay(h,"The third seed. Someone is crying nearby.",230);h.wh3=1;h.crawlT=300+Math.floor(Math.random()*500);}
@@ -1311,7 +1310,7 @@ const hzOverlays=(ctx,h)=>{
     if(tapped&&tp&&bz){if(tp.x<W*.35)enter=true;else if(tp.x>W*.65)space=true;else place=true;}
     let dx=(K.ArrowRight?1:0)-(K.ArrowLeft?1:0);
     if(!dx&&tp&&!bz){const ps=(h.inRoom?h.inRoom.x:h.x-hzCamX(h))*W/HZ.VW,df=tp.x-ps;if(Math.abs(df)>9)dx=df>0?1:-1;}
-    if(h.mt>0)h.mt--;else if(h.q.length){const m=h.q.shift();h.msg=m[0];h.mt=m[1];}
+    if(h.mt>0)h.mt--;else if(h.q.length){if(h.qg==null)h.qg=h.inRoom?150:480;if(--h.qg<=0){h.qg=null;const m=h.q.shift();h.msg=m[0];h.mt=m[1];}}   /* CHANGED: queued story lines wait 8 s (2.5 s in a room) between each other */
     if(h.hid){dx=0;space=false;place=false;}
     h.pl=place;
     if(h.inRoom){h.rsp=space;hzRoomStep(h,dx,enter);return;}
@@ -1319,28 +1318,32 @@ const hzOverlays=(ctx,h)=>{
     /* walking along the hall. A ghost standing right in front of you blocks the way (use the candle flare) */
     const px0=h.x;
     if(dx){h.dir=dx;let nx=h.x+dx*HZ.SPEED;
-      if(!hzSafe(h.x)&&h.souls.some(s=>!s.dis&&(s.x-h.x)*dx>0&&Math.abs(s.x-nx)<9))nx=h.x;
       if(h.wall&&!h.wall.open&&nx>HZ.wallx-10)nx=Math.min(nx,HZ.wallx-10);h.x=hzCl(nx,26,HZ.WW-6);}
     if(h.x!==px0){h.walk+=.25;h.stepAcc+=Math.abs(h.x-px0);if(h.stepAcc>=HZ.STRIDE){h.stepAcc-=HZ.STRIDE;h.foot^=1;plop();if(h.echo>0)plopAt(.26,60+Math.random()*25);}}else h.walk=0;
     /* placeable candles (C), wax stubs, and cold zones that drink your own candle */
     {const nc=h.cp.find(c=>Math.abs(c.x-h.x)<14);
-     if(place&&nc){h.cp.splice(h.cp.indexOf(nc),1);h.cn++;windClick();hzSay(h,"You pinch the flame out and take the candle back.",110);}
-     else if(place&&h.cn>0){h.cn--;h.cp.push({x:h.x,t:Math.round(1800*(h.cl||1))});windClick();seedChime();if(!h.cpm){h.cpm=1;hzSay(h,"A candle burns where you leave it. Two close together make a ward. C again takes it back.",220);}}
-     else if(place)hzSay(h,"No wax left. Look for stubs in the halls.",110);}
+     if(place&&nc){h.cp.splice(h.cp.indexOf(nc),1);windClick();hzSay(h,"You pinch the flame out and take the candle back.",110);}
+     else if(place&&h.cn>0&&h.cp.length<2){h.cp.push({x:h.x,t:Math.round(1800*(h.cl||1))});windClick();seedChime();if(!h.cpm){h.cpm=1;hzSay(h,"A candle burns where you leave it. Two close together make a ward. C again takes it back.",220);}}
+     else if(place&&h.cn>0)hzSay(h,"Two candles are already burning. C beside one takes it back.",110);
+     else if(place)hzSay(h,"Your candle is out. Find wax.",110);}
     h.cp.forEach(c=>c.t--);h.cp=h.cp.filter(c=>c.t>0);
     h.cp.forEach(c=>{if(c.t===200){whisper(0,.2);windClick();}});
     if(hzCan(h,h.x,20)){h.bcd=0;if(h.dim>0)h.dim=0;if(!h.rch){h.rch=1;hzSay(h,"Standing in your own candle light restores the flare.",170);}}
-    HZ.wax.forEach((wx,i)=>{if(!h.wg[i]&&Math.abs(h.x-wx)<7){h.wg[i]=1;h.cn++;seedChime();hzSay(h,"A stub of wax. +1 candle.",110);}});
+    HZ.wax.forEach((wx,i)=>{if(!h.wg[i]&&Math.abs(h.x-wx)<7){h.wg[i]=1;h.cn++;seedChime();hzSay(h,"A stub of wax. The flame steadies.",110);}});
+    /* CHANGED: wax is simply what keeps the candle alive. It burns down while you walk the hall (one stub = about 6 minutes). Flares and placed candles cost nothing. */
+    if(h.cn>0)h.cn=Math.max(0,h.cn-1/21600);
     /* CHANGED: NO WAX = THE CANDLE IS OUT. The flare and the light stop working, it is dark but you can still make out shapes, and loud whispers keep going until you find wax. */
     if(h.cn<=0){h.dark=Math.max(h.dark,2);
+      /* safety net so the game can never get stuck: after 90 s with the candle out, one last stub of wax is left where you stand */
+      if(++h.oc>=5400){h.oc=0;h.cn=1;seedChime();hzSay(h,"A last stub of wax lies where you stand. Do not waste it.",220);}
       if(!h.wom){h.wom=1;h.woR=20;hzSay(h,"Your candle is out. Collect wax.",220);heartbeat(1);whisper(-1,.6);whisper(1,.6);}
       else if(h.mt<=0&&!h.q.length&&(h.t%900)===0)hzSay(h,"Your candle is out. Collect wax.",200);
       if(space)hzSay(h,"Your candle is out. Collect wax.",110);
       if(!h.silent&&--h.woR<=0){h.woR=22+Math.floor(Math.random()*40);const k=1+Math.floor(Math.random()*3);for(let i=0;i<k;i++)whisper(Math.random()*2-1,.5+Math.random()*.3);if(Math.random()<.35)heartbeat(.8);}}
-    else if(h.wom){h.wom=0;hzSay(h,"The flame catches. The voices fade.",150);}
+    else if(h.wom){h.wom=0;h.oc=0;hzSay(h,"The flame catches. The voices fade.",150);}
     /* the candle: flickers, and SPACE flares it bright (then it burns low for a moment) */
     if(space&&h.bcd<=0&&h.dark<=0&&h.cn<=0){space=false;hzSay(h,"No wax. The flare will not light. Find a stub of wax.",110);whisper(0,.15);}
-    if(space&&h.bcd<=0&&h.dark<=0){h.cn--;h.br=40;h.bcd=h.chase?240:360;h.dim=0;hzBurst(h);}
+    if(space&&h.bcd<=0&&h.dark<=0){h.br=40;h.bcd=h.chase?240:360;h.dim=0;hzBurst(h);}
     if(h.bcd>0)h.bcd--;
     if(h.dark>0){h.dark--;h.fl=0;h.flTarget=0;}
     else if(h.br>0){h.br--;h.fl=1;if(h.br===0)h.dim=100;}
@@ -1350,20 +1353,21 @@ const hzOverlays=(ctx,h)=>{
     const rm=hzRoom(h.x);if(rm!==h.room){h.room=rm;h.toast=150;}if(h.toast>0)h.toast--;
     const safeP=hzSafe(h.x);
     /* ghosts: only move while the candle is NOT on them. Fires slow them right down. */
-    if(h.spCd>0)h.spCd--;if(h.fsCd>0)h.fsCd--;
-    if(sec>=60&&!h.spawned){h.spawned=1;hzSpawn();}   /* 1:00 = the danger starts */
-    else if(h.spawned&&h.spCd<=0)hzSpawn();   /* then one new ghost every 30 seconds, never more */
+    if(h.fsCd>0)h.fsCd--;
+    /* CHANGED: ghosts do not spawn and cannot be killed. The 4 that exist ROAM their stretch of the hall like the tall man and ignore you. They freeze while your candle is on them (walk through a frozen one and it stays stunned for a few seconds). Touch one in the dark, or with no candle, and you are caught. */
     const spd=.16+.05*h.seeds+(h.chase?.04:0);let near=999;
     h.souls.forEach(s=>{
-      if(s.dis){if(++s.dis>34){s.gone=1;h.rq.push({t:h.chase?300:480,ch:s.ch});}return;}
-      if(h.cp.length>1&&h.cp.some((a,i)=>h.cp.some((b,j)=>j>i&&Math.abs(a.x-b.x)<70&&s.x>Math.min(a.x,b.x)-8&&s.x<Math.max(a.x,b.x)+8))){s.dis=1;if(!h.wdm){h.wdm=1;hzSay(h,"Two flames close together make a ward. The dead cannot cross.",200);}for(let i=0;i<10;i++)h.pt.push({x:s.x+(Math.random()-.5)*5,y:HZ.FY-4-Math.random()*16,vx:(Math.random()-.5)*.8,vy:-.3-Math.random()*.6,l:35+Math.random()*20});return;}
       s.lit=hzLit(h,s.x);const ex=h.x-s.x,d=Math.abs(ex)||1;near=Math.min(near,d);
       if(h.hid&&d<46){s.hc=(s.hc||0)+1;if(s.hc>420){s.aw=480;s.hc=0;}}   /* hidden: a ghost circles the wardrobe, then loses you and wanders off */
       if(s.aw>0){s.aw--;s.x-=Math.sign(ex)*spd*1.3;return;}
-      if(!s.lit||h.chase||s.ch){const cn=hzCan(h,s.x,30),sl=cn?.04:HZ.fires.some(f=>Math.abs(s.x-f)<HZ.FR+6)?.3:1;if(cn&&(s.bn=(s.bn||0)+1)>240)s.dis=1;if(!(h.hid&&d<=34))s.x+=Math.sign(ex)*(spd+(s.ch?.1:0))*sl;
-        if(d<5&&!safeP&&!h.hid){h.catch=1;h.killer="ghost";}}});
-    h.souls=h.souls.filter(s=>!s.gone);
-    if(h.rq.length){h.rq.forEach(q=>q.t--);const due=h.rq.filter(q=>q.t<=0);h.rq=h.rq.filter(q=>q.t>0);due.forEach(q=>hzSpawn(0));}
+      if(s.st>0){s.st--;return;}
+      if(s.lit&&!h.chase){if(d<7)s.st=300;return;}
+      if(h.chase){const cn=hzCan(h,s.x,30);if(!(h.hid&&d<=34))s.x+=Math.sign(ex)*(spd+(s.ch?.1:0))*(cn?.04:1);}
+      else if(s.p>0)s.p--;
+      else{if(hzCan(h,s.x+s.dir*22,12)){s.dir*=-1;s.p=90;}s.x+=s.dir*.3;
+        if(s.x>=s.home+s.rng){s.x=s.home+s.rng;s.dir=-1;s.p=240+Math.floor(Math.random()*360);}
+        else if(s.x<=s.home-s.rng){s.x=s.home-s.rng;s.dir=1;s.p=240+Math.floor(Math.random()*360);}}
+      if(d<5&&!safeP&&!h.hid){h.catch=1;h.killer="ghost";}});
     h.pt.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.l--;});h.pt=h.pt.filter(p=>p.l>0);
     if(h.catch){h.catch=0;h.dead=1;h.slam=null;h.silent=0;h.br=0;hzAmbLevel(0);return;}   /* caught: showGame plays the Hades skull jumpscare */
     if(h.open&&Math.abs(h.x-HZ.gate)<10)h.out=1;
@@ -1382,7 +1386,7 @@ const hzOverlays=(ctx,h)=>{
     /* CHANGED: ENTER at a drawer. Wax is hidden inside. */
     if(enter&&!h.hid){const di=HZ.dw.findIndex((d,i)=>!h.dwo[i]&&Math.abs(d[0]-h.x)<12);
       if(di>=0){enter=false;h.dwo[di]=1;const n=HZ.dw[di][1];windClick();
-        if(n>0){h.cn+=n;seedChime();hzSay(h,n>1?"Two stubs of wax, tucked behind old cloth. +"+n+" candles.":"A stub of wax in the back of the drawer. +1 candle.",150);}
+        if(n>0){h.cn+=n;seedChime();hzSay(h,n>1?"Two stubs of wax, tucked behind old cloth.":"A stub of wax in the back of the drawer. The flame steadies.",150);}
         else{whisper(0,.14);hzSay(h,["Empty. Only dust.","Empty. A child's tooth.","Empty. Scratches on the inside.","Empty. Somebody was here first."][di%4],120);}}}
     /* ENTER: open the door you are standing at */
     if(enter){const dr=h.doors.find(d=>Math.abs(d.x-h.x)<11);
@@ -1401,15 +1405,14 @@ const hzOverlays=(ctx,h)=>{
     if(!h.quiet&&sec>=38&&h.fl>.5){h.quiet=1;}
     if(h.peek){const p=h.peek;p.t++;if(hzLit(h,p.x)){if(p.out)h.peek=null;}else if(p.t>20)p.out=1;if(p.t>200)h.peek=null;}
     /* fake scare (1:45): the candle goes out, whisper and heartbeat, nothing there */
-    if(!h.fake&&sec>=105&&!h.slam){h.fake=1;h.dark=14;h.fkT=18;whisper(Math.random()<.5?-1:1,.3);heartbeat(.7);}
     if(h.fkT>0&&--h.fkT===0)heartbeat(.8);
     /* real jumpscare (after 2 pomegranates, 2:20+): total silence, then a face slams into the light (no danger) */
-    if(!h.slamDone&&!h.slam&&h.seeds>=2&&sec>=140&&!safeP&&near>45){h.slam={t:0};h.silent=1;hzAmbLevel(0);}
+    if(!h.slamDone&&!h.slam&&h.seeds>=2&&sec>=420&&!safeP&&near>45){h.slam={t:0};h.silent=1;hzAmbLevel(0);}
     if(h.slam){const s=h.slam;s.t++;if(s.t===100){noiseHit();hzFV++;}if(s.t>=118){h.slam=null;h.silent=0;h.slamDone=1;hzAmbLevel(.05);}}
     /* sound: heartbeat speeds up near ghosts, whispers come from the side of the nearest ghost */
-    if(h.souls.length&&!h.silent){
+    if(h.souls.length&&!h.silent&&near<420){
       if(--h.hbT<=0){h.hbT=Math.round(hzCl(20+(near-20)*.7,20,76));heartbeat(safeP?.25:hzCl(.22+(90-near)/200,.22,.6));}
-      if(--h.whT<=0){h.whT=300+Math.floor(Math.random()*420);const s=h.souls.reduce((a,b)=>Math.abs(a.x-h.x)<Math.abs(b.x-h.x)?a:b);
+      if(--h.whT<=0){h.whT=600+Math.floor(Math.random()*900);const s=h.souls.reduce((a,b)=>Math.abs(a.x-h.x)<Math.abs(b.x-h.x)?a:b);
         whisper(hzCl((s.x-h.x)/50,-1,1),hzCl(.28-near/400,.05,.22));}}
   };
   /* drawing */
@@ -1513,7 +1516,7 @@ const hzOverlays=(ctx,h)=>{
       for(let i=0;i<14;i++){c.fillStyle=i%2?"#1b4a78":"#143a62";c.fillRect(rx+2+(i*5)%18,CT+Math.floor((i*23+t*.35*(1+(i%3)*.3))%(VH-CT)),5,1);}
       c.fillStyle="#3a3f46";c.fillRect(rx+24,CT,2,VH-CT);}
     /* iron fence along the graveyard wall */
-    for(let fx=Math.round(584*HZ.KS);fx<HZ.WW-10;fx+=7){const x=R(fx-cam);if(x<-4||x>V+4)continue;c.fillStyle="#2a2f36";c.fillRect(x,64,2,42);c.fillRect(x-1,62,4,2);c.fillRect(x,60,2,2);}
+    for(let fx=HZ.rb[3];fx<HZ.WW-10;fx+=7){const x=R(fx-cam);if(x<-4||x>V+4)continue;c.fillStyle="#2a2f36";c.fillRect(x,64,2,42);c.fillRect(x-1,62,4,2);c.fillRect(x,60,2,2);}
     /* wall decorations */
     HZ.wd.forEach(([k,x,y])=>{const sx=R(x-cam);if(sx<-10||sx>V+10)return;
       if(k==="mirror"){c.fillStyle="#4b3f2c";c.fillRect(sx-7,52,14,28);c.fillStyle="#27384a";c.fillRect(sx-6,53,12,26);c.fillStyle=(t>>4)%5?"#4d6b86":"#7fa6c4";c.fillRect(sx-5,56,1,5);c.fillRect(sx-4,58,1,3);}
@@ -1611,11 +1614,9 @@ const hzOverlays=(ctx,h)=>{
     /* Cerberus */
     if(h.cer){const e=h.cer,sx=R(e.x-cam),f=e.f;c.fillStyle="#17090b";c.fillRect(sx-9,FY-16,18,9);[-8,-4,3,7].forEach(l=>c.fillRect(sx+l,FY-8,2,8-(R(e.t/5)%2)));
       [0,1,2].forEach(i=>{const hx=sx+f*(10+i*2)-2,hy=FY-22+i*3;c.fillRect(hx,hy,5,5);c.fillStyle="#ff2a2a";c.fillRect(hx+(f>0?3:0),hy+1,1,1);c.fillStyle="#17090b";});}
-    /* pale face at the edge of the light */
-    if(h.peek){const sx=R(h.peek.x-cam);c.fillStyle="#d8d8cc";c.fillRect(sx-2,FY-19,5,7);c.fillStyle="#000";c.fillRect(sx-1,FY-17,1,2);c.fillRect(sx+1,FY-17,1,2);c.fillRect(sx,FY-14,1,1);}
     /* chain trail behind the chained ghost, then every ghost */
     h.souls.forEach(s=>{if(s.ch){c.fillStyle="#8a8f9a";s.tr.forEach(x=>c.fillRect(R(x-cam),FY-6,1,1));}});
-    h.souls.forEach(s=>{const sx=R(s.x-cam);if(sx>-10&&sx<V+10)hzGhost(c,sx,FY,t,s.dis,h.x>=s.x?1:-1);});
+    h.souls.forEach(s=>{const sx=R(s.x-cam);if(sx>-10&&sx<V+10)hzGhost(c,sx,FY,t,s.dis,(s.rm&&!h.chase&&!s.lit&&!(s.st>0))?s.dir:(h.x>=s.x?1:-1));});
     /* the player */
     if(h.fall&&h.fall.t>=36){const fl=h.fall,wd=Math.min(28,Math.round(fl.t*1.1)),fx=R(HZ.fx-cam);c.save();c.beginPath();c.rect(fx-wd/2,0,wd,FY+9);c.clip();hzPerson(c,h.x-cam,FY+Math.round((fl.t-36)*1.3),0,0,h.dir,t,0);c.restore();}
     else if(!h.hid)hzPerson(c,h.x-cam,FY,h.walk,h.foot,h.dir,t,h.fl>.15);
@@ -1824,14 +1825,13 @@ const hzGirlFloor=(c,gx,fy,t,f,up)=>{gx=Math.round(gx);
     ctx.font="bold 11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(255,230,170,"+(.6+.3*Math.sin(h.t*.2))+")";
     if(nearDoor)ctx.fillText("ENTER",pxs,(FY-30)*3);
     if(Rm&&(((Rm.i<5||Rm.i>6)&&Rm.x<30)||(Rm.i===5&&Rm.q&&Rm.q.run&&Rm.x<30)||(Rm.i===6&&Rm.q&&Rm.q.dr&&Rm.x>=88)))ctx.fillText("ENTER to leave",pxs,(FY-30)*3);
-    if(Rm&&Rm.i===9&&!h.sig&&[34,62,90].some((sx,j)=>!(h.alt||[])[j]&&Math.abs(Rm.x-sx)<12))ctx.fillText("C: light it ("+h.cn+" wax)",pxs,(FY-30)*3);
+    if(Rm&&Rm.i===9&&!h.sig&&[34,62,90].some((sx,j)=>!(h.alt||[])[j]&&Math.abs(Rm.x-sx)<12))ctx.fillText("C: light it",pxs,(FY-30)*3);
     if(Rm&&Rm.i===8&&Rm.q&&Math.abs(Rm.x-60)<14&&Rm.q.lk<3&&!Rm.q.lock)ctx.fillText("ENTER: look",pxs,(FY-30)*3);
     if(Rm&&Rm.i===4&&h.nur.st===0&&Math.abs(Rm.x-88)<9)ctx.fillText("ENTER: wind it "+h.nur.w+"/12",pxs,(FY-30)*3);
-    if(!Rm&&h.bcd<=0&&h.souls.some(s=>!s.dis&&Math.abs(s.x-h.x)<=HZ.BR&&s.lit))ctx.fillText("SPACE",pxs,(FY-40)*3);
     /* candle flare meter + hints */
     ctx.font="11px Cinzel,Georgia,serif";
     if(!Rm){const rdy=h.bcd<=0,fill=rdy?1:1-h.bcd/(h.chase?240:360);ctx.fillStyle="rgba(255,255,255,.12)";ctx.fillRect(W/2-30,H-18,60,4);ctx.fillStyle=rdy?"rgba(255,208,90,.85)":"rgba(160,150,130,.7)";ctx.fillRect(W/2-30,H-18,60*fill,4);
-      ctx.fillStyle="rgba(200,190,170,.6)";ctx.fillText(rdy?"flare: SPACE (1 wax)":"flare",W/2,H-24);ctx.fillText("wax "+h.cn+"  -  C: place a candle",W/2,H-8);}
+      ctx.fillStyle="rgba(200,190,170,.6)";ctx.fillText(rdy?"flare: SPACE":"flare",W/2,H-24);const fu=Math.min(1,h.cn/4);ctx.fillStyle="rgba(255,255,255,.12)";ctx.fillRect(W/2+74,H-9,40,3);ctx.fillStyle=fu<.25?"rgba(190,60,40,.9)":"rgba(255,190,90,.85)";ctx.fillRect(W/2+74,H-9,40*fu,3);ctx.fillStyle="rgba(200,190,170,.6)";ctx.fillText("candle  -  C: place a candle",W/2,H-2);}
     if(h.t<420){ctx.fillStyle="rgba(200,190,170,"+Math.min(.6,(420-h.t)/80)+")";ctx.fillText("arrows walk  -  ENTER doors  -  SPACE bright candle",W/2,H-38);}
     ctx.textAlign="left";
     if(h.slam&&h.slam.t>=100)hzFace(ctx,h.slam.t-100);
