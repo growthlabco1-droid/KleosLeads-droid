@@ -43,6 +43,10 @@ a{color:#7a5c14}
 small{color:var(--muted)}
 #gamebox{position:fixed;inset:0;z-index:50;display:flex;background:linear-gradient(180deg,#121830,#0b1020)}
 #gamebox[hidden]{display:none}
+#gamebox.full{background:#000}
+#gamebox.full .gt,#gamebox.full .gs,#gamebox.full .gcard::before{display:none}
+#gamebox.full .gcard{padding:0;border-top:0}
+#gamebox.full #game{box-shadow:none;border-radius:0}
 #gexit{position:absolute;top:10px;right:12px;z-index:2;align-self:auto;padding:5px 12px;font-size:.68rem;letter-spacing:.12em;border-radius:8px;background:rgba(11,16,32,.85);color:#f3e3b0;border:1px solid #c59a3d;box-shadow:0 0 0 2px #0b1020,0 0 0 3px rgba(197,154,61,.6)}
 #gexit:hover{background:linear-gradient(135deg,#d9b863,#f6e8b8);color:#16202b}
 #gexit[hidden]{display:none}
@@ -835,7 +839,7 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
     h.open=h.seeds>=4?1:0;};
   const hzInit=()=>{g.hz={};hzReset(true);hzBdStart(g.hz);};   /* CHANGED: you now wake up in your bedroom first (hzBdStart). The hall and its sounds start when you walk out of the door (hzBdEnd). */
   g.hzDead=()=>g.bs===6&&!!g.hz&&g.hz.dead>0;
-  g.hzRevive=()=>{hzReset(false);hzAmbLevel(.05);};
+  g.hzRevive=()=>{hzReset(false);hzAmbLevel(.05);if(g.hz&&g.hz.bd&&g.hz.bd.ph===2)hzBdGo(g.hz.bd,2);};   /* died in the parents' room: that scene starts again */
   const hzFinish=()=>hzThroneStart();   /* gate reached -> throne room */
   const startDark=()=>{g.cutDone=1;g.bs=6;g.dt=0;g.balls=[];g.burn=[];g.embers=[];g.souls=[];g.hz=null;g.tpt=null;thunder(.5,0);rumble();angryRoar();};
   const darkStep=()=>{g.dt++;if(g.dt<150)return;
@@ -1148,8 +1152,8 @@ const hzOverlays=(ctx,h)=>{
     if(k.leave>70){ctx.fillStyle="rgba(0,0,0,"+Math.min(1,(k.leave-70)/58)+")";ctx.fillRect(0,0,W,H);}};
 
   /* ===== NEW: THE BEDROOM (the start of the mini-game). After the black screen you wake up in your own room. It was just a dream. You get up, walk to the door, and when you walk out the horror begins. ===== */
-  const hzBdCam=k=>hzCl(Math.round(k.x-HZ.VW/2),0,200-HZ.VW);
-  const hzBdStart=h=>{hzAmbient(false);h.bd={t:0,st:0,x:24,dir:1,walk:0,foot:0,sa:0,msg:"",mt:0,en0:true,lt:0,lc:150,leave:0};};
+  const hzBdCam=k=>k.ph===1?hzCl(Math.round(k.x-HZ.VW/2),0,50):k.ph===2?0:hzCl(Math.round(k.x-HZ.VW/2),0,200-HZ.VW);
+  const hzBdStart=h=>{hzAmbient(false);h.bd={ph:0,sp0:true,t:0,st:0,x:24,dir:1,walk:0,foot:0,sa:0,msg:"",mt:0,en0:true,lt:0,lc:150,leave:0};};
   const hzBdEnd=h=>{h.bd=null;h.x=40;h.dir=1;h.walk=0;h.fin=70;h.en0=true;hzAmbient(true);thunder(.45,0);rumble();
     hzSayQ(h,[["This is not your house.",230],["Hades' halls. Take back the four seeds.",230],["Your little sister is somewhere in the dark.",230],["Do not let the candle die.",210]]);};
   const hzBdStep=h=>{const k=h.bd,K=window.GK||{};k.t++;const t=k.t;
@@ -1158,6 +1162,10 @@ const hzOverlays=(ctx,h)=>{
     const tp=g.tpt,bz=!!tp&&tp.y>H*.8;if(tapped&&tp&&bz&&tp.x<W*.35)enter=true;
     let dx=(K.ArrowRight?1:0)-(K.ArrowLeft?1:0);
     if(!dx&&tp&&!bz){const df=tp.x-(k.x-hzBdCam(k))*W/HZ.VW;if(Math.abs(df)>9)dx=df>0?1:-1;}
+    const spc=!!K[" "];let space=spc&&!k.sp0;k.sp0=spc;if(tapped&&tp&&bz&&tp.x>W*.65)space=true;
+    if(h.dead>0)return;
+    if(k.ph===1){hzHallStep(h,k,dx,enter,space);return;}
+    if(k.ph===2){hzParStep(h,k,dx,space);return;}
     if(k.mt>0)k.mt--;if(k.lt>0)k.lt--;
     const say=(m,d)=>{k.msg=m;k.mt=d;};
     if(--k.lc<=0){k.lc=620+Math.floor(Math.random()*520);k.lt=12;thunder(.3,0);}   /* far lightning outside the window */
@@ -1171,8 +1179,170 @@ const hzOverlays=(ctx,h)=>{
       if(dx){k.dir=dx;k.x=hzCl(k.x+dx*HZ.SPEED,14,186);k.walk+=.25;k.sa+=HZ.SPEED;if(k.sa>=HZ.STRIDE){k.sa-=HZ.STRIDE;k.foot^=1;plop();}}else k.walk=0;
       k.nd=Math.abs(k.x-180)<16;
       if(k.nd&&enter){k.leave=1;k.dir=1;windClick();}}
-    else if(k.leave){k.leave++;k.walk=0;if(k.leave===34){thunder(.4,0);whisper(0,.3);}if(k.leave>=100)hzBdEnd(h);}};
+    else if(k.leave){k.leave++;k.walk=0;if(k.leave===34){thunder(.4,0);whisper(0,.3);}if(k.leave>=100)hzBdGo(k,1);}};
+  /* ===== NEW: the normal hallway, the parents' room, and the escape. Only after you run out of that room does the hall of Hades begin. ===== */
+  const hzKnock=()=>{if(!ac)return;try{const n=ac.currentTime,o=ac.createOscillator(),gn=ac.createGain();o.type="triangle";o.frequency.setValueAtTime(150,n);o.frequency.exponentialRampToValueAtTime(60,n+.09);gn.gain.setValueAtTime(.55,n);gn.gain.exponentialRampToValueAtTime(.001,n+.12);o.connect(gn);gn.connect(ac.destination);o.start(n);o.stop(n+.13);}catch(e){}};
+  const hzBdGo=(k,ph)=>{k.ph=ph;k.t=0;k.mt=0;k.walk=0;k.leave=0;k.go=0;k.gt=0;k.dir=1;k.fl=0;
+    if(ph===1){k.x=22;k.kn=0;k.kt=0;k.dopen=0;k.ok=0;k.nd=0;}
+    if(ph===2){k.x=26;k.sc=0;k.dt=0;k.dad={x:100,st:0,p:0,rt:0};k.pc=[];}};
+  const hzHallStep=(h,k,dx,enter,space)=>{k.t++;const t=k.t;if(k.mt>0)k.mt--;
+    const say=(m,d)=>{k.msg=m;k.mt=d;};
+    if(t===70)say("The house is quiet.",190);
+    if(t===330)say("Mom? Dad?",170);
+    if(!k.go){
+      if(dx){k.dir=dx;k.x=hzCl(k.x+dx*HZ.SPEED,14,150);k.walk+=.25;k.sa+=HZ.SPEED;if(k.sa>=HZ.STRIDE){k.sa-=HZ.STRIDE;k.foot^=1;plop();}}else k.walk=0;
+      k.nd=k.x>=124;
+      if(k.nd&&space&&!k.kn){k.kn=1;k.kt=0;k.dir=1;}
+      if(k.kn){k.kt++;if(k.kt===1||k.kt===20||k.kt===38)hzKnock();
+        if(k.kt===120){windClick();say("The door opens by itself.",200);}
+        if(k.kt>120&&k.dopen<1)k.dopen=Math.min(1,k.dopen+.012);
+        if(k.dopen>=1&&!k.ok){k.ok=1;heartbeat(.6);}}
+      if(k.ok&&k.nd&&enter){k.go=1;k.gt=0;k.dir=1;windClick();}
+    }else{k.gt++;k.walk=0;if(k.gt>=60)hzBdGo(k,2);}};
+  const hzParStep=(h,k,dx,space)=>{k.t++;const t=k.t,D=k.dad;if(k.mt>0)k.mt--;if(k.fl>0)k.fl--;
+    const say=(m,d)=>{k.msg=m;k.mt=d;};
+    if(t===1)hzAmbLevel(0);
+    if(t===25){crawlSting();heartbeat(.8);}
+    if(k.sc===0){if(t%38===0)dragSound();if(t%61===20)plop();if(t%210===90)heartbeat(.5);
+      if(t%9===0)k.pc.push({x:96+Math.random()*8,y:HZ.FY-10,vx:-.25-Math.random()*.6,vy:-.5-Math.random()*.6,l:60});}
+    k.pc.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.06;p.l--;if(p.y>HZ.FY){p.y=HZ.FY;p.vx=0;p.vy=0;}});k.pc=k.pc.filter(p=>p.l>0);
+    if(!k.go){
+      if(dx){k.dir=dx;k.x=hzCl(k.x+dx*HZ.SPEED,k.sc>=1?10:20,56);k.walk+=.25;k.sa+=HZ.SPEED;if(k.sa>=HZ.STRIDE){k.sa-=HZ.STRIDE;k.foot^=1;plop();}}else k.walk=0;
+      if(k.sc===0&&space&&t>=120){k.sc=1;k.dt=0;say("Dad... what are you doing?",170);heartbeat(1);whisper(0,.4);}
+      if(k.sc>=1){k.dt++;
+        if(k.dt===1)thunder(.4,0);
+        if(k.dt===20){hadesGrowl(1.8,.6);heartbeat(1);}
+        if(k.dt>=20&&k.dt<65)D.p=(k.dt-20)/45;
+        if(k.dt===65){k.sc=2;D.p=1;D.st=1;k.fl=6;hadesRoar();girlShriek(.9,.6);heartbeat(1);}   /* he stands up, deformed and covered in blood, and runs at you */
+        if(k.sc===2){D.rt++;D.x+=Math.sign(k.x-D.x)*.38;if(D.rt%14===0)plop();
+          if(Math.abs(k.x-D.x)<7){hzKill(h,"dad");return;}}
+        if(k.x<=14){k.go=1;k.gt=0;windClick();}}
+    }else{k.gt++;k.walk=0;if(k.gt>=50)hzBdEnd(h);}};
+  /* mom lying on the floor, torn open. Same grey/blood look as the rest of the mini-game. */
+  const hzMom=(c,x,fy,t)=>{x=Math.round(x);const r=(ox,oy,w,h,col)=>{c.fillStyle=col;c.fillRect(x+ox,fy+oy,w,h);};
+    const GW="#a8a29a",GS="#8a847c",SKN="#cfc7b8",BL="#7a0f0f",BL2="#a01414",BL3="#c42020",BN="#d8d0b8";
+    r(-22,-1,46,2,"#4a0808");r(-17,1,36,1,"#6a0b0b");r(-12,2,26,1,"#3a0606");
+    r(8,-4,14,3,GW);r(8,-2,14,1,GS);r(20,-3,3,3,SKN);
+    r(-8,-6,17,5,GW);
+    r(-6,-6,11,4,"#5a0a0a");r(-4,-5,7,2,BL2);r(-3,-6,1,2,BN);r(-1,-6,1,2,BN);r(1,-6,1,2,BN);r(3,-6,1,2,BN);
+    r(3,-2,7,1,BL2);r(6,-1,6,1,BL3);r(-8,-3,3,2,BL);r(8,-5,3,2,BL);
+    r(-15,-6,7,5,SKN);r(-19,-5,5,3,"#2a1a10");r(-16,-4,1,1,"#fff");r(-14,-4,1,1,"#fff");r(-13,-2,2,2,BL2);
+    const tw=(t>>5)%3===0?1:0;r(-11,-2+tw,4,1,SKN);r(-9,-1,2,1,BL2);};
+  /* dad's head, the same in both poses: a swollen crooked skull, one huge bulging eye, the other eye torn out, a mouth that is a long vertical split with teeth down both sides, a chin that hangs.
+     r = a rect drawer, (hx,hy) = back/top of the head, dr = which way the face points (1 = +x, -1 = -x), wide = how far the split is open (0..2) */
+  const hzDadHead=(r,hx,hy,dr,t,wide)=>{const q=(ox,oy,w,h,col)=>r(dr>0?hx+ox:hx-ox-w,hy+oy,w,h,col);
+    const FL="#b08a78",FD="#8c6656",RW="#8a1414",RW2="#b01c1c",BN="#d8d0b8";
+    q(0,0,11,10,FL);q(1,-2,8,2,FL);q(0,0,1,10,FD);q(0,-1,3,2,"#2a1a10");q(7,-3,2,2,"#2a1a10");
+    q(1,3,4,4,"#e8dca0");q(2,4,2,2,"#7a0f0f");q(3,5,1,1,"#000");q(1,2,5,1,FD);
+    q(9,3,2,3,"#0a0505");q(8,2,4,1,RW);q(10,6,1,2,RW);
+    q(6,1,2+wide,9,"#2a0505");q(5,2,1,1,BN);q(8+wide,3,1,1,BN);q(5,5,1,1,BN);q(8+wide,6,1,1,BN);q(5,8,1,1,BN);q(8+wide,9,1,1,BN);
+    q(1,7,4,3,RW);q(3,8,2,2,RW2);q(5,10,4,4+wide,FD);q(7,14+wide,1,3,RW2);};
+  /* dad on his knees over her. turn 0 = eating (head down), turn>0 = head slowly lifting toward you */
+  const hzDadEat=(c,x,fy,t,turn)=>{x=Math.round(x);const r=(ox,oy,w,h,col)=>{c.fillStyle=col;c.fillRect(x+ox,fy+oy,w,h);};
+    const SK="#b08a78",SH="#8c6656",HR="#2a1a10",BL="#7a0f0f",BL2="#a01414",BL3="#c42020",BN="#d8d0b8",bob=turn>0?0:((t>>3)&1),jt=turn>0?0:((t>>2)&1);
+    r(2,-5,10,5,"#2a2a35");r(8,-3,6,3,"#1a1a22");r(-2,-4,6,4,"#2a2a35");
+    r(-5+jt,-14,11,10,"#3a3a4a");r(-3,-12,6,6,BL);r(0,-13,4,3,BL2);r(2,-9,3,3,BL3);r(-5,-9,3,4,BL2);
+    r(1+jt,-17,2,3,BN);r(4+jt,-16,2,3,BN);r(-3+jt,-15,2,2,BN);                           /* spine knobs poking through the shirt */
+    r(-9,-9+bob,5,2,SK);r(-11,-7,4,2,BL2);r(-12,-6,2,2,BL3);r(-14,-5,3,1,SK);r(-15,-4,3,1,SH);   /* arms too long, fingers dragging in her */
+    if(turn<=0){r(-11,-12+bob,7,6,SK);r(-12,-13+bob,9,2,HR);r(-11,-8+bob,3,2,BL2);r(-9,-10+bob,2,2,"#e8dca0");r(-8,-9+bob,1,1,"#000");}
+    else{const hy=-17-Math.round(turn*8);
+      for(let k=0;k<=Math.round(turn*8);k++)r(-8,-14-k,3,2,k%2?SK:SH);
+      hzDadHead(r,-2,hy,-1,t,turn>.6?1:0);}};
+  /* dad after he stands: not a zombie, a body that has gone wrong. very tall and stretched, one shoulder far higher than the other, one arm much too long, knees bent the wrong way,
+     bones through the back, ribs open, a small extra arm out of his side, a head that hangs crooked on a long neck. run=1: lunging forward, long arm dragging behind. p = how far up he is (0..1) */
+  const hzDadMon=(c,x,fy,t,f,p,run)=>{x=Math.round(x);const ph=(t>>(run?2:3))&1,u=-Math.round(14*p),ln=run?4:0,tw=(t>>3)&1;
+    const r=(ox,oy,w,h,col)=>{c.fillStyle=col;c.fillRect(f>0?x+ox:x-ox-w,fy+oy,w,h);};
+    const FL="#b08a78",FD="#8c6656",RW="#8a1414",RW2="#b01c1c",RW3="#5a0a0a",BN="#d8d0b8",CL="#3a3a4a",CL2="#2a2a35";
+    /* legs: bent the wrong way, long backwards feet, one longer than the other */
+    if(p>.3){r(-3,u,5,-u-4,CL2);r(2,-8,3,3,FD);r(-3,-6,2,5,FL);r(-7,-1-ph,7,1,FD);r(-8,-2-ph,2,1,RW);
+      r(2,u+3,4,-u-8,CL2);r(5,-6,3,3,FD);r(4,-4,2,4,FL);r(0,-1,6,1,FD);r(-1,-2,2,1,RW2);}
+    /* the over-long arm: from the high shoulder, two elbows, down to the floor (dragging behind him when he runs) */
+    {const n=22-u,bx=-7+ln;for(let k=0;k<n;k++){const sh=run?Math.floor(k*.6):0;r(bx-sh+(k===Math.floor(n/2)?-2:0),u-21+k,3,1,k%6===3?FD:FL);}
+     const ex=bx-(run?Math.floor(n*.6):0);r(ex-2,u-12,3,3,FD);r(ex-1,-2,7,1,FL);r(ex+6,-1,3,1,FD);r(ex,-1,1,1,FD);r(ex+3,-3,1,2,FD);r(ex+5,-2,2,1,RW2);}
+    /* torso: stretched, narrow waist, shirt in rags, bones through the back, chest split open */
+    r(-5+ln,u-20,9,20,CL);r(-3+ln,u-4,5,4,FD);
+    r(-7+ln,u-18,2,2,BN);r(-6+ln,u-14,2,2,BN);r(-7+ln,u-10,2,2,BN);
+    r(-1+ln,u-17,5,9,RW3);r(ln,u-16,1,7,BN);r(2+ln,u-16,1,7,BN);r(4+ln,u-16,3,1,BN);r(4+ln,u-13,3,1,BN);r(-4+ln,u-8,3,4,RW2);r(1+ln,u-7,5,3,RW);r(-5+ln,u-20,4,3,RW);
+    r(-8+ln,u-24,7,4,FL);r(-8+ln,u-24,7,1,"#cfa892");                       /* high shoulder */
+    r(3+ln,u-16,4,3,FL);r(5+ln,u-13,2,6,FL);r(7+ln,u-9,2,2,FL);r(8+ln,u-8,3,1,FD);r(10+ln,u-7,1,2,RW2);   /* low shoulder, short twisted arm */
+    r(3+ln+tw,u-9,5,1,FL);r(7+ln+tw,u-10,1,2,FD);                          /* small extra arm out of his ribs, twitching */
+    /* long neck, crooked head */
+    r(-1+ln,u-30,3,7,FL);r(0+ln,u-28,3,1,FD);
+    hzDadHead(r,-2+ln+tw,u-41,1,t,ph*2);};
+  const hzBdFx=(ctx,h,k,t)=>{
+    for(let i=0;i<90;i++){ctx.fillStyle=Math.random()<.5?"rgba(255,255,255,.06)":"rgba(0,0,0,.18)";ctx.fillRect(Math.floor(Math.random()*W/3)*3,Math.floor(Math.random()*H/3)*3,3,3);}
+    const vg=ctx.createRadialGradient(W/2,H/2,H*.26,W/2,H/2,H*.72);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.8)");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+    ctx.textAlign="center";ctx.font="11px Cinzel,Georgia,serif";
+    if(k.mt>0){ctx.fillStyle="rgba(230,200,150,"+Math.min(.9,k.mt/30)+")";ctx.fillText(k.msg,W/2,44);}};
+  const hzHallDraw=(ctx,h)=>{const k=h.bd,V=HZ.VW,VH=HZ.VH,FY=HZ.FY,t=k.t;
+    if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
+    const c=h.A.getContext("2d"),cam=hzBdCam(k),r=(col,x,y,w,hh)=>{c.fillStyle=col;c.fillRect(Math.round(x-cam),y,w,hh);};
+    c.globalCompositeOperation="source-over";const x0=Math.floor(cam/10)*10;
+    /* an ordinary hallway: beige wallpaper, wood panelling, a red runner, family photos, a lamp, a clock, a rainy window */
+    for(let x=x0;x<cam+V+10;x+=10){r((x/10)%2?"#4d4236":"#493e32",x,0,10,104);r("#3a3027",x+9,0,1,100);}
+    r("#2a1d12",0,0,170,4);r("#3a2616",0,66,170,38);r("#5a3a22",0,64,170,3);r("#2a1a10",0,100,170,5);
+    for(let x=x0;x<cam+V+20;x+=20){r(((x/20)|0)%2?"#3a2418":"#33200f",x,105,20,35);r("#25160e",x,105,1,35);}
+    r("#1a0f08",0,105,170,2);r("#4a1218",0,112,170,16);r("#6a1f24",0,115,170,10);r("#c9a24a",0,112,170,1);r("#c9a24a",0,127,170,1);
+    for(let x=0;x<170;x+=12)r("#8a2a30",x+2,119,6,1);
+    [50,125].forEach(lx=>{r("#b48a2a",lx-5,4,10,3);r("#e8c050",lx-3,7,6,1);});
+    r("#8a6a2a",40,34,14,18);r("#1a1410",42,36,10,14);r("#d8b89a",45,39,4,4);r("#2a1a10",44,38,6,2);r("#6a4a3a",43,43,8,7);
+    r("#8a6a2a",60,38,12,15);r("#1a1410",62,40,8,11);r("#d8b89a",64,43,4,3);r("#3a2a1a",63,42,6,2);r("#2b3f6e",63,46,6,6);
+    r("#8a6a2a",76,36,12,16);r("#1a1410",78,38,8,12);r("#d8b89a",80,41,4,4);r("#2a1a10",79,40,6,2);r("#7f93b5",79,45,6,6);
+    r("#9aa2ac",94,30,26,48);r("#0a1230",96,32,22,44);r("#3a2a1a",106,32,2,44);r("#3a2a1a",96,53,22,2);r("#7a828c",92,77,30,3);
+    for(let i=0;i<12;i++){const px=96+((i*7+(t>>1))%21),py=32+((i*13+t*2)%40);r("#6a7aaa",px,py,1,2);r("#6a7aaa",px+1,py+2,1,1);}
+    r("#8a6a2a",126,34,12,12);r("#d8d0b8",128,36,8,8);r("#2a1a10",131,37,1,3);r("#2a1a10",131,40,3,1);
+    r("#6a4a2a",44,90,24,3);r("#5a3a1e",46,93,3,23);r("#5a3a1e",63,93,3,23);r("#8a1c24",52,84,6,6);r("#3a4a8a",50,77,10,7);r("#e8c050",51,78,8,1);
+    /* the door you came out of (left) and your parents' door (right) */
+    r("#cfd3d8",2,56,28,61);r("#5a3a1e",4,58,24,59);r("#4a2c18",7,62,18,20);r("#4a2c18",7,86,18,26);r("#c9a24a",24,88,3,3);
+    const dop=k.dopen||0,lw=Math.max(2,Math.round(24*(1-dop)));
+    r("#cfd3d8",138,56,30,61);r("#100608",140,58,26,59);if(dop>0)r("rgba(150,30,30,"+(.2*dop)+")",140,58,26,59);
+    r("#5a3a1e",140,58,lw,59);if(lw>8){r("#4a2c18",143,62,lw-6,20);r("#4a2c18",143,86,lw-6,26);r("#c9a24a",140+lw-5,88,3,3);}
+    hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,0);
+    ctx.imageSmoothingEnabled=false;ctx.drawImage(h.A,0,0,V,VH,0,0,W,H);
+    ctx.fillStyle="rgba(0,0,0,.25)";ctx.fillRect(0,0,W,H);
+    {const lg=ctx.createRadialGradient((55-cam)*3,78*3,10,(55-cam)*3,78*3,240);lg.addColorStop(0,"rgba(255,175,80,.22)");lg.addColorStop(1,"rgba(255,175,80,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();}
+    hzBdFx(ctx,h,k,t);
+    if(!k.go){ctx.font="bold 11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(255,230,170,"+(.6+.3*Math.sin(t*.2))+")";
+      if(k.nd&&!k.kn)ctx.fillText("SPACE: knock",(k.x-cam)*3,(FY-30)*3);
+      else if(k.ok&&k.nd)ctx.fillText("ENTER",(k.x-cam)*3,(FY-30)*3);
+      if(t<700&&!k.kn){ctx.font="11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(200,190,170,"+Math.min(.6,(700-t)/80)+")";ctx.fillText("arrows walk",W/2,H-14);}}
+    ctx.textAlign="left";
+    if(t<60){ctx.fillStyle="rgba(0,0,0,"+(1-t/60)+")";ctx.fillRect(0,0,W,H);}
+    if(k.go&&k.gt>20){ctx.fillStyle="rgba(0,0,0,"+Math.min(1,(k.gt-20)/40)+")";ctx.fillRect(0,0,W,H);}};
+  const hzParDraw=(ctx,h)=>{const k=h.bd,V=HZ.VW,VH=HZ.VH,FY=HZ.FY,t=k.t,D=k.dad;
+    if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
+    const c=h.A.getContext("2d"),r=(col,x,y,w,hh)=>{c.fillStyle=col;c.fillRect(Math.round(x),y,w,hh);};
+    c.globalCompositeOperation="source-over";
+    for(let x=0;x<V;x+=10){r((x/10)%2?"#2b2026":"#2f2329",x,0,10,104);r("#231a1f",x+9,0,1,100);}
+    r("#17100a",0,0,V,4);r("#1c1218",0,100,V,5);
+    for(let x=0;x<V;x+=20){r(((x/20)|0)%2?"#2e1c14":"#28180f",x,105,20,35);r("#1c100a",x,105,1,35);}
+    r("#4a1c22",34,114,84,14);r("#c9a24a",34,114,84,1);r("#c9a24a",34,127,84,1);
+    r("#9aa2ac",60,26,22,38);r("#0a1230",62,28,18,34);r("#3a2a1a",70,28,2,34);r("#3a2a1a",62,44,18,2);r("#7a828c",58,63,26,3);
+    for(let i=0;i<9;i++){const px=62+((i*7+(t>>1))%17),py=28+((i*13+t*2)%30);r("#6a7aaa",px,py,1,2);}
+    r("#2a1d12",2,58,22,59);r("#cfd3d8",0,56,2,61);r("#3a2616",4,60,18,55);r("rgba(255,170,70,.22)",4,60,18,55);
+    r("#4a2c18",32,88,22,28);r("#3a2414",34,90,18,10);r("#3a2414",34,102,18,12);r("#c9a24a",42,94,2,2);r("#c9a24a",42,107,2,2);
+    r("#8a1c24",38,82,6,6);r("#3a4a8a",36,75,10,7);r((t>>2)%11?"#e8c050":"#6a5a28",37,76,8,1);
+    r("#5a3416",64,98,54,14);r("#6a3d1c",114,76,4,36);r("#7a1219",66,92,50,7);r("#d8d8d0",102,88,12,5);r("#4a0808",72,94,14,3);r("#4a0808",96,93,8,3);
+    hzMom(c,92,FY,t);
+    if(k.sc===0)hzDadEat(c,98,FY,t,0);
+    else if(k.sc===1&&k.dt<20)hzDadEat(c,98,FY,t,k.dt/20);
+    else hzDadMon(c,D.x,FY,t,k.x<D.x?-1:1,D.p,D.st);
+    k.pc.forEach(p=>{c.fillStyle=p.l%2?"#a01414":"#7a0f0f";c.fillRect(Math.round(p.x),Math.round(p.y),2,1+(p.l%3===0?1:0));});
+    hzPerson(c,k.x,FY,k.walk,k.foot,k.dir,t,0);
+    ctx.imageSmoothingEnabled=false;ctx.drawImage(h.A,0,0,V,VH,0,0,W,H);
+    ctx.fillStyle="rgba(0,0,0,.45)";ctx.fillRect(0,0,W,H);
+    {const lg=ctx.createRadialGradient(41*3,78*3,10,41*3,78*3,200);lg.addColorStop(0,"rgba(255,170,70,.2)");lg.addColorStop(1,"rgba(255,170,70,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);
+      const rg=ctx.createRadialGradient(96*3,112*3,10,96*3,112*3,170);rg.addColorStop(0,"rgba(150,20,20,"+(k.sc>=2?.2:.1)+")");rg.addColorStop(1,"rgba(150,20,20,0)");ctx.fillStyle=rg;ctx.fillRect(0,0,W,H);ctx.restore();}
+    hzBdFx(ctx,h,k,t);
+    if(k.sc===0&&t>=120&&!k.go){ctx.font="bold 11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(255,230,170,"+(.6+.3*Math.sin(t*.2))+")";ctx.fillText("SPACE: ask him what he is doing",W/2,H-20);}
+    if(k.sc===2&&!k.go){const q=Math.floor(t/6)%2;ctx.font="bold 54px Cinzel,Georgia,serif";ctx.fillStyle=q?"rgba(150,10,10,.95)":"rgba(70,5,5,.8)";ctx.fillText("RUN",W/2+(Math.random()-.5)*5,H*.3);}
+    ctx.textAlign="left";
+    if(k.fl>0){ctx.fillStyle="rgba(255,255,255,"+k.fl/8+")";ctx.fillRect(0,0,W,H);}
+    if(t<60){ctx.fillStyle="rgba(0,0,0,"+(1-t/60)+")";ctx.fillRect(0,0,W,H);}
+    if(k.go&&k.gt>10){ctx.fillStyle="rgba(0,0,0,"+Math.min(1,(k.gt-10)/36)+")";ctx.fillRect(0,0,W,H);}};
+
   const hzBdDraw=(ctx,h)=>{const k=h.bd,V=HZ.VW,VH=HZ.VH,FY=HZ.FY,t=k.t;
+    if(k.ph===1){hzHallDraw(ctx,h);return;}if(k.ph===2){hzParDraw(ctx,h);return;}
     if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
     const c=h.A.getContext("2d"),cam=hzBdCam(k),r=(col,x,y,w,hh)=>{c.fillStyle=col;c.fillRect(Math.round(x-cam),y,w,hh);};
     c.globalCompositeOperation="source-over";const fl=k.lt>0?Math.min(1,k.lt/6):0;
@@ -3096,6 +3266,7 @@ function ghoulFace(c,w,h,t,f,v){
 let raf=0,keyDown=null,keyUp=null;
 function showGame(on,endless){
   document.getElementById("gamebox").hidden=!on;
+  document.getElementById("gamebox").classList.toggle("full",!!(on&&endless));   /* "fake" mode = just the full game screen, no "Finding your leads" card */
   document.getElementById("gexit").hidden=!(on&&endless);
   const sc=document.getElementById("scare"); sc.hidden=true; window.onresize=null;
   cancelAnimationFrame(raf);bossMusic(false);hzAmbient(false);
