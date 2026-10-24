@@ -724,7 +724,7 @@ function createGame(W,H){
   /* ===== HADES HORROR MINI-GAME (SIDE VIEW) =====
      Starts when the pomegranate brick is hit (kind 10 -> startDark). The brick breaker is paused (g.bs===6).
      Side-scrolling hall, drawn at 120x140 and scaled x3 with no smoothing = low-res grainy pixel look.
-     Arrow keys walk, ENTER opens doors, SPACE = bright candle (ghosts in range disintegrate). */
+     Arrow keys walk, ENTER opens doors, SPACE = bright candle (ghosts in range are blinded for 4 seconds). */
   const HZ={VW:120,VH:140,WW:700,FY:122,WB:106,CT:26,FR:22,SPEED:.55,STRIDE:9,BR:62,
     fires:[60,215,365,490,525,640],   /* safe spots (x on the floor) */
     gate:688,MX:364,PX:250,hang:[232,380,515,626],
@@ -776,7 +776,7 @@ HZ.lore.push([142,"SIGN: Some words only show in the dark. Shine your candle on 
    for(let i=0;i<ND;i++){let x=Math.round(220+i*(HZ.gate-420)/(ND-1)+(rr()-.5)*60);let fin=0;for(const m of [60,46,34]){for(let k=0;k<50&&!fin;k++){const sh=(k%2?1:-1)*Math.ceil(k/2)*20;if(ok(x+sh,m)&&HZ.dw.every(d=>Math.abs(d[0]-x-sh)>=100)){x+=sh;fin=1;}}if(fin)break;}HZ.dw.push([x,give[i]]);}HZ.dw.sort((u,v)=>u[0]-v[0]);}
   }}
 /* CHANGED (Hades pacing): the hall is stretched again, NOT evenly. Long empty stretches now sit between doors, so you can walk a minute with only the dark and your footsteps. The order of everything is kept. The last door stays close to the gate so the dog chase is as long as before. */
-{const Z=6.0,SEG=[[1015,1400],[1270,600],[1500,600],[1740,600],[1970,1800],[2270,0],[2590,600],[2800,600],[3030,1800],[3260,600],[3480,600],[3700,1200]],LAST=3700;
+{const Z=4.4,SEG=[[1015,840],[1270,360],[1500,360],[1740,360],[1970,1080],[2270,0],[2590,360],[2800,360],[3030,1080],[3260,360],[3480,360],[3700,720]],LAST=3700;   /* CHANGED: hall about 30% shorter (was Z=6.0 and gaps 1400/600/1800/1200). Same order, same spacing style, the long empty stretches are just shorter. */
  const f=v=>{let r=Math.min(v,LAST)*Z;for(const q of SEG)if(v>q[0])r+=q[1];if(v>LAST)r+=v-LAST;return Math.round(r);};
  HZ.rb=[140,290,440,580].map(v=>f(v*HZ.KS));
  HZ.WW=f(HZ.WW);HZ.gate=f(HZ.gate);HZ.MX=f(HZ.MX);HZ.PX=f(HZ.PX);HZ.hang=HZ.hang.map(f);HZ.dp=HZ.dp.map(gr=>gr.map(pp=>pp.map(f)));
@@ -793,7 +793,7 @@ HZ.lore.push([142,"SIGN: Some words only show in the dark. Shine your candle on 
   for(let i=0;i<140;i++)HZ.wd.push(["wcrk",50+rr()*(HZ.WW-100),34+Math.floor(rr()*52)]);
   HZ.decor.sort((a,b)=>a[2]-b[2]);}
  /* the 4 roaming ghosts: where each one lives and how far it paces */
- HZ.gh=[.24,.44,.62,.80].map(r=>Math.round(HZ.gate*r));HZ.GR=800;}
+ HZ.gh=[.24,.44,.62,.80].map(r=>Math.round(HZ.gate*r));HZ.GR=800;HZ.GR2=1500;}   /* CHANGED: GR2 = how far the 2 new up-and-down ghosts pace */
 const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
   /* NEW: where the rotten floorboards are (far from every door, closet, drawer, sign, prop and wax stub) */
   {const bad=[];HZ.dp.forEach(g=>g.forEach(r=>bad.push(r[0],r[1])));Object.values(HZ.dx).forEach(v=>bad.push(v));HZ.closets.forEach(v=>bad.push(v));HZ.signs.forEach(v=>bad.push(v));HZ.dw.forEach(d=>bad.push(d[0]));HZ.props.forEach(p=>bad.push(p[0]));HZ.wax.forEach(v=>bad.push(v));bad.push(HZ.wallx,HZ.MX,HZ.gate);
@@ -834,7 +834,9 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
       else{Object.assign(h,{t:0,seeds:0,got:[0,0,0,0],quiet:1,fake:0,wall:{d:0,open:1},alt:[0,0,0],slamDone:0,spawned:0,room:-1,toast:0,chase:0,ct:0,wh3:0,whR:60,crawlT:0,crawlDone:0,chDone:0,turnDone:0,pDone:0,dDone:0,fbDone:0,lw:Array(40).fill(0),hw:[0,0,0],mir:{s:0,t:0},
         cdone:0,bdone:0,dolldone:0,welldone:0,sig:0,crypt:0,chap:0,rel:0,cl:0,cb:0,spx:null,xs:null,wf:null,loreCd:0,fsCd:0,gf:0,ds:null,kitDone:0,fHint:0});}hzSay(h,({girl:"She only wanted someone to stay.",ghost:"They only wanted to be remembered.",hanger:"Some of them never stop falling.",dog:"He only guards what he loves.",mimic:"Some seeds are hungry.",figure:"He walks the halls for a reason.",crawler:"It was a child once.",drowned:"The water remembers everyone it takes."})[kk]||"The seeds are hidden again.",230);h.q=[[({girl:"She is still waiting where you left her.",ghost:"Hades remembers every one of them.",hanger:"Look up before you walk under them.",dog:"Drop a candle. Make him wait.",mimic:"Shine your light before you reach for anything.",figure:"Wait until his back is turned.",crawler:"Do not let it reach you in the dark.",drowned:"Pull free. Do not stop pulling."})[kk]||"Every seed must be taken again.",230]];}   /* died: all pomegranates must be collected again */
     /* CHANGED: exactly 4 ghosts in the whole game. They roam their own stretch of the hall like the tall man. No random spawns. */
-    h.souls=HZ.gh.map((gx,i)=>({x:gx,lit:0,ch:i===2?1:0,tr:[],dis:0,rm:1,home:gx,rng:HZ.GR,dir:i%2?1:-1,p:Math.floor(Math.random()*300),st:0}));
+    h.souls=HZ.gh.map((gx,i)=>({x:gx,lit:0,ch:i===2?1:0,tr:[],dis:0,rm:1,home:gx,rng:HZ.GR,dir:i%2?1:-1,p:300+Math.floor(Math.random()*300),st:0,bl:0,en:0,et:0,hold:0,ld:null,w:0}));
+    /* CHANGED: 2 MORE ghosts (6 in total). They walk up and down a long stretch of the hall, sometimes stand still for 5 to 10 seconds, and sometimes slip into LOCKED doors only (they hide inside for 5 to 10 seconds, then come back out). */
+    {const lk=h.doors.filter(d=>d.locked);[lk[1],lk[2]].forEach((d,i)=>{if(d)h.souls.push({x:d.x,lit:0,ch:0,tr:[],dis:0,rm:1,home:d.x,rng:HZ.GR2,dir:i%2?-1:1,p:300+Math.floor(Math.random()*300),st:0,bl:0,en:0,et:0,hold:0,ld:null,w:1});});}
     h.souls.forEach(q=>{if(Math.abs(q.home-h.x)<q.rng+800){q.home=hzCl(h.x+(q.home>=h.x?1:-1)*(q.rng+1000),q.rng+60,HZ.WW-q.rng-60);q.x=q.home;}});
     h.open=h.seeds>=4?1:0;};
   const hzInit=()=>{g.hz={};hzReset(true);hzBdStart(g.hz);};   /* CHANGED: you now wake up in your bedroom first (hzBdStart). The hall and its sounds start when you walk out of the door (hzBdEnd). */
@@ -852,8 +854,9 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
     hzStep();};
   /* last pomegranate: lights go out, Hades skull flashes, EVERY ghost now moves toward you whether you look or not, the gate is open */
   const hzChase=h=>{h.chase=1;h.ct=0;h.cn=Math.max(h.cn,2);h.dark=50;h.skull=14;h.hw[2]=1;thunder(.8,0);rumble();howl(0,.3);hzAmbLevel(.09);};
-  /* SPACE: the candle flares. Ceiling hangers and Cerberus in range are driven off. CHANGED: ghosts are NOT destroyed any more. */
+  /* SPACE: the candle flares. Ceiling hangers and Cerberus in range are driven off. CHANGED: ghosts are NOT destroyed, the flash BLINDS every ghost in range for 4 seconds (they stand still and cannot catch you, so you can walk past). */
   const hzBurst=h=>{zap();hzAmbLevel(.08);
+    h.souls.forEach(q=>{if(!(q.en>0)&&Math.abs(q.x-h.x)<=HZ.BR)q.bl=240;});
     h.hg.forEach((q,i)=>{if(!q.d&&Math.abs(HZ.hang[i]-h.x)<=HZ.BR){q.d=2;for(let k=0;k<10;k++)h.pt.push({x:HZ.hang[i]+(Math.random()-.5)*5,y:HZ.CT+30+Math.random()*50,vx:(Math.random()-.5)*.8,vy:-.2-Math.random()*.5,l:35+Math.random()*20});}});
     if(h.cer&&Math.abs(h.cer.x-h.x)<=HZ.BR+20)h.cer.fl=130;
     if(h.peek)h.peek=null;};
@@ -1874,7 +1877,12 @@ const hzOverlays=(ctx,h)=>{
     /* CHANGED: ghosts do not spawn and cannot be killed. The 4 that exist ROAM their stretch of the hall like the tall man and ignore you. They freeze while your candle is on them (walk through a frozen one and it stays stunned for a few seconds). Touch one in the dark, or with no candle, and you are caught. */
     const spd=.16+.05*h.seeds+(h.chase?.04:0);let near=999;
     h.souls.forEach(s=>{
-      s.lit=hzLit(h,s.x);const ex=h.x-s.x,d=Math.abs(ex)||1;near=Math.min(near,d);
+      s.lit=hzLit(h,s.x);const ex=h.x-s.x,d=Math.abs(ex)||1;
+      /* NEW: a ghost that slipped into a locked door: it fades into the door, stays inside 5 to 10 seconds, then fades back out and walks on. Nothing can touch it while it is inside. */
+      if(s.en>0){if(h.chase){s.en=0;}else{s.et++;const T=30+s.hold;s.dis=s.et<30?s.et*34/30:s.et<T?34:34-(s.et-T)*34/30;if(s.et>=T+30){s.en=0;s.dis=0;}return;}}
+      near=Math.min(near,d);
+      /* NEW: blinded by the flare for 4 seconds: it stands still and cannot catch you */
+      if(s.bl>0){s.bl--;return;}
       if(h.hid&&d<46){s.hc=(s.hc||0)+1;if(s.hc>420){s.aw=480;s.hc=0;}}   /* hidden: a ghost circles the wardrobe, then loses you and wanders off */
       if(s.aw>0){s.aw--;s.x-=Math.sign(ex)*spd*1.3;return;}
       if(s.st>0){s.st--;return;}
@@ -1882,9 +1890,16 @@ const hzOverlays=(ctx,h)=>{
       if(h.chase){const cn=hzCan(h,s.x,30);if(!(h.hid&&d<=34))s.x+=Math.sign(ex)*(spd+(s.ch?.1:0))*(cn?.04:1);}
       else if(s.p>0)s.p--;
       else{if(hzCan(h,s.x+s.dir*22,12)){s.dir*=-1;s.p=90;}s.x+=s.dir*.3;
-        if(s.x>=s.home+s.rng){s.x=s.home+s.rng;s.dir=-1;s.p=240+Math.floor(Math.random()*360);}
-        else if(s.x<=s.home-s.rng){s.x=s.home-s.rng;s.dir=1;s.p=240+Math.floor(Math.random()*360);}}
-      if(d<5&&!safeP&&!h.hid){h.catch=1;h.killer="ghost";}});
+        if(s.x>=s.home+s.rng){s.x=s.home+s.rng;s.dir=-1;s.p=300+Math.floor(Math.random()*300);}
+        else if(s.x<=s.home-s.rng){s.x=s.home-s.rng;s.dir=1;s.p=300+Math.floor(Math.random()*300);}
+        else if(!s.p){
+          /* NEW: sometimes a ghost just stops and stands frozen for 5 to 10 seconds, and then it has to walk again. The 4 old ghosts like to stop in front of a door (you cannot enter it while they stand there). */
+          if(!s.w){const dd=h.doors.find(q=>Math.abs(q.x-s.x)<5);if(dd){if(s.ld!==dd){s.ld=dd;if(Math.random()<.4)s.p=300+Math.floor(Math.random()*300);}}else s.ld=null;}
+          /* NEW: the 2 up-and-down ghosts sometimes go into a LOCKED door (only those) */
+          else{const dd=h.doors.find(q=>q.locked&&Math.abs(q.x-s.x)<5);if(dd){if(s.ld!==dd){s.ld=dd;if(Math.random()<.45){s.en=1;s.et=0;s.hold=300+Math.floor(Math.random()*300);s.x=dd.x;}}}else s.ld=null;}
+          /* a random stand anywhere (the new ghosts never stop right at a real door) */
+          if(!s.p&&!s.en&&Math.random()<1/900&&!(s.w&&h.doors.some(q=>!q.locked&&Math.abs(q.x-s.x)<40)))s.p=300+Math.floor(Math.random()*300);}}
+      if(d<5&&!safeP&&!h.hid&&!(s.en>0)){h.catch=1;h.killer="ghost";}});
     h.pt.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.l--;});h.pt=h.pt.filter(p=>p.l>0);
     if(h.catch){h.catch=0;h.dead=1;h.slam=null;h.silent=0;h.br=0;hzAmbLevel(0);return;}   /* caught: showGame plays the Hades skull jumpscare */
     if(h.open&&Math.abs(h.x-HZ.gate)<10)h.out=1;
@@ -1907,7 +1922,8 @@ const hzOverlays=(ctx,h)=>{
         else{whisper(0,.14);hzSay(h,["Empty. Only dust.","Empty. A child's tooth.","Empty. Scratches on the inside.","Empty. Somebody was here first."][di%4],120);}}}
     /* ENTER: open the door you are standing at */
     if(enter){const dr=h.doors.find(d=>Math.abs(d.x-h.x)<11);
-      if(dr){if(!dr.locked&&hzWatch(h,dr)){hzKill(h,"figure");return;}if(dr.locked){hzSay(h,["Locked.","Locked. Something scratches inside.","Locked. A soft laugh, very close.","Locked. Don't knock."][Math.floor(Math.random()*4)],110);whisper(0,.12);}
+      if(dr&&!dr.locked&&h.souls.some(q=>!(q.en>0)&&!(q.bl>0)&&Math.abs(q.x-dr.x)<14)){hzSay(h,"A ghost stands in front of the door. Wait, or flare your candle.",120);whisper(0,.15);}   /* NEW: a ghost standing at a door blocks it (a blinded ghost does not) */
+      else if(dr){if(!dr.locked&&hzWatch(h,dr)){hzKill(h,"figure");return;}if(dr.locked){hzSay(h,["Locked.","Locked. Something scratches inside.","Locked. A soft laugh, very close.","Locked. Don't knock."][Math.floor(Math.random()*4)],110);whisper(0,.12);}
         else if(dr.i===3&&h.seeds<3){hzSay(h,"The door won't open. Not yet.",120);whisper(0,.12);}
         else if(dr.i===3&&(h.rel||0)<2){hzSay(h,"Two offerings are missing: one from the crypt, one from the chapel.",200);whisper(0,.12);}
         else if(dr.i===3&&!h.sig){hzSay(h,"Sealed with wax and ash. Light the three-candle altar.",190);whisper(0,.12);}
@@ -1952,7 +1968,7 @@ const hzOverlays=(ctx,h)=>{
     if(on){c.fillStyle=(t>>2)%2?"#ffd05a":"#ffb347";c.fillRect(cx-1,py-15,2,3);c.fillStyle="#fff3b0";c.fillRect(cx-1,py-14,1,1);}};
   /* ---- new figures (low-res pixel buffer) ---- */
   /* grey human: long arms that hang to the floor and drag behind, white eyes. dr = way it faces (toward you), 0 = hanging body */
-  const hzGhost=(c,gx,fy,t,dis,dr)=>{gx=Math.round(gx)+(dis?Math.round((Math.random()-.5)*3):0);dr=dr||0;
+  const hzGhost=(c,gx,fy,t,dis,dr,bl)=>{gx=Math.round(gx)+(dis?Math.round((Math.random()-.5)*3):0);dr=dr||0;
     const f=dr||1,ph=(t>>3)&1,bob=(t>>4)&1,Y=Math.round(fy)-1,sw=Math.round(Math.sin(t*.07+gx));
     const r=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h);};
     const SK="#8d8f89",SH="#686a65",HI="#a5a7a0",RG="#26231f",HR="#171513";
@@ -1979,7 +1995,7 @@ const hzOverlays=(ctx,h)=>{
     r(hx-2,hy,5,6,SK);r(hx-2,hy+5,5,1,SH);r(hx-1,hy+6,3,1,SK);
     r(hx-3,hy-1,7,2,HR);r(hx-3,hy+1,1,8,HR);r(hx+3,hy+1,1,8,HR);r(hx-2,hy+1,1,2,HR);
     r(hx-2,hy+2,5,2,"#050505");
-    r(hx-2,hy+3,2,1,"#ffffff");r(hx+1,hy+3,2,1,"#ffffff");
+    r(hx-2,hy+3,2,1,bl?"#050505":"#ffffff");r(hx+1,hy+3,2,1,bl?"#050505":"#ffffff");   /* blinded: the white eyes go dark */
     r(hx,hy+4,1,1,SH);r(hx-1,hy+5,3,1,"#2a2220");
     c.globalAlpha=1;};
   
@@ -2180,7 +2196,7 @@ const hzOverlays=(ctx,h)=>{
     if(h.cer)hzDog(c,R(h.cer.x-cam),FY,h.cer.t,h.cer.f);
     /* chain trail behind the chained ghost, then every ghost */
     h.souls.forEach(s=>{if(s.ch){c.fillStyle="#8a8f9a";s.tr.forEach(x=>c.fillRect(R(x-cam),FY-6,1,1));}});
-    h.souls.forEach(s=>{const sx=R(s.x-cam);if(sx>-10&&sx<V+10)hzGhost(c,sx,FY,t,s.dis,(s.rm&&!h.chase&&!s.lit&&!(s.st>0))?s.dir:(h.x>=s.x?1:-1));});
+    h.souls.forEach(s=>{const sx=R(s.x-cam);if(sx>-10&&sx<V+10&&!(s.en>0&&s.dis>=34))hzGhost(c,sx,FY,((s.p>0&&!h.chase)||s.bl>0)?0:t,s.dis,(s.rm&&!h.chase&&!s.lit&&!(s.st>0))?s.dir:(h.x>=s.x?1:-1),s.bl>0);});
     /* the player */
     if(h.fall&&h.fall.t>=36){const fl=h.fall,wd=Math.min(28,Math.round(fl.t*1.1)),fx=R(HZ.fx-cam);c.save();c.beginPath();c.rect(fx-wd/2,0,wd,FY+9);c.clip();hzPerson(c,h.x-cam,FY+Math.round((fl.t-36)*1.3),0,0,h.dir,t,0);c.restore();}
     else if(!h.hid)hzPerson(c,h.x-cam,FY,h.walk,h.foot,h.dir,t,h.fl>.15);
@@ -2418,7 +2434,7 @@ const hzGirlFloor=(c,gx,fy,t,f,up)=>{gx=Math.round(gx);
       ctx.font=G;ctx.fillStyle=R;ctx.fillText("CONTROLS",cx,y);y+=18;
       y=wrap("ARROW KEYS: walk",y,B,C,15);
       y=wrap("ENTER: open a door, leave a room, dig",y,B,C,15);
-      y=wrap("SPACE: flare the candle (costs 1 wax). Ghosts close to you turn to dust",y,B,C,15);
+      y=wrap("SPACE: flare the candle (costs 1 wax). The flash does not kill ghosts, it blinds the ones close to you for 4 seconds so you can walk past them",y,B,C,15);
       y=wrap("C: place a candle (C on a candle takes it back)",y,B,C,15);
       y=wrap("At the throne: press E",y,B,C,15)+6;
       y=wrap("Phone: drag to walk. Tap bottom-left for ENTER, bottom-middle to place a candle, bottom-right for the flare",y,B,D,14);
