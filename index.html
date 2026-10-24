@@ -995,7 +995,7 @@ const hzOverlays=(ctx,h)=>{
       if(T.stab%5===0)plop();}
     if(T.stab){T.stab++;if(T.stab===2){thunder(.7,0);hadesGrowl(1.8,.8);}
       if(T.stab>18&&T.stab<170){const c=(T.stab-18)/150;for(let i=0;i<3;i++)T.emb.push({x:60+(Math.random()-.5)*26,y:74-60*(1-c)+Math.random()*6,vx:(Math.random()-.5)*.3,vy:-.2-Math.random()*.5,l:60+Math.random()*50});}
-      if(T.stab>=260)hzEndStep(h,T);return;}   /* CHANGED: no victory song or win screen any more, the ending below plays instead */
+      if(T.stab>=260)hzEndStep(h,T,press);return;}   /* CHANGED: no victory song or win screen any more, the ending below plays instead */
     let dx=(K.ArrowRight?1:0)-(K.ArrowLeft?1:0),dy=(K.ArrowDown?1:0)-(K.ArrowUp?1:0);
     if(!dx&&!dy&&g.tpt){const tx=g.tpt.x*HZ.VW/W-T.x,ty=g.tpt.y*HZ.VH/H-T.y;if(Math.hypot(tx,ty)>3){dx=tx;dy=ty;}}
     const ln=Math.hypot(dx,dy);
@@ -1006,10 +1006,58 @@ const hzOverlays=(ctx,h)=>{
     if(T.armed&&T.t%3===0)T.emb.push({x:T.x+4+Math.random()*3,y:T.y-12,vx:(Math.random()-.5)*.3,vy:-.4,l:18});
   };
   /* ===== NEW ENDING after Hades dies: about 7 seconds of awkward silence (no victory song), he asks where it is, ~4 s later everything snaps back to the normal house: the living room, a bloody knife, his dead mom and sister on the floor. "What did I do." The black cutscreen comes later. ===== */
-  const hzEndStep=(h,T)=>{T.et=(T.et||0)+1;if(T.mt>0)T.mt--;if(T.fl>0)T.fl--;const et=T.et;
+  const hzEndStep=(h,T,press)=>{T.et=(T.et||0)+1;if(T.mt>0)T.mt--;if(T.fl>0)T.fl--;const et=T.et;
     if(et===420){T.msg="What happened? Where's my victory song?";T.mt=240;}      /* after about 7 s of silence */
     if(et===660){T.scene=1;T.et2=0;T.fl=10;T.mt=0;heartbeat(1);}                  /* about 4 s later: suddenly back in the house */
-    if(T.scene===1){T.et2++;if(T.et2===150){T.msg="What did I do.";T.mt=999999;heartbeat(1);}}};
+    if(T.scene===1){T.et2++;if(T.et2===150){T.msg="What did I do.";T.mt=999999;heartbeat(1);}
+      if(T.et2===520){T.scene=2;T.si=0;T.sp=0;T.sa=0;T.sg=60;T.sh=0;T.mt=0;T.fl=0;}}   /* after "What did I do.": cut to the black story screens */
+    else if(T.scene===2){
+      /* Story screens: white text fades in, press E, it fades out, the next one fades in. The last one is the credits (no more E). */
+      const LAST=HZSTORY.length;
+      if(T.sg>0){T.sg--;return;}
+      if(T.sp===0){T.sa=Math.min(1,T.sa+1/90);if(T.sa>=1){T.sp=1;T.sh=0;}}
+      else if(T.sp===1){T.sh++;if(T.si<LAST&&press&&T.sh>10){T.sp=2;}}
+      else if(T.sp===2){T.sa=Math.max(0,T.sa-1/50);if(T.sa<=0){T.si++;T.sp=0;T.sg=40;}}
+      if(T.si===LAST){   /* credits: our character sits in the dark crying, and you can't play any more */
+        if(T.sp===0&&T.sa>0&&!T.cried){T.cried=1;cry(0,.5);}
+        if(T.cried&&T.t%220===0)cry(0,.35);
+      }
+    }};
+  const HZSTORY=["On a Saturday night, while Timmy's father was away from work, the worst thing could have happened.",
+    "Timmy had an issue with violent video games.",
+    "This new game came out where you could fight Greek mythology gods.",
+    "Timmy's autistic mind made this game his reality.",
+    "On that Saturday night, 2 people lost their lives due to a game.",
+    "His sister.",
+    "His mother."];
+  const hzWrap=(ctx,txt,maxW)=>{const w=txt.split(" "),L=[];let cur="";for(const x of w){const tt=cur?cur+" "+x:x;if(cur&&ctx.measureText(tt).width>maxW){L.push(cur);cur=x;}else cur=tt;}if(cur)L.push(cur);return L;};
+  const hzStoryDraw=(ctx,h)=>{const T=h.th,t=T.t;
+    ctx.fillStyle="#000";ctx.fillRect(0,0,W,H);
+    const si=T.si||0,a=T.sa||0,fs=Math.max(15,Math.round(Math.min(W/24,H/16)));
+    ctx.textAlign="center";ctx.textBaseline="middle";
+    if(si<HZSTORY.length){
+      ctx.font=fs+"px Cinzel,Georgia,serif";ctx.fillStyle="rgba(255,255,255,"+a+")";
+      const L=hzWrap(ctx,HZSTORY[si],W*.8),lh=fs*1.5,y0=H/2-(L.length-1)*lh/2;
+      L.forEach((ln,i)=>ctx.fillText(ln,W/2,y0+i*lh));
+      if(T.sp===1&&T.sh>90){const pa=.25+.2*Math.sin(t/18);ctx.font=Math.round(fs*.55)+"px Cinzel,Georgia,serif";ctx.fillStyle="rgba(255,255,255,"+pa+")";ctx.fillText("press E",W/2,H-fs*1.6);}
+    }else{
+      /* credits + the character crying in pure darkness (only visible while the credit is on screen) */
+      const u=Math.max(3,Math.round(Math.min(W,H)/55)),cx=Math.round(W/2),cy=Math.round(H*.74);
+      ctx.save();ctx.globalAlpha=a*.6;
+      const R=(x,y,w,hh,c)=>{ctx.fillStyle=c;ctx.fillRect(cx+x*u,cy+y*u,w*u,hh*u);};
+      const sob=Math.round(Math.sin(t/9)*.6*u)/u;
+      R(-3,-1+sob,6,4,"#2b3f6e");           /* hunched body */
+      R(-4,-3+sob,3,3,"#cfa77a");           /* head bowed */
+      R(-3,3,7,1,"#1a1a22");                /* knees and feet */
+      R(-5,2,2,1,"#1a1a22");
+      R(0,0+sob,5,2,"#2b3f6e");             /* arms around the knees */
+      for(let i=0;i<3;i++){const ph=((t+i*23)%70)/70;ctx.fillStyle="rgba(150,200,255,"+(1-ph)+")";ctx.fillRect(cx-3*u+i*u*.6,cy+(0+ph*5)*u,Math.max(1,u*.4),Math.max(2,u*.7));}
+      ctx.restore();
+      ctx.globalAlpha=1;
+      ctx.font=Math.round(fs*.6)+"px Cinzel,Georgia,serif";ctx.fillStyle="rgba(255,255,255,"+a*.8+")";ctx.fillText("PRODUCER",W/2,H*.34);
+      ctx.font=Math.round(fs*1.5)+"px Cinzel,Georgia,serif";ctx.fillStyle="rgba(255,255,255,"+a+")";ctx.fillText("KleOs Studios",W/2,H*.34+fs*2);
+    }
+    ctx.textAlign="left";ctx.textBaseline="alphabetic";};
   const hzDeadMom=(c,x,fy)=>{x=Math.round(x);const r=(ox,oy,w,h,col)=>{c.fillStyle=col;c.fillRect(x+ox,fy+oy,w,h);};
     const GW="#a8a29a",GS="#8a847c",SKN="#cfc7b8",BL="#7a0f0f",BL2="#a01414",BL3="#c42020";
     r(-24,-1,50,2,"#4a0808");r(-19,1,40,1,"#6a0b0b");r(-12,2,28,1,"#3a0606");
@@ -1066,6 +1114,7 @@ const hzOverlays=(ctx,h)=>{
     if(T.fl>0){ctx.fillStyle="rgba(255,255,255,"+T.fl/10*.9+")";ctx.fillRect(0,0,W,H);}};
   const hzThroneDraw=(ctx,h)=>{
     const T=h.th,V=HZ.VW,VH=HZ.VH,t=T.t;
+    if(T.scene===2){hzStoryDraw(ctx,h);return;}
     if(T.scene===1){hzLivingDraw(ctx,h);return;}
     if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
     const c=h.A.getContext("2d");
