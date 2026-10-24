@@ -43,10 +43,6 @@ a{color:#7a5c14}
 small{color:var(--muted)}
 #gamebox{position:fixed;inset:0;z-index:50;display:flex;background:linear-gradient(180deg,#121830,#0b1020)}
 #gamebox[hidden]{display:none}
-#gamebox.full{background:#000}
-#gamebox.full .gt,#gamebox.full .gs,#gamebox.full .gcard::before{display:none}
-#gamebox.full .gcard{padding:0;border-top:0}
-#gamebox.full #game{box-shadow:none;border-radius:0}
 #gexit{position:absolute;top:10px;right:12px;z-index:2;align-self:auto;padding:5px 12px;font-size:.68rem;letter-spacing:.12em;border-radius:8px;background:rgba(11,16,32,.85);color:#f3e3b0;border:1px solid #c59a3d;box-shadow:0 0 0 2px #0b1020,0 0 0 3px rgba(197,154,61,.6)}
 #gexit:hover{background:linear-gradient(135deg,#d9b863,#f6e8b8);color:#16202b}
 #gexit[hidden]{display:none}
@@ -839,7 +835,7 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
     h.open=h.seeds>=4?1:0;};
   const hzInit=()=>{g.hz={};hzReset(true);hzBdStart(g.hz);};   /* CHANGED: you now wake up in your bedroom first (hzBdStart). The hall and its sounds start when you walk out of the door (hzBdEnd). */
   g.hzDead=()=>g.bs===6&&!!g.hz&&g.hz.dead>0;
-  g.hzRevive=()=>{hzReset(false);hzAmbLevel(.05);if(g.hz&&g.hz.bd&&g.hz.bd.ph===2)hzBdGo(g.hz.bd,2);};   /* died in the parents' room: that scene starts again */
+  g.hzRevive=()=>{hzReset(false);hzAmbLevel(.05);};
   const hzFinish=()=>hzThroneStart();   /* gate reached -> throne room */
   const startDark=()=>{g.cutDone=1;g.bs=6;g.dt=0;g.balls=[];g.burn=[];g.embers=[];g.souls=[];g.hz=null;g.tpt=null;thunder(.5,0);rumble();angryRoar();};
   const darkStep=()=>{g.dt++;if(g.dt<150)return;
@@ -1152,8 +1148,8 @@ const hzOverlays=(ctx,h)=>{
     if(k.leave>70){ctx.fillStyle="rgba(0,0,0,"+Math.min(1,(k.leave-70)/58)+")";ctx.fillRect(0,0,W,H);}};
 
   /* ===== NEW: THE BEDROOM (the start of the mini-game). After the black screen you wake up in your own room. It was just a dream. You get up, walk to the door, and when you walk out the horror begins. ===== */
-  const hzBdCam=k=>k.ph===1?hzCl(Math.round(k.x-HZ.VW/2),0,50):k.ph===2?0:hzCl(Math.round(k.x-HZ.VW/2),0,200-HZ.VW);
-  const hzBdStart=h=>{hzAmbient(false);h.bd={ph:0,sp0:true,t:0,st:0,x:24,dir:1,walk:0,foot:0,sa:0,msg:"",mt:0,en0:true,lt:0,lc:150,leave:0};};
+  const hzBdCam=k=>hzCl(Math.round(k.x-HZ.VW/2),0,200-HZ.VW);
+  const hzBdStart=h=>{hzAmbient(false);h.bd={t:0,st:0,x:24,dir:1,walk:0,foot:0,sa:0,msg:"",mt:0,en0:true,lt:0,lc:150,leave:0};};
   const hzBdEnd=h=>{h.bd=null;h.x=40;h.dir=1;h.walk=0;h.fin=70;h.en0=true;hzAmbient(true);thunder(.45,0);rumble();
     hzSayQ(h,[["This is not your house.",230],["Hades' halls. Take back the four seeds.",230],["Your little sister is somewhere in the dark.",230],["Do not let the candle die.",210]]);};
   const hzBdStep=h=>{const k=h.bd,K=window.GK||{};k.t++;const t=k.t;
@@ -1162,10 +1158,6 @@ const hzOverlays=(ctx,h)=>{
     const tp=g.tpt,bz=!!tp&&tp.y>H*.8;if(tapped&&tp&&bz&&tp.x<W*.35)enter=true;
     let dx=(K.ArrowRight?1:0)-(K.ArrowLeft?1:0);
     if(!dx&&tp&&!bz){const df=tp.x-(k.x-hzBdCam(k))*W/HZ.VW;if(Math.abs(df)>9)dx=df>0?1:-1;}
-    const spc=!!K[" "];let space=spc&&!k.sp0;k.sp0=spc;if(tapped&&tp&&bz&&tp.x>W*.65)space=true;
-    if(h.dead>0)return;
-    if(k.ph===1){hzHallStep(h,k,dx,enter,space);return;}
-    if(k.ph===2){hzParStep(h,k,dx,space);return;}
     if(k.mt>0)k.mt--;if(k.lt>0)k.lt--;
     const say=(m,d)=>{k.msg=m;k.mt=d;};
     if(--k.lc<=0){k.lc=620+Math.floor(Math.random()*520);k.lt=12;thunder(.3,0);}   /* far lightning outside the window */
@@ -1179,170 +1171,8 @@ const hzOverlays=(ctx,h)=>{
       if(dx){k.dir=dx;k.x=hzCl(k.x+dx*HZ.SPEED,14,186);k.walk+=.25;k.sa+=HZ.SPEED;if(k.sa>=HZ.STRIDE){k.sa-=HZ.STRIDE;k.foot^=1;plop();}}else k.walk=0;
       k.nd=Math.abs(k.x-180)<16;
       if(k.nd&&enter){k.leave=1;k.dir=1;windClick();}}
-    else if(k.leave){k.leave++;k.walk=0;if(k.leave===34){thunder(.4,0);whisper(0,.3);}if(k.leave>=100)hzBdGo(k,1);}};
-  /* ===== NEW: the normal hallway, the parents' room, and the escape. Only after you run out of that room does the hall of Hades begin. ===== */
-  const hzKnock=()=>{if(!ac)return;try{const n=ac.currentTime,o=ac.createOscillator(),gn=ac.createGain();o.type="triangle";o.frequency.setValueAtTime(150,n);o.frequency.exponentialRampToValueAtTime(60,n+.09);gn.gain.setValueAtTime(.55,n);gn.gain.exponentialRampToValueAtTime(.001,n+.12);o.connect(gn);gn.connect(ac.destination);o.start(n);o.stop(n+.13);}catch(e){}};
-  const hzBdGo=(k,ph)=>{k.ph=ph;k.t=0;k.mt=0;k.walk=0;k.leave=0;k.go=0;k.gt=0;k.dir=1;k.fl=0;
-    if(ph===1){k.x=22;k.kn=0;k.kt=0;k.dopen=0;k.ok=0;k.nd=0;}
-    if(ph===2){k.x=26;k.sc=0;k.dt=0;k.dad={x:100,st:0,p:0,rt:0};k.pc=[];}};
-  const hzHallStep=(h,k,dx,enter,space)=>{k.t++;const t=k.t;if(k.mt>0)k.mt--;
-    const say=(m,d)=>{k.msg=m;k.mt=d;};
-    if(t===70)say("The house is quiet.",190);
-    if(t===330)say("Mom? Dad?",170);
-    if(!k.go){
-      if(dx){k.dir=dx;k.x=hzCl(k.x+dx*HZ.SPEED,14,150);k.walk+=.25;k.sa+=HZ.SPEED;if(k.sa>=HZ.STRIDE){k.sa-=HZ.STRIDE;k.foot^=1;plop();}}else k.walk=0;
-      k.nd=k.x>=124;
-      if(k.nd&&space&&!k.kn){k.kn=1;k.kt=0;k.dir=1;}
-      if(k.kn){k.kt++;if(k.kt===1||k.kt===20||k.kt===38)hzKnock();
-        if(k.kt===120){windClick();say("The door opens by itself.",200);}
-        if(k.kt>120&&k.dopen<1)k.dopen=Math.min(1,k.dopen+.012);
-        if(k.dopen>=1&&!k.ok){k.ok=1;heartbeat(.6);}}
-      if(k.ok&&k.nd&&enter){k.go=1;k.gt=0;k.dir=1;windClick();}
-    }else{k.gt++;k.walk=0;if(k.gt>=60)hzBdGo(k,2);}};
-  const hzParStep=(h,k,dx,space)=>{k.t++;const t=k.t,D=k.dad;if(k.mt>0)k.mt--;if(k.fl>0)k.fl--;
-    const say=(m,d)=>{k.msg=m;k.mt=d;};
-    if(t===1)hzAmbLevel(0);
-    if(t===25){crawlSting();heartbeat(.8);}
-    if(k.sc===0){if(t%38===0)dragSound();if(t%61===20)plop();if(t%210===90)heartbeat(.5);
-      if(t%9===0)k.pc.push({x:96+Math.random()*8,y:HZ.FY-10,vx:-.25-Math.random()*.6,vy:-.5-Math.random()*.6,l:60});}
-    k.pc.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.06;p.l--;if(p.y>HZ.FY){p.y=HZ.FY;p.vx=0;p.vy=0;}});k.pc=k.pc.filter(p=>p.l>0);
-    if(!k.go){
-      if(dx){k.dir=dx;k.x=hzCl(k.x+dx*HZ.SPEED,k.sc>=1?10:20,56);k.walk+=.25;k.sa+=HZ.SPEED;if(k.sa>=HZ.STRIDE){k.sa-=HZ.STRIDE;k.foot^=1;plop();}}else k.walk=0;
-      if(k.sc===0&&space&&t>=120){k.sc=1;k.dt=0;say("Dad... what are you doing?",170);heartbeat(1);whisper(0,.4);}
-      if(k.sc>=1){k.dt++;
-        if(k.dt===1)thunder(.4,0);
-        if(k.dt===20){hadesGrowl(1.8,.6);heartbeat(1);}
-        if(k.dt>=20&&k.dt<65)D.p=(k.dt-20)/45;
-        if(k.dt===65){k.sc=2;D.p=1;D.st=1;k.fl=6;hadesRoar();girlShriek(.9,.6);heartbeat(1);}   /* he stands up, deformed and covered in blood, and runs at you */
-        if(k.sc===2){D.rt++;D.x+=Math.sign(k.x-D.x)*.38;if(D.rt%14===0)plop();
-          if(Math.abs(k.x-D.x)<7){hzKill(h,"dad");return;}}
-        if(k.x<=14){k.go=1;k.gt=0;windClick();}}
-    }else{k.gt++;k.walk=0;if(k.gt>=50)hzBdEnd(h);}};
-  /* mom lying on the floor, torn open. Same grey/blood look as the rest of the mini-game. */
-  const hzMom=(c,x,fy,t)=>{x=Math.round(x);const r=(ox,oy,w,h,col)=>{c.fillStyle=col;c.fillRect(x+ox,fy+oy,w,h);};
-    const GW="#a8a29a",GS="#8a847c",SKN="#cfc7b8",BL="#7a0f0f",BL2="#a01414",BL3="#c42020",BN="#d8d0b8";
-    r(-22,-1,46,2,"#4a0808");r(-17,1,36,1,"#6a0b0b");r(-12,2,26,1,"#3a0606");
-    r(8,-4,14,3,GW);r(8,-2,14,1,GS);r(20,-3,3,3,SKN);
-    r(-8,-6,17,5,GW);
-    r(-6,-6,11,4,"#5a0a0a");r(-4,-5,7,2,BL2);r(-3,-6,1,2,BN);r(-1,-6,1,2,BN);r(1,-6,1,2,BN);r(3,-6,1,2,BN);
-    r(3,-2,7,1,BL2);r(6,-1,6,1,BL3);r(-8,-3,3,2,BL);r(8,-5,3,2,BL);
-    r(-15,-6,7,5,SKN);r(-19,-5,5,3,"#2a1a10");r(-16,-4,1,1,"#fff");r(-14,-4,1,1,"#fff");r(-13,-2,2,2,BL2);
-    const tw=(t>>5)%3===0?1:0;r(-11,-2+tw,4,1,SKN);r(-9,-1,2,1,BL2);};
-  /* dad's head, the same in both poses: a swollen crooked skull, one huge bulging eye, the other eye torn out, a mouth that is a long vertical split with teeth down both sides, a chin that hangs.
-     r = a rect drawer, (hx,hy) = back/top of the head, dr = which way the face points (1 = +x, -1 = -x), wide = how far the split is open (0..2) */
-  const hzDadHead=(r,hx,hy,dr,t,wide)=>{const q=(ox,oy,w,h,col)=>r(dr>0?hx+ox:hx-ox-w,hy+oy,w,h,col);
-    const FL="#b08a78",FD="#8c6656",RW="#8a1414",RW2="#b01c1c",BN="#d8d0b8";
-    q(0,0,11,10,FL);q(1,-2,8,2,FL);q(0,0,1,10,FD);q(0,-1,3,2,"#2a1a10");q(7,-3,2,2,"#2a1a10");
-    q(1,3,4,4,"#e8dca0");q(2,4,2,2,"#7a0f0f");q(3,5,1,1,"#000");q(1,2,5,1,FD);
-    q(9,3,2,3,"#0a0505");q(8,2,4,1,RW);q(10,6,1,2,RW);
-    q(6,1,2+wide,9,"#2a0505");q(5,2,1,1,BN);q(8+wide,3,1,1,BN);q(5,5,1,1,BN);q(8+wide,6,1,1,BN);q(5,8,1,1,BN);q(8+wide,9,1,1,BN);
-    q(1,7,4,3,RW);q(3,8,2,2,RW2);q(5,10,4,4+wide,FD);q(7,14+wide,1,3,RW2);};
-  /* dad on his knees over her. turn 0 = eating (head down), turn>0 = head slowly lifting toward you */
-  const hzDadEat=(c,x,fy,t,turn)=>{x=Math.round(x);const r=(ox,oy,w,h,col)=>{c.fillStyle=col;c.fillRect(x+ox,fy+oy,w,h);};
-    const SK="#b08a78",SH="#8c6656",HR="#2a1a10",BL="#7a0f0f",BL2="#a01414",BL3="#c42020",BN="#d8d0b8",bob=turn>0?0:((t>>3)&1),jt=turn>0?0:((t>>2)&1);
-    r(2,-5,10,5,"#2a2a35");r(8,-3,6,3,"#1a1a22");r(-2,-4,6,4,"#2a2a35");
-    r(-5+jt,-14,11,10,"#3a3a4a");r(-3,-12,6,6,BL);r(0,-13,4,3,BL2);r(2,-9,3,3,BL3);r(-5,-9,3,4,BL2);
-    r(1+jt,-17,2,3,BN);r(4+jt,-16,2,3,BN);r(-3+jt,-15,2,2,BN);                           /* spine knobs poking through the shirt */
-    r(-9,-9+bob,5,2,SK);r(-11,-7,4,2,BL2);r(-12,-6,2,2,BL3);r(-14,-5,3,1,SK);r(-15,-4,3,1,SH);   /* arms too long, fingers dragging in her */
-    if(turn<=0){r(-11,-12+bob,7,6,SK);r(-12,-13+bob,9,2,HR);r(-11,-8+bob,3,2,BL2);r(-9,-10+bob,2,2,"#e8dca0");r(-8,-9+bob,1,1,"#000");}
-    else{const hy=-17-Math.round(turn*8);
-      for(let k=0;k<=Math.round(turn*8);k++)r(-8,-14-k,3,2,k%2?SK:SH);
-      hzDadHead(r,-2,hy,-1,t,turn>.6?1:0);}};
-  /* dad after he stands: not a zombie, a body that has gone wrong. very tall and stretched, one shoulder far higher than the other, one arm much too long, knees bent the wrong way,
-     bones through the back, ribs open, a small extra arm out of his side, a head that hangs crooked on a long neck. run=1: lunging forward, long arm dragging behind. p = how far up he is (0..1) */
-  const hzDadMon=(c,x,fy,t,f,p,run)=>{x=Math.round(x);const ph=(t>>(run?2:3))&1,u=-Math.round(14*p),ln=run?4:0,tw=(t>>3)&1;
-    const r=(ox,oy,w,h,col)=>{c.fillStyle=col;c.fillRect(f>0?x+ox:x-ox-w,fy+oy,w,h);};
-    const FL="#b08a78",FD="#8c6656",RW="#8a1414",RW2="#b01c1c",RW3="#5a0a0a",BN="#d8d0b8",CL="#3a3a4a",CL2="#2a2a35";
-    /* legs: bent the wrong way, long backwards feet, one longer than the other */
-    if(p>.3){r(-3,u,5,-u-4,CL2);r(2,-8,3,3,FD);r(-3,-6,2,5,FL);r(-7,-1-ph,7,1,FD);r(-8,-2-ph,2,1,RW);
-      r(2,u+3,4,-u-8,CL2);r(5,-6,3,3,FD);r(4,-4,2,4,FL);r(0,-1,6,1,FD);r(-1,-2,2,1,RW2);}
-    /* the over-long arm: from the high shoulder, two elbows, down to the floor (dragging behind him when he runs) */
-    {const n=22-u,bx=-7+ln;for(let k=0;k<n;k++){const sh=run?Math.floor(k*.6):0;r(bx-sh+(k===Math.floor(n/2)?-2:0),u-21+k,3,1,k%6===3?FD:FL);}
-     const ex=bx-(run?Math.floor(n*.6):0);r(ex-2,u-12,3,3,FD);r(ex-1,-2,7,1,FL);r(ex+6,-1,3,1,FD);r(ex,-1,1,1,FD);r(ex+3,-3,1,2,FD);r(ex+5,-2,2,1,RW2);}
-    /* torso: stretched, narrow waist, shirt in rags, bones through the back, chest split open */
-    r(-5+ln,u-20,9,20,CL);r(-3+ln,u-4,5,4,FD);
-    r(-7+ln,u-18,2,2,BN);r(-6+ln,u-14,2,2,BN);r(-7+ln,u-10,2,2,BN);
-    r(-1+ln,u-17,5,9,RW3);r(ln,u-16,1,7,BN);r(2+ln,u-16,1,7,BN);r(4+ln,u-16,3,1,BN);r(4+ln,u-13,3,1,BN);r(-4+ln,u-8,3,4,RW2);r(1+ln,u-7,5,3,RW);r(-5+ln,u-20,4,3,RW);
-    r(-8+ln,u-24,7,4,FL);r(-8+ln,u-24,7,1,"#cfa892");                       /* high shoulder */
-    r(3+ln,u-16,4,3,FL);r(5+ln,u-13,2,6,FL);r(7+ln,u-9,2,2,FL);r(8+ln,u-8,3,1,FD);r(10+ln,u-7,1,2,RW2);   /* low shoulder, short twisted arm */
-    r(3+ln+tw,u-9,5,1,FL);r(7+ln+tw,u-10,1,2,FD);                          /* small extra arm out of his ribs, twitching */
-    /* long neck, crooked head */
-    r(-1+ln,u-30,3,7,FL);r(0+ln,u-28,3,1,FD);
-    hzDadHead(r,-2+ln+tw,u-41,1,t,ph*2);};
-  const hzBdFx=(ctx,h,k,t)=>{
-    for(let i=0;i<90;i++){ctx.fillStyle=Math.random()<.5?"rgba(255,255,255,.06)":"rgba(0,0,0,.18)";ctx.fillRect(Math.floor(Math.random()*W/3)*3,Math.floor(Math.random()*H/3)*3,3,3);}
-    const vg=ctx.createRadialGradient(W/2,H/2,H*.26,W/2,H/2,H*.72);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.8)");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
-    ctx.textAlign="center";ctx.font="11px Cinzel,Georgia,serif";
-    if(k.mt>0){ctx.fillStyle="rgba(230,200,150,"+Math.min(.9,k.mt/30)+")";ctx.fillText(k.msg,W/2,44);}};
-  const hzHallDraw=(ctx,h)=>{const k=h.bd,V=HZ.VW,VH=HZ.VH,FY=HZ.FY,t=k.t;
-    if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
-    const c=h.A.getContext("2d"),cam=hzBdCam(k),r=(col,x,y,w,hh)=>{c.fillStyle=col;c.fillRect(Math.round(x-cam),y,w,hh);};
-    c.globalCompositeOperation="source-over";const x0=Math.floor(cam/10)*10;
-    /* an ordinary hallway: beige wallpaper, wood panelling, a red runner, family photos, a lamp, a clock, a rainy window */
-    for(let x=x0;x<cam+V+10;x+=10){r((x/10)%2?"#4d4236":"#493e32",x,0,10,104);r("#3a3027",x+9,0,1,100);}
-    r("#2a1d12",0,0,170,4);r("#3a2616",0,66,170,38);r("#5a3a22",0,64,170,3);r("#2a1a10",0,100,170,5);
-    for(let x=x0;x<cam+V+20;x+=20){r(((x/20)|0)%2?"#3a2418":"#33200f",x,105,20,35);r("#25160e",x,105,1,35);}
-    r("#1a0f08",0,105,170,2);r("#4a1218",0,112,170,16);r("#6a1f24",0,115,170,10);r("#c9a24a",0,112,170,1);r("#c9a24a",0,127,170,1);
-    for(let x=0;x<170;x+=12)r("#8a2a30",x+2,119,6,1);
-    [50,125].forEach(lx=>{r("#b48a2a",lx-5,4,10,3);r("#e8c050",lx-3,7,6,1);});
-    r("#8a6a2a",40,34,14,18);r("#1a1410",42,36,10,14);r("#d8b89a",45,39,4,4);r("#2a1a10",44,38,6,2);r("#6a4a3a",43,43,8,7);
-    r("#8a6a2a",60,38,12,15);r("#1a1410",62,40,8,11);r("#d8b89a",64,43,4,3);r("#3a2a1a",63,42,6,2);r("#2b3f6e",63,46,6,6);
-    r("#8a6a2a",76,36,12,16);r("#1a1410",78,38,8,12);r("#d8b89a",80,41,4,4);r("#2a1a10",79,40,6,2);r("#7f93b5",79,45,6,6);
-    r("#9aa2ac",94,30,26,48);r("#0a1230",96,32,22,44);r("#3a2a1a",106,32,2,44);r("#3a2a1a",96,53,22,2);r("#7a828c",92,77,30,3);
-    for(let i=0;i<12;i++){const px=96+((i*7+(t>>1))%21),py=32+((i*13+t*2)%40);r("#6a7aaa",px,py,1,2);r("#6a7aaa",px+1,py+2,1,1);}
-    r("#8a6a2a",126,34,12,12);r("#d8d0b8",128,36,8,8);r("#2a1a10",131,37,1,3);r("#2a1a10",131,40,3,1);
-    r("#6a4a2a",44,90,24,3);r("#5a3a1e",46,93,3,23);r("#5a3a1e",63,93,3,23);r("#8a1c24",52,84,6,6);r("#3a4a8a",50,77,10,7);r("#e8c050",51,78,8,1);
-    /* the door you came out of (left) and your parents' door (right) */
-    r("#cfd3d8",2,56,28,61);r("#5a3a1e",4,58,24,59);r("#4a2c18",7,62,18,20);r("#4a2c18",7,86,18,26);r("#c9a24a",24,88,3,3);
-    const dop=k.dopen||0,lw=Math.max(2,Math.round(24*(1-dop)));
-    r("#cfd3d8",138,56,30,61);r("#100608",140,58,26,59);if(dop>0)r("rgba(150,30,30,"+(.2*dop)+")",140,58,26,59);
-    r("#5a3a1e",140,58,lw,59);if(lw>8){r("#4a2c18",143,62,lw-6,20);r("#4a2c18",143,86,lw-6,26);r("#c9a24a",140+lw-5,88,3,3);}
-    hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,0);
-    ctx.imageSmoothingEnabled=false;ctx.drawImage(h.A,0,0,V,VH,0,0,W,H);
-    ctx.fillStyle="rgba(0,0,0,.25)";ctx.fillRect(0,0,W,H);
-    {const lg=ctx.createRadialGradient((55-cam)*3,78*3,10,(55-cam)*3,78*3,240);lg.addColorStop(0,"rgba(255,175,80,.22)");lg.addColorStop(1,"rgba(255,175,80,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();}
-    hzBdFx(ctx,h,k,t);
-    if(!k.go){ctx.font="bold 11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(255,230,170,"+(.6+.3*Math.sin(t*.2))+")";
-      if(k.nd&&!k.kn)ctx.fillText("SPACE: knock",(k.x-cam)*3,(FY-30)*3);
-      else if(k.ok&&k.nd)ctx.fillText("ENTER",(k.x-cam)*3,(FY-30)*3);
-      if(t<700&&!k.kn){ctx.font="11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(200,190,170,"+Math.min(.6,(700-t)/80)+")";ctx.fillText("arrows walk",W/2,H-14);}}
-    ctx.textAlign="left";
-    if(t<60){ctx.fillStyle="rgba(0,0,0,"+(1-t/60)+")";ctx.fillRect(0,0,W,H);}
-    if(k.go&&k.gt>20){ctx.fillStyle="rgba(0,0,0,"+Math.min(1,(k.gt-20)/40)+")";ctx.fillRect(0,0,W,H);}};
-  const hzParDraw=(ctx,h)=>{const k=h.bd,V=HZ.VW,VH=HZ.VH,FY=HZ.FY,t=k.t,D=k.dad;
-    if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
-    const c=h.A.getContext("2d"),r=(col,x,y,w,hh)=>{c.fillStyle=col;c.fillRect(Math.round(x),y,w,hh);};
-    c.globalCompositeOperation="source-over";
-    for(let x=0;x<V;x+=10){r((x/10)%2?"#2b2026":"#2f2329",x,0,10,104);r("#231a1f",x+9,0,1,100);}
-    r("#17100a",0,0,V,4);r("#1c1218",0,100,V,5);
-    for(let x=0;x<V;x+=20){r(((x/20)|0)%2?"#2e1c14":"#28180f",x,105,20,35);r("#1c100a",x,105,1,35);}
-    r("#4a1c22",34,114,84,14);r("#c9a24a",34,114,84,1);r("#c9a24a",34,127,84,1);
-    r("#9aa2ac",60,26,22,38);r("#0a1230",62,28,18,34);r("#3a2a1a",70,28,2,34);r("#3a2a1a",62,44,18,2);r("#7a828c",58,63,26,3);
-    for(let i=0;i<9;i++){const px=62+((i*7+(t>>1))%17),py=28+((i*13+t*2)%30);r("#6a7aaa",px,py,1,2);}
-    r("#2a1d12",2,58,22,59);r("#cfd3d8",0,56,2,61);r("#3a2616",4,60,18,55);r("rgba(255,170,70,.22)",4,60,18,55);
-    r("#4a2c18",32,88,22,28);r("#3a2414",34,90,18,10);r("#3a2414",34,102,18,12);r("#c9a24a",42,94,2,2);r("#c9a24a",42,107,2,2);
-    r("#8a1c24",38,82,6,6);r("#3a4a8a",36,75,10,7);r((t>>2)%11?"#e8c050":"#6a5a28",37,76,8,1);
-    r("#5a3416",64,98,54,14);r("#6a3d1c",114,76,4,36);r("#7a1219",66,92,50,7);r("#d8d8d0",102,88,12,5);r("#4a0808",72,94,14,3);r("#4a0808",96,93,8,3);
-    hzMom(c,92,FY,t);
-    if(k.sc===0)hzDadEat(c,98,FY,t,0);
-    else if(k.sc===1&&k.dt<20)hzDadEat(c,98,FY,t,k.dt/20);
-    else hzDadMon(c,D.x,FY,t,k.x<D.x?-1:1,D.p,D.st);
-    k.pc.forEach(p=>{c.fillStyle=p.l%2?"#a01414":"#7a0f0f";c.fillRect(Math.round(p.x),Math.round(p.y),2,1+(p.l%3===0?1:0));});
-    hzPerson(c,k.x,FY,k.walk,k.foot,k.dir,t,0);
-    ctx.imageSmoothingEnabled=false;ctx.drawImage(h.A,0,0,V,VH,0,0,W,H);
-    ctx.fillStyle="rgba(0,0,0,.45)";ctx.fillRect(0,0,W,H);
-    {const lg=ctx.createRadialGradient(41*3,78*3,10,41*3,78*3,200);lg.addColorStop(0,"rgba(255,170,70,.2)");lg.addColorStop(1,"rgba(255,170,70,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);
-      const rg=ctx.createRadialGradient(96*3,112*3,10,96*3,112*3,170);rg.addColorStop(0,"rgba(150,20,20,"+(k.sc>=2?.2:.1)+")");rg.addColorStop(1,"rgba(150,20,20,0)");ctx.fillStyle=rg;ctx.fillRect(0,0,W,H);ctx.restore();}
-    hzBdFx(ctx,h,k,t);
-    if(k.sc===0&&t>=120&&!k.go){ctx.font="bold 11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(255,230,170,"+(.6+.3*Math.sin(t*.2))+")";ctx.fillText("SPACE: ask him what he is doing",W/2,H-20);}
-    if(k.sc===2&&!k.go){const q=Math.floor(t/6)%2;ctx.font="bold 54px Cinzel,Georgia,serif";ctx.fillStyle=q?"rgba(150,10,10,.95)":"rgba(70,5,5,.8)";ctx.fillText("RUN",W/2+(Math.random()-.5)*5,H*.3);}
-    ctx.textAlign="left";
-    if(k.fl>0){ctx.fillStyle="rgba(255,255,255,"+k.fl/8+")";ctx.fillRect(0,0,W,H);}
-    if(t<60){ctx.fillStyle="rgba(0,0,0,"+(1-t/60)+")";ctx.fillRect(0,0,W,H);}
-    if(k.go&&k.gt>10){ctx.fillStyle="rgba(0,0,0,"+Math.min(1,(k.gt-10)/36)+")";ctx.fillRect(0,0,W,H);}};
-
+    else if(k.leave){k.leave++;k.walk=0;if(k.leave===34){thunder(.4,0);whisper(0,.3);}if(k.leave>=100)hzHlStart(h);}};
   const hzBdDraw=(ctx,h)=>{const k=h.bd,V=HZ.VW,VH=HZ.VH,FY=HZ.FY,t=k.t;
-    if(k.ph===1){hzHallDraw(ctx,h);return;}if(k.ph===2){hzParDraw(ctx,h);return;}
     if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
     const c=h.A.getContext("2d"),cam=hzBdCam(k),r=(col,x,y,w,hh)=>{c.fillStyle=col;c.fillRect(Math.round(x-cam),y,w,hh);};
     c.globalCompositeOperation="source-over";const fl=k.lt>0?Math.min(1,k.lt/6):0;
@@ -1401,6 +1231,280 @@ const hzOverlays=(ctx,h)=>{
     ctx.textAlign="left";
     if(t<60){ctx.fillStyle="rgba(0,0,0,"+(1-t/60)+")";ctx.fillRect(0,0,W,H);}
     if(k.leave>50){ctx.fillStyle="rgba(0,0,0,"+Math.min(1,(k.leave-50)/50)+")";ctx.fillRect(0,0,W,H);}};
+  /* ===== NEW: THE LONG WALK. After the bedroom door you step into a normal, warm hallway. "I'm so thirsty, it's so hot in here." You pass your parents' room and walk on
+     to the kitchen. The walk is EXACTLY one minute of walking (HL.kd - HL.x0 = 1980 px at HZ.SPEED .55 px per step, 60 steps per second = 3600 steps = 60 s).
+     In the kitchen you take a cup (E), pour water at the faucet (E), and a loud yell comes from far away. You drop the glass and run back. The same hallway is now
+     dark: blood is coming up through a crack in the floor at your sister's door (locked). At your parents' room you knock with SPACE, the door opens and you go in.
+     Dad eating mom, SPACE to ask him, he stands up and runs at you (about 3 seconds to get out), and when you leave the room the horror hall begins (hzBdEnd). ===== */
+  const HL={x0:40,pd:200,wc:620,sd:1000,cl:1500,kd:2036,L:2116,chaseX:175,stopX:120,exitX:20};
+  const hlCam=k=>hzCl(Math.round(k.x-HZ.VW/2),0,(k.m===0||k.m===2?HL.L:200)-HZ.VW);
+  const hzHlStart=h=>{h.bd=null;hzAmbient(false);
+    h.hl={m:0,u:0,t:0,x:HL.x0,dir:1,walk:0,foot:0,sa:0,msg:"",mt:0,en0:true,sp0:true,lt:0,lc:240,fi:50,go:null,nr:0,said:{}};};
+  const hlGo=(k,m,setup)=>{k.go={m,setup,t:0};};
+  const hlRoomStart=k=>{k.m=3;k.u=0;k.x=24;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.p=0;k.pu=0;k.dad={x:HL.chaseX,t:0,ft:0};k.cu=0;k.ps=[];k.dop=1;k.esc=0;k.msg="";k.mt=0;};
+  const hzHlStep=h=>{const k=h.hl,K=window.GK||{};k.t++;k.u++;
+    const tapped=g.tapE;g.tapE=0;
+    const ent=!!(K.Enter||K.e||K.E),spc=!!K[" "];
+    let enter=ent&&!k.en0,space=spc&&!k.sp0;k.en0=ent;k.sp0=spc;
+    const tp=g.tpt,bz=!!tp&&tp.y>H*.8;if(tapped&&tp&&bz){if(tp.x<W*.35)enter=true;else if(tp.x>W*.65)space=true;}
+    let dx=(K.ArrowRight?1:0)-(K.ArrowLeft?1:0);
+    if(!dx&&tp&&!bz){const df=tp.x-(k.x-hlCam(k))*W/HZ.VW;if(Math.abs(df)>9)dx=df>0?1:-1;}
+    if(k.mt>0)k.mt--;if(k.lt>0)k.lt--;if(k.fi>0)k.fi--;
+    const say=(m,d)=>{k.msg=m;k.mt=d;};
+    const mv=sp=>{if(dx){k.dir=dx;k.x+=dx*sp;k.walk+=.25;k.sa+=sp;if(k.sa>=HZ.STRIDE){k.sa-=HZ.STRIDE;k.foot^=1;plop();}}else k.walk=0;};
+    if(k.go){k.go.t++;k.walk=0;if(k.go.t>=36){const G=k.go;k.go=null;k.m=G.m;k.u=0;k.fi=36;G.setup(k);}return;}
+    const m=k.m;
+    if(m===0||m===2){   /* ---- the hallway ---- */
+      if(--k.lc<=0){k.lc=m===2?260+Math.floor(Math.random()*200):520+Math.floor(Math.random()*400);k.lt=12;thunder(m===2?.35:.2,0);}
+      const kn=m===2&&k.kn;
+      if(m===0){
+        if(k.u===70)say("Wow... I'm so thirsty. It's so hot in here.",250);
+        if(k.u>=30){mv(HZ.SPEED);k.x=hzCl(k.x,14,HL.kd);}
+        if(k.x>760&&!k.said.a){k.said.a=1;say("This hallway feels so long tonight.",190);}
+        if(k.x>1580&&!k.said.b){k.said.b=1;say("Almost there.",150);}
+        k.nr=Math.abs(k.x-HL.pd)<16?1:Math.abs(k.x-HL.sd)<16?2:Math.abs(k.x-HL.wc)<16?3:Math.abs(k.x-HL.cl)<16?5:k.x>=HL.kd-16?4:k.x<30?6:0;
+        if(enter){if(k.nr===1)say("Mom and dad are asleep.",150);else if(k.nr===2)say("Better not wake her up.",150);else if(k.nr===3)say("Not the bathroom. I need water.",150);
+          else if(k.nr===5)say("Just towels in there.",130);else if(k.nr===6)say("I'm not going back to bed yet.",150);
+          else if(k.nr===4){windClick();hlGo(k,1,q=>{q.x=26;q.dir=1;q.walk=0;q.foot=0;q.sa=0;q.cup=0;q.pour=0;q.yell=0;q.sh=[];q.cy=0;q.cv=0;q.nr=0;q.msg="";q.mt=0;});}}}
+      else{
+        if(!kn){mv(HZ.SPEED);k.x=hzCl(k.x,14,HL.kd);}
+        if(k.x<1150&&!k.said.a){k.said.a=1;say("Is that... blood?",210);heartbeat(.8);}
+        if(k.t%140===0)heartbeat(.35+.65*Math.max(0,Math.min(1,(HL.kd-k.x)/HL.kd)));
+        k.nr=Math.abs(k.x-HL.sd)<18?2:Math.abs(k.x-HL.pd)<16?1:0;
+        if(enter&&k.nr===2&&!kn){lockRattle();k.rt=(k.rt||0)+1;say(k.rt>1?"It won't open!":"It's locked!",150);}
+        if(enter&&k.nr===1&&!kn)say("Knock. Use SPACE.",100);
+        if(space&&k.nr===1&&!kn){k.kn=1;k.ku=0;k.walk=0;k.dir=-1;}
+        if(k.kn){k.ku++;if(k.ku===6||k.ku===34||k.ku===62)knockSound();if(k.ku===84)say("Mom? Dad?",120);
+          if(k.ku===120){doorCreak();k.dopen=1;}if(k.ku===230)hlGo(k,3,hlRoomStart);}}
+      return;}
+    if(m===1){   /* ---- the kitchen ---- */
+      if(--k.lc<=0){k.lc=420+Math.floor(Math.random()*300);k.lt=12;thunder(.2,0);}
+      if(k.u===50)say("Finally. Some water.",170);
+      if(k.cup===2){k.pour++;k.walk=0;if(k.pour===1)waterSound(2.7);if(k.pour>=165){k.cup=3;k.ft=0;}}
+      else if(k.cup===3){k.ft++;k.walk=0;if(k.ft===40)say("Ahh... cold.",100);
+        if(k.ft===120){k.yell=1;k.yu=0;scream();thunder(.7,0);k.lt=14;k.cup=4;k.cy=FYK();k.cv=0;k.cx=k.x+k.dir*4;say("It sounds like it came from my parents' room!",230);}}
+      else if(k.cup===4||k.yell){k.yu=(k.yu||0)+1;
+        if(k.cup===4){k.cv+=.09;k.cy+=k.cv;if(k.cy>=HZ.FY-1){k.cy=HZ.FY-1;k.cup=5;glassBreak();k.sh=Array.from({length:16},()=>({x:k.cx,y:HZ.FY-2,vx:(Math.random()-.5)*2.2,vy:-1-Math.random()*1.8,l:70}));}}
+        k.sh.forEach(s=>{if(s.l>0){s.l--;s.x+=s.vx;s.y+=s.vy;s.vy+=.12;if(s.y>HZ.FY-1){s.y=HZ.FY-1;s.vy=0;s.vx*=.4;}}});
+        if(k.yu>30){k.dir=-1;k.x-=1.5;k.walk+=.35;k.sa+=1.5;if(k.sa>=HZ.STRIDE){k.sa-=HZ.STRIDE;k.foot^=1;plop();}
+          if(k.x<=22)hlGo(k,2,q=>{q.x=HL.kd;q.dir=-1;q.walk=0;q.foot=0;q.sa=0;q.said={};q.kn=0;q.lc=120;q.msg="";q.mt=0;q.nr=0;thunder(.5,0);});}}
+      else{
+        mv(HZ.SPEED);k.x=hzCl(k.x,14,186);
+        const nc=k.cup===0&&Math.abs(k.x-80)<14,nf=k.cup===1&&Math.abs(k.x-140)<12,nd=k.x<30;k.nr=nc?1:nf?2:nd?3:0;
+        if(enter){if(nc){k.cup=1;plop();say("A glass.",90);}else if(nf){k.cup=2;k.pour=0;k.x=140;k.dir=1;k.walk=0;}
+          else if(nd)say("I need water first.",120);}}
+      return;}
+    if(m===3){   /* ---- the parents' room ---- */
+      const d=k.dad;k.pu++;
+      if(k.p<=2&&k.pu%26===12)crunchSound();
+      if(k.p<=2&&(k.pu&7)===0)k.ps.push({x:158+Math.random()*10,y:90,vx:(Math.random()-.5)*1.4,vy:-1-Math.random(),l:26});
+      if(k.p!==6){k.ps.forEach(s=>{s.l--;s.x+=s.vx;s.y+=s.vy;s.vy+=.1;});k.ps=k.ps.filter(s=>s.l>0&&s.y<HZ.FY);}
+      if(k.p===0){   /* you walk in; he does not notice you */
+        if(k.pu===1)doorCreak();
+        if(k.pu>=40){k.walk+=.25;k.sa+=HZ.SPEED;k.x+=HZ.SPEED;k.dir=1;if(k.sa>=HZ.STRIDE){k.sa-=HZ.STRIDE;k.foot^=1;plop();}}
+        if(k.pu===60)say("...",150);
+        if(k.x>=HL.stopX){k.x=HL.stopX;k.walk=0;k.p=1;k.pu=0;heartbeat(.9);}}
+      else if(k.p===1){if(space&&k.pu>40){say("What are you doing, dad?",210);k.p=2;k.pu=0;}}
+      else if(k.p===2){   /* you asked. he stops. */
+        if(k.pu===70)heartbeat(1);
+        if(k.pu===150){k.p=3;k.pu=0;angryRoar();scream();thunder(.8,0);k.lt=16;rumble();}}
+      else if(k.p===3){   /* he rises, deformed, and screams */
+        if(k.pu>=70){k.p=4;k.pu=0;d.t=0;say("RUN!",120);}}
+      else if(k.p===4){   /* the chase */
+        mv(HZ.SPEED);k.x=hzCl(k.x,6,186);
+        d.t++;d.x-=Math.min(.7,.3+.006*d.t);d.ft++;if(d.ft%13===0){thud();if(d.ft%26===0)growl();}
+        if(Math.random()<.4)k.ps.push({x:d.x+3,y:HZ.FY-26,vx:(Math.random()-.2)*.8,vy:-.3,l:30});
+        if(d.x-k.x<7){k.p=6;k.cu=0;k.walk=0;scream();thunder(.9,0);k.lt=18;}
+        else if(k.x<=HL.exitX){k.p=5;k.pu=0;k.walk=0;thunder(.5,0);windClick();}}
+      else if(k.p===5){   /* you are out. the door slams behind you and the dark begins */
+        d.x-=.7;d.ft++;if(d.ft%13===0)thud();
+        if(k.pu===30){thunder(.7,0);rumble();}
+        if(k.pu>=96){h.hl=null;hzBdEnd(h);}}
+      else if(k.p===6){k.cu++;if(k.cu===40)say("He got you...",110);if(k.cu>=150){hlRoomStart(k);k.fi=40;}}
+      return;}};
+  const FYK=()=>HZ.FY-14;
+  /* ---- drawing helpers for the new scenes ---- */
+  const hlFrame=(r,x,y,w,h2,fr,inn)=>{r(fr,x,y,w,h2);r(inn,x+2,y+2,w-4,h2-4);};
+  const hlDoor=(r,x,y,col,dk)=>{r("#2a1a10",x-13,y-3,26,h2d(y)+3);r(col,x-11,y,22,h2d(y));r(dk,x-8,y+4,16,22);r(dk,x-8,y+30,16,26);r("#c9a24a",x+7,y+30,3,3);};
+  const h2d=y=>106-y;
+  /* one picture / piece of furniture on the hallway wall, chosen by index */
+  const hlDeco=(c,r,x,i,t,fl)=>{
+    switch(i){
+      case 0:hlFrame(r,x-11,34,22,16,"#6a4a22","#7ea0b8");r("#4a6a3a",x-9,42,18,6);r("#c8d4e0",x-8,37,5,2);r("#e8d890",x+4,37,3,3);break;           /* landscape */
+      case 1:hlFrame(r,x-8,32,16,20,"#5a3a1a","#d8caa8");r("#2a2a3a",x-5,40,3,8);r("#3a2a2a",x-1,38,3,10);r("#cfa77a",x-5,37,3,3);r("#cfa77a",x-1,35,3,3);r("#6a2a3a",x+3,43,3,5);r("#cfa77a",x+3,40,3,3);break;   /* family photo */
+      case 2:hlFrame(r,x-7,32,14,18,"#8a6a2a","#2a1c14");r("#cfa77a",x-3,36,6,7);r("#1a1008",x-4,34,8,3);r("#3a3a5a",x-4,44,8,5);break;           /* portrait */
+      case 3:hlFrame(r,x-9,35,18,14,"#4a2c18","#d8d0b0");r("#a02430",x-5,40,3,3);r("#d8a020",x,39,3,3);r("#4a7a3a",x-4,43,1,4);r("#4a7a3a",x+1,42,1,5);break;   /* flowers */
+      case 4:r("#5a3a1a",x-7,30,14,14);r("#e8dcc0",x-6,31,12,12);r("#1a1008",x,33,1,5);r("#1a1008",x,37,4,1);r("#8a6a2a",x-2,45,4,6+((t>>5)&1));break;   /* clock */
+      case 5:r("#d8d0b8",x-12,26,24,36);r(fl>0?"#9aaad8":"#0a1230",x-10,28,20,32);for(let j=0;j<6;j++){const px=x-10+((j*7+(t>>1))%19),py=28+((j*11+t*2)%30);r(fl>0?"#d8e4ff":"#6a7aaa",px,py,1,2);}
+        r("#d8d0b8",x-1,28,2,32);r("#d8d0b8",x-10,43,20,2);r("#7a2a30",x-14,24,5,40);r("#7a2a30",x+9,24,5,40);break;                                   /* window with curtains */
+      case 6:r("#5a3a1e",x-9,78,18,3);r("#4a2c18",x-8,81,16,25);r("#3a2414",x-6,84,12,8);r("#c9a24a",x-1,86,2,2);r("#3a6a8a",x-4,66,8,12);r("#2a4a6a",x-5,70,10,1);r("#4a7a3a",x-3,58,2,8);r("#4a7a3a",x+1,60,2,6);r("#a02430",x-5,60,3,3);break;   /* little table + vase */
+      case 7:r("#3a2414",x-1,34,2,72);r("#3a2414",x-9,104,18,2);r("#5a3a1e",x-9,38,6,2);r("#5a3a1e",x+3,38,6,2);r("#2a3a6a",x-9,40,5,16);r("#7a3a2a",x+4,40,5,14);break;   /* coat rack */
+      case 8:r("#4a2c18",x-14,38,28,3);r("#4a2c18",x-14,52,28,3);for(let j=0;j<9;j++){r(["#7a2a2a","#2a4a6a","#4a6a3a","#8a6a2a"][j%4],x-13+j*3,29+(j%3),2,9-(j%3));r(["#2a4a6a","#7a2a2a","#8a6a2a","#4a6a3a"][j%4],x-13+j*3,43+(j%2),2,9-(j%2));}break;   /* bookshelf */
+      default:hlFrame(r,x-8,28,16,28,"#8a6a2a","#aab4bc");r("#c8d4dc",x-5,31,4,20);r("#8a96a0",x+1,36,4,16);break;                                   /* mirror */
+    }};
+  const hlHall=(c,r,k,cam,t,fl,txt,ret)=>{const V=HZ.VW,x0=Math.floor(cam/8)*8,FY=HZ.FY;
+    for(let x=x0;x<cam+V+8;x+=8){r((x/8)%2?"#8c7a5c":"#85724f",x,5,8,61);r("#74623f",x,5,1,61);}
+    r("#2a1a10",cam,0,V,5);r("#17100a",cam,5,V,1);
+    r("#3a281a",cam,65,V,2);
+    for(let x=Math.floor(cam/24)*24;x<cam+V+24;x+=24){r("#4e3a28",x,67,24,38);r("#5e4630",x+3,70,18,32);r("#3a281a",x+3,70,18,1);r("#3a281a",x+3,70,1,32);}
+    r("#2a1a10",cam,102,V,5);r("#3d2616",cam,102,V,1);
+    for(let x=Math.floor(cam/20)*20;x<cam+V+20;x+=20){r(((x/20)|0)%2?"#5a3c24":"#52371f",x,107,20,33);r("#3a2414",x,107,1,33);}
+    r("#2a1a10",cam,107,V,2);
+    /* the runner rug */
+    r("#d8c8a0",cam,114,V,1);r("#5a1a24",cam,115,V,19);r("#d8c8a0",cam,134,V,1);
+    for(let x=Math.floor(cam/12)*12;x<cam+V+12;x+=12){r("#7a2a38",x+4,122,4,3);r("#7a2a38",x+5,121,2,5);r("#8a6a2a",x,117,1,2);r("#8a6a2a",x,130,1,2);}
+    /* doors */
+    const dr=(x,col,dk)=>{if(x>cam-20&&x<cam+V+20)hlDoor(r,x,38,col,dk);};
+    dr(HL.pd,"#6a4a2a","#5a3c20");dr(HL.wc,"#6e5a3a","#5e4a2c");dr(HL.cl,"#6a4a2a","#5a3c20");
+    if(cam<60){r("#2a1a10",0,36,26,70);r("#050507",2,38,22,68);r("#5a3a1e",2,38,3,68);}                                                         /* your bedroom door, behind you */
+    /* kitchen arch at the end */
+    if(cam+V>HL.kd-30){r("#2a1a10",HL.kd-16,30,32,78);r("#d8c890",HL.kd-13,34,26,72);r("#a89868",HL.kd-13,34,26,8);for(let j=0;j<6;j++)r(j%2?"#8a7a58":"#b8a878",HL.kd-13,44+j*10,26,5);r("#3a2414",HL.kd-13,34,26,2);}
+    /* your sister's door */
+    if(HL.sd>cam-20&&HL.sd<cam+V+20){const x=HL.sd;hlDoor(r,x,38,"#d8a0b8","#c88aa4");r("#f4d84a",x-6,60,3,3);r("#f4d84a",x-7,61,5,1);r("#f4d84a",x-5,59,1,5);r("#e85a8a",x+2,70,2,2);r("#e85a8a",x+4,70,2,2);r("#e85a8a",x+1,72,6,2);r("#e85a8a",x+3,74,2,1);
+      r("#e8dcb8",x-10,41,20,18);r("#c8b890",x-10,41,20,1);r("#b83030",x-1,39,2,3);
+      txt.push(["NO",x,47],["NERDS",x,52],["ALLOWED",x,57]);}
+    /* wall decorations */
+    const sp=[90,170,300,380,455,540,700,780,860,930,1090,1170,1250,1330,1410,1570,1640,1720,1800,1880,1950];
+    sp.forEach((x,i)=>{if(x>cam-30&&x<cam+V+30)hlDeco(c,r,x,hzH(i,7)%10,t,fl);});
+    /* ceiling lamps */
+    for(let x=120;x<HL.L;x+=220){if(x>cam-10&&x<cam+V+10){r("#8a6a2a",x-5,5,10,3);r("#e8d090",x-4,8,8,2);}}
+    if(ret){   /* the crack in the floor and the blood that comes up through it */
+      const x=HL.sd;
+      if(x>cam-60&&x<cam+V+60){
+        const rx=40+Math.round(Math.sin(t*.03)*1.5);
+        for(let yy=-9;yy<=9;yy++){const w=Math.round(rx*Math.sqrt(1-(yy*yy)/(10*10)));r(yy%2?"#5a0606":"#6a0808",x-w,121+yy,w*2,1);}
+        r("#8a1010",x-12,106,24,4);
+        const cr=[[0,108],[-3,112],[2,116],[-4,120],[1,124],[-6,128],[3,132],[-2,137]];
+        for(let j=0;j<cr.length-1;j++){r("#0a0505",x+cr[j][0]-1,cr[j][1],3,5);r("#a01010",x+cr[j][0],cr[j][1],1,5);}
+        for(let j=0;j<5;j++){const o=(t*.8+j*37)%60;r("#b01010",x-30+j*14,106+Math.round(o*.4),1,2);}
+        r("#7a0a0a",x-9,50,2,3);r("#7a0a0a",x-8,53,1,7);r("#7a0a0a",x+4,60,2,3);r("#7a0a0a",x+4,63,1,9);r("#7a0a0a",x-3,70,6,2);
+      }}};
+  const hlKit=(c,r,k,cam,t,fl,txt)=>{const V=HZ.VW,FY=HZ.FY;
+    for(let x=0;x<200;x+=8){r((x/8)%2?"#a09062":"#98885c",x,0,8,106);}
+    for(let x=0;x<200;x+=4)for(let y=60;y<106;y+=4)r(((x+y)/4)%2?"#c9c4b0":"#b8b3a0",x,y,4,4);
+    r("#2a1a10",0,0,200,4);r("#2a1a10",0,104,200,3);
+    for(let y=107;y<140;y+=8)for(let x=0;x<200;x+=8)r(((x+y)/8)%2?"#6a665a":"#5a574c",x,y,8,8);
+    /* door you came in by */
+    r("#2a1a10",3,38,26,70);r("#5a3a1e",5,40,5,66);r("#12100c",10,40,18,66);
+    r("#e8dcc0",14,16,14,14);r("#1a1008",20,18,1,6);r("#1a1008",20,23,4,1);                                                                  /* clock */
+    r("#cfd6d8",34,44,24,62);r("#aab4b8",34,70,24,1);r("#8a96a0",52,52,2,8);r("#8a96a0",52,76,2,10);                                       /* fridge */
+    r("#5a3a1e",62,84,50,3);r("#6a4a2a",62,87,50,19);r("#4a2c18",65,91,20,12);r("#4a2c18",89,91,20,12);r("#c9a24a",84,95,2,2);r("#c9a24a",88,95,2,2);
+    r("#6a4a2a",62,16,38,26);r("#4a2c18",65,19,15,20);r("#4a2c18",82,19,15,20);r("#c9a24a",79,28,2,3);                                          /* cabinets */
+    r("#6a4a2a",124,16,66,26);for(let x=127;x<188;x+=22){r("#4a2c18",x,19,19,20);}
+    r("#d8d0b8",102,22,18,26);r(fl>0?"#9aaad8":"#0a1230",104,24,14,22);for(let j=0;j<5;j++){const px=104+((j*5+(t>>1))%13),py=24+((j*9+t*2)%20);r(fl>0?"#d8e4ff":"#6a7aaa",px,py,1,2);}r("#d8d0b8",110,24,2,22);   /* window */
+    r("#5a3a1e",118,84,70,3);r("#6a4a2a",118,87,70,19);r("#4a2c18",121,91,30,12);r("#4a2c18",155,91,30,12);r("#c9a24a",150,95,2,2);
+    r("#aab4bc",128,84,26,3);r("#7a8690",130,87,22,2);                                                                                       /* sink */
+    r("#aab4bc",146,68,3,16);r("#aab4bc",140,68,9,3);r("#aab4bc",140,71,2,3);                                                               /* faucet */
+    /* the glass on the counter */
+    if(k.cup===0){r("rgba(200,225,245,.75)",78,80,5,6);r("#fff",79,80,1,5);r("rgba(150,190,220,.5)",78,85,5,1);}
+    /* water stream + glass under the faucet while pouring */
+    if(k.cup===2){r("rgba(200,225,245,.8)",138,76,5,8);r("#fff",139,76,1,7);const lv=Math.min(1,k.pour/165);r("rgba(110,170,230,.85)",139,84-Math.round(6*lv),3,Math.round(6*lv));}
+    if(k.cup===2&&k.pour<150){r((t>>1)%2?"#9fd0f0":"#7fb8e0",141,74,1,10-Math.round(6*Math.min(1,k.pour/165)));}
+    /* shards and the puddle after the glass breaks */
+    if(k.cup===5){for(let yy=-2;yy<=2;yy++){const w=Math.round(14*Math.sqrt(1-(yy*yy)/9));r("rgba(110,170,230,.55)",k.cx-w,HZ.FY-1+yy,w*2,1);}}
+    k.sh.forEach(s=>{if(s.l>0)r("rgba(210,230,245,.9)",s.x,s.y,1,1);});
+    if(k.cup===4)r("rgba(200,225,245,.85)",k.cx-1,k.cy,3,4);
+    /* player (and the glass in his hand) */
+    hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,0);
+    if(k.cup===1||(k.cup===3&&!k.yell)){const px=Math.round(k.x-cam)+k.dir*4;c.fillStyle="rgba(200,225,245,.85)";c.fillRect(px-1,FY-15,3,5);c.fillStyle="#fff";c.fillRect(px,FY-15,1,4);if(k.cup===3){c.fillStyle="rgba(110,170,230,.85)";c.fillRect(px-1,FY-13,3,3);}}};
+  /* the dad. st: 0 eating  1 turns his head  2 standing up, deformed  3 running at you */
+  const hlDad=(c,r,x,st,t,rise,ft)=>{
+    const j=()=>Math.round((Math.random()-.5)*2);
+    if(st<=1){   /* kneeling over the bed, ripping pieces out of her */
+      const ph=(t>>3)&3,hy=st?-3:0;
+      r("#1a1a24",x-6,112,15,5);r("#2a2a38",x-1,100,6,13);r("#2a2a38",x-8,112,10,5);                                            /* legs, kneeling */
+      r("#4a4452",x-2,92,7,10);r("#4a4452",x-5,86,7,8);r("#7a0a0a",x-4,88,4,6);r("#7a0a0a",x,95,3,4);r("#5a0606",x+1,99,2,3);      /* torn shirt, soaked in blood */
+      if(!st){r("#b89a7e",x-10,83+(ph===1?-2:0),7,6);r("#2a1a10",x-10,82+(ph===1?-2:0),7,2);r("#3a0808",x-12,87+(ph===1?-2:0),3,2);r("#e8e2d6",x-12,86+(ph===1?-2:0),1,1);r("#a01010",x-11,89,5,2);}   /* head down, mouth in her */
+      else{r("#b89a7e",x-8,80+hy,7,7);r("#2a1a10",x-8,79+hy,7,2);r("#fff",x-7,82+hy,2,2);r("#d01010",x-7,83+hy,1,1);r("#3a0808",x-8,85+hy,5,3);r("#a01010",x-7,87+hy,3,3);}
+      const ax=x-8,ay=94;                                                                                                            /* his arms pull */
+      r("#b89a7e",ax+(ph%2?2:0),ay-(ph===2?4:0),9,2);r("#9a1010",ax-2+(ph%2?2:0),ay-(ph===2?5:1),3,3);if(ph===2){r("#c01818",ax-2,ay-8,3,3);r("#e8e2d6",ax-1,ay-9,1,1);}
+      r("#b89a7e",ax+4,ay+3-(ph===0?2:0),7,2);
+      return;}
+    /* standing / running: tall, hunched, one shoulder too high, arms down to his knees, jaw hanging */
+    const run=st===3,s1=run?((ft>>2)&1?3:-3):0,ly=run?2:0,lean=run?-3:-1;
+    r("#1a1a24",x-4+s1,119,5,3);r("#1a1a24",x-s1+2,119,5,3);
+    r("#2a2a38",x-3+s1,102,4,17);r("#2a2a38",x-s1+2,102,4,17+ly-2);r("#5a0606",x-3+s1,106,4,4);
+    const top=Math.round(86-8*Math.min(1,rise));
+    r("#4a4452",x-4+lean,top+8,10,18);r("#4a4452",x-6+lean,top+2,8,9);r("#7a0a0a",x-4+lean,top+6,6,12);r("#a01010",x-2+lean,top+10,3,8);r("#5a0606",x+1+lean,top+16,4,6);r("#e8e2d6",x-5+lean,top+12,1,2);
+    r("#4a4452",x-7+lean,top-2,5,5);                                                                                                  /* hump / high shoulder */
+    r("#b89a7e",x-10+lean,top-4+j(),7,8);r("#2a1a10",x-10+lean,top-5+j(),7,2);                                                       /* head, tilted */
+    r("#fff",x-9+lean,top-2,2,2);r("#d01010",x-9+lean,top-1,1,1);r("#fff",x-6+lean,top-2,1,1);r("#d01010",x-6+lean,top-2,1,1);
+    r("#2a0808",x-9+lean,top+2,5,6+((ft>>3)&1));r("#e8e2d6",x-9+lean,top+2,1,2);r("#e8e2d6",x-7+lean,top+2,1,2);r("#e8e2d6",x-5+lean,top+2,1,2);r("#a01010",x-8+lean,top+8,3,3);
+    const aw=run?(ft>>2)&1:0;
+    r("#b89a7e",x-12+lean,top+8+aw*2,3,18);r("#9a1010",x-13+lean,top+24+aw*2,4,5);r("#e8e2d6",x-14+lean,top+27+aw*2,1,2);r("#e8e2d6",x-12+lean,top+28+aw*2,1,2);   /* long arm reaching for you */
+    r("#b89a7e",x+5+lean,top+10,3,12);r("#9a1010",x+5+lean,top+21,4,4);                                                               /* other arm */
+    r("#8a7a64",x+2+lean,top+14,2,5);r("#8a7a64",x+3+lean,top+18,3,2);                                                                 /* a third small arm from his ribs */
+  };
+  const hlRoom=(c,r,k,cam,t,fl,txt)=>{const V=HZ.VW,FY=HZ.FY,d=k.dad,st=k.p<=1?0:k.p===2?(k.pu>70?1:0):k.p===3?2:3,hot=k.p>=3;
+    for(let x=0;x<200;x+=10){r((x/10)%2?"#4a3c46":"#463842",x,0,10,104);r("#5a4a56",x+4,10,1,1);r("#5a4a56",x+4,40,1,1);r("#5a4a56",x+4,70,1,1);}
+    r("#2a1a10",0,0,200,4);r("#2a1a10",0,100,200,5);
+    for(let x=0;x<200;x+=20)r(((x/20)|0)%2?"#3a2418":"#33200f",x,105,20,35);
+    r("#1a0f08",0,105,200,2);
+    r("#4a1e26",30,118,110,18);r("#6a2a34",32,120,106,14);for(let x=36;x<136;x+=10)r("#4a1e26",x,124,4,4);                                 /* rug */
+    /* the door you came in by (open) */
+    r("#2a1a10",3,36,26,70);r("#0a0608",5,38,22,68);r("#5a3a1e",5,38,k.p===5?Math.min(22,4+Math.round(k.pu*.9)):4,68);
+    r("#6a4a2a",40,46,28,60);r("#4a2c18",43,50,10,52);r("#4a2c18",55,50,10,52);r("#c9a24a",53,76,2,3);                                          /* wardrobe */
+    r("#d8d0b8",78,28,24,42);r(fl>0?"#9aaad8":"#0a1230",80,30,20,38);for(let j=0;j<7;j++){const px=80+((j*5+(t>>1))%17),py=30+((j*11+t*2)%34);r(fl>0?"#d8e4ff":"#6a7aaa",px,py,1,2);}r("#d8d0b8",89,30,2,38);r("#7a2a30",74,26,6,46);r("#7a2a30",100,26,6,46);   /* window */
+    hlFrame(r,134,30,18,22,"#8a6a2a","#d8caa8");r("#e8e8e8",138,36,4,10);r("#2a2a3a",144,38,4,8);                                              /* wedding photo */
+    /* the bed (head on the right) */
+    r("#5a3416",108,102,88,6);r("#6a3d1c",190,62,6,46);r("#8a5a2a",189,60,8,3);r("#6a3d1c",108,92,4,16);
+    r("#8a8a96",112,92,78,9);r("#7a1219",112,95,56,6);r("#a01010",120,96,30,3);r("#5a0606",150,97,18,3);                                         /* mattress and blanket */
+    r("#d8d8d0",180,86,10,6);                                                                                                                /* pillow */
+    /* mom: pale, one arm hanging, torn open */
+    r("#d8bca0",182,85,7,6);r("#3a2216",181,83,9,3);r("#3a2216",188,85,2,8);r("#fff",184,87,1,1);r("#fff",187,87,1,1);r("#000",184,88,1,1);r("#000",187,88,1,1);r("#8a1010",184,90,3,2);
+    r("#d8bca0",168,95,14,3);r("#8a0e0e",158,92,14,6);r("#a01212",160,90,10,4);r("#e8e2d6",161,92,1,3);r("#e8e2d6",164,91,1,3);r("#e8e2d6",167,92,1,3);r("#4a0404",162,94,6,2);
+    r("#d8bca0",176,98,3,12);r("#a01010",176,108,3,3);if((t>>4)%3===0)r("#a01010",177,112,1,2);
+    r("#3a2418",118,92,2,10);r("#e8c050",118,86,6,1);                                                                                         /* nightstand lamp (dim) */
+    r("#4a3220",98,92,10,14);r("#c9a24a",100,95,2,2);r("#e8c050",100,86,6,3);r("#c8a050",99,84,8,2);
+    /* blood on the floor under the bed */
+    for(let yy=-3;yy<=3;yy++){const w=Math.round(24*Math.sqrt(1-(yy*yy)/16));r(yy%2?"#4a0404":"#5a0606",150-w,124+yy,w*2,1);}
+    hlDad(c,r,d.x,st,k.p===2?0:t,st>=2?(k.p===3?Math.min(1,k.pu/60):1):0,d.ft);
+    k.ps.forEach(s=>r("#b01010",s.x,s.y,1,1));
+    if((k.p!==6||k.cu<12)&&!(k.p===5&&k.pu>12))hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,0);};
+  const hzHlDraw=(ctx,h)=>{const k=h.hl,V=HZ.VW,VH=HZ.VH,FY=HZ.FY,t=k.t,m=k.m;
+    if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
+    const c=h.A.getContext("2d"),cam=hlCam(k),r=(col,x,y,w,hh)=>{c.fillStyle=col;c.fillRect(Math.round(x-cam),y,w,hh);};
+    c.globalCompositeOperation="source-over";const fl=k.lt>0?Math.min(1,k.lt/6):0,txt=[];
+    const ret=m===2;
+    if(m===0||m===2){hlHall(c,r,k,cam,t,fl,txt,ret);
+      if(k.kn&&k.ku>=120){const o=Math.min(1,(k.ku-120)/40);r("#2a1a10",HL.pd-13,35,26,71);r("#050507",HL.pd-11,38,22,68);if(o>0)r("rgba(120,60,40,"+(.4*o)+")",HL.pd-11,38,22,68);r("#6a4a2a",HL.pd-11,38,Math.max(3,Math.round(22*(1-o))),68);}
+      hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,0);}
+    else if(m===1)hlKit(c,r,k,cam,t,fl,txt);
+    else hlRoom(c,r,k,cam,t,fl,txt);
+    ctx.imageSmoothingEnabled=false;ctx.drawImage(h.A,0,0,V,VH,0,0,W,H);
+    /* darkness: warm and normal at first, blood-dark on the way back, very dark in the parents' room */
+    const flick=(ret&&((t>>2)%23===0))?.25:0;
+    ctx.fillStyle="rgba(0,0,0,"+((m===0?.2:m===1?.3:m===2?.5+flick:.55)-.2*fl)+")";ctx.fillRect(0,0,W,H);
+    if(m===0||m===2){for(let x=120;x<HL.L;x+=220){if(x<cam-90||x>cam+V+90)continue;const lx=(x-cam)*3,lg=ctx.createRadialGradient(lx,26,6,lx,26,ret?150:210);lg.addColorStop(0,ret?"rgba(255,150,90,.18)":"rgba(255,200,110,.3)");lg.addColorStop(1,"rgba(255,180,90,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();}}
+    else if(m===1){const lx=70*3-cam*3,lg=ctx.createRadialGradient(lx,60,10,lx,60,300);lg.addColorStop(0,"rgba(255,220,150,.22)");lg.addColorStop(1,"rgba(255,200,120,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();}
+    else{const lx=(122-cam)*3,lg=ctx.createRadialGradient(lx,270,6,lx,270,200);lg.addColorStop(0,"rgba(255,170,80,.16)");lg.addColorStop(1,"rgba(255,170,80,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();
+      if(k.p>=3&&k.p!==6){ctx.fillStyle="rgba(120,0,0,"+(.1+.06*Math.sin(t*.4))+")";ctx.fillRect(0,0,W,H);}}
+    if(fl>0){ctx.fillStyle="rgba(170,190,255,"+.14*fl+")";ctx.fillRect(0,0,W,H);}
+    for(let i=0;i<80;i++){ctx.fillStyle=Math.random()<.5?"rgba(255,255,255,.05)":"rgba(0,0,0,.16)";ctx.fillRect(Math.floor(Math.random()*W/3)*3,Math.floor(Math.random()*H/3)*3,3,3);}
+    const vg=ctx.createRadialGradient(W/2,H/2,H*.26,W/2,H/2,H*.72);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,"+(m===3?.85:.7)+")");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+    ctx.textAlign="center";
+    txt.forEach(s=>{ctx.font="bold 9px Georgia,serif";ctx.fillStyle="#2a2a6a";ctx.fillText(s[0],(s[1]-cam)*3,s[2]*3);});
+    ctx.font="11px Cinzel,Georgia,serif";
+    if(k.mt>0){let fs=11;ctx.font=fs+"px Cinzel,Georgia,serif";while(ctx.measureText(k.msg).width>W-16&&fs>7){fs--;ctx.font=fs+"px Cinzel,Georgia,serif";}
+      if(k.msg==="RUN!"){ctx.font="bold 26px Cinzel,Georgia,serif";ctx.fillStyle="rgba(205,8,8,"+Math.min(1,k.mt/20)+")";ctx.fillText("RUN!",W/2+(Math.random()-.5)*3,64);}
+      else{ctx.fillStyle="rgba(230,200,150,"+Math.min(.9,k.mt/30)+")";ctx.fillText(k.msg,W/2,44);}}
+    ctx.font="bold 11px Cinzel,Georgia,serif";
+    const px=(k.x-cam)*3,py=(FY-30)*3,pulse="rgba(255,230,170,"+(.6+.3*Math.sin(t*.2))+")";
+    if(!k.go&&k.fi<=0){
+      if(m===0){if(k.nr===4){ctx.fillStyle=pulse;ctx.fillText("ENTER: kitchen",px,py);}else if(k.nr>0){ctx.fillStyle=pulse;ctx.fillText("ENTER",px,py);}}
+      else if(m===2&&!k.kn){if(k.nr===1){ctx.fillStyle=pulse;ctx.fillText("SPACE: knock",px,py);}else if(k.nr===2){ctx.fillStyle=pulse;ctx.fillText("ENTER",px,py);}}
+      else if(m===1&&!k.yell){const nm=k.nr===1?"ENTER: take the glass":k.nr===2?"ENTER: pour water":k.nr===3?"ENTER":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}}
+      else if(m===3&&k.p===1&&k.pu>40){ctx.fillStyle=pulse;ctx.fillText("SPACE: speak",px,py);}
+      if(m===0&&k.u>80&&k.u<1300){ctx.font="11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(200,190,170,"+Math.min(.6,(1300-k.u)/80)+")";ctx.fillText("arrows walk  -  ENTER to use  -  SPACE to knock",W/2,H-14);}}
+    ctx.textAlign="left";
+    let blk=0;
+    if(k.fi>0)blk=Math.max(blk,k.fi/(k.m===0?50:36));
+    if(k.go)blk=Math.max(blk,Math.min(1,k.go.t/36));
+    if(m===2&&k.kn&&k.ku>=200)blk=Math.max(blk,Math.min(1,(k.ku-200)/30));
+    if(m===3&&k.p===5)blk=Math.max(blk,Math.min(1,k.pu/90));
+    if(m===3&&k.p===6){ctx.fillStyle="rgba(150,0,0,"+Math.max(0,.6-k.cu/40)+")";ctx.fillRect(0,0,W,H);blk=Math.max(blk,Math.min(1,k.cu/50));}
+    if(blk>0){ctx.fillStyle="rgba(0,0,0,"+blk+")";ctx.fillRect(0,0,W,H);}
+    if(m===3&&k.p===6&&k.cu>40){ctx.textAlign="center";ctx.font="11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(230,200,150,"+Math.min(.9,(k.cu-40)/20)+")";ctx.fillText(k.msg,W/2,H/2);ctx.textAlign="left";}};
   /* fade for the fall / pick-up, and the two big red messages after the kitchen (5.5 s each) */
   const hzNewOver=(ctx,h)=>{
     if(h.fin>0){ctx.fillStyle="rgba(0,0,0,"+Math.min(1,h.fin/70)+")";ctx.fillRect(0,0,W,H);}
@@ -1555,6 +1659,7 @@ const hzOverlays=(ctx,h)=>{
     const h=g.hz,K=window.GK||{};
     if(h.th){hzThroneStep(h);return;}
     if(h.bd){hzBdStep(h);return;}
+    if(h.hl){hzHlStep(h);return;}
     if(h.fin>0)h.fin--;
     if(h.out>0){if(++h.out>=110)hzFinish();return;}
     if(h.dead>0)return;
@@ -2086,6 +2191,7 @@ const hzGirlFloor=(c,gx,fy,t,f,up)=>{gx=Math.round(gx);
     const h=g.hz;if(!h){ctx.fillStyle="#000";ctx.fillRect(0,0,W,H);return;}
     if(h.th){hzThroneDraw(ctx,h);return;}
     if(h.bd){hzBdDraw(ctx,h);return;}
+    if(h.hl){hzHlDraw(ctx,h);return;}
     if(h.kt){hzKitDraw(ctx,h);return;}
     const V=HZ.VW,VH=HZ.VH,FY=HZ.FY,Rd=Math.round,Rm=h.inRoom;
     if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
@@ -3191,6 +3297,36 @@ function windClick(){
     o.frequency.setValueAtTime(900+Math.random()*300,n);o.frequency.exponentialRampToValueAtTime(300,n+.04);
     gn.gain.setValueAtTime(.18,n);gn.gain.exponentialRampToValueAtTime(.001,n+.06);o.connect(gn);gn.connect(ac.destination);o.start(n);o.stop(n+.07);}catch(e){}
 }
+/* ===== NEW sounds for the long walk (all made of oscillators and noise, like the rest) ===== */
+function hlTone(f0,f1,d,ty,v,dl){
+  if(!ac) return;
+  try{const n=ac.currentTime+(dl||0),o=ac.createOscillator(),gn=ac.createGain();o.type=ty;
+    o.frequency.setValueAtTime(f0,n);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),n+d);
+    gn.gain.setValueAtTime(v,n);gn.gain.exponentialRampToValueAtTime(.001,n+d);o.connect(gn);gn.connect(ac.destination);o.start(n);o.stop(n+d+.02);}catch(e){}
+}
+function hlNoise(d,ty,f0,f1,v,dl){
+  if(!ac) return;
+  try{const n=ac.currentTime+(dl||0),buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),da=buf.getChannelData(0);
+    for(let i=0;i<da.length;i++)da[i]=Math.random()*2-1;
+    const s=ac.createBufferSource(),fl=ac.createBiquadFilter(),gn=ac.createGain();s.buffer=buf;fl.type=ty;
+    fl.frequency.setValueAtTime(f0,n);fl.frequency.exponentialRampToValueAtTime(Math.max(20,f1),n+d);
+    gn.gain.setValueAtTime(v,n);gn.gain.exponentialRampToValueAtTime(.001,n+d);s.connect(fl);fl.connect(gn);gn.connect(ac.destination);s.start(n);}catch(e){}
+}
+function knockSound(){hlTone(130,55,.16,"sine",.7);hlNoise(.05,"lowpass",1400,300,.35);}
+function doorCreak(){hlNoise(1.1,"bandpass",260,900,.14);hlTone(150,260,1.1,"sawtooth",.04);}
+function lockRattle(){hlTone(900,500,.05,"square",.12);hlTone(800,450,.05,"square",.12,.1);hlTone(700,400,.05,"square",.1,.2);}
+function glassBreak(){hlNoise(.5,"highpass",2500,6000,.4);hlTone(2600,1900,.2,"triangle",.1,.02);hlTone(3300,2500,.15,"triangle",.08,.08);hlTone(2100,1500,.2,"triangle",.07,.15);}
+function crunchSound(){hlNoise(.14,"lowpass",900,200,.5);hlTone(90,40,.12,"sine",.3);}
+function thud(){hlTone(75,35,.16,"sine",.55);}
+function growl(){hlTone(80,45,.5,"sawtooth",.16);hlNoise(.5,"lowpass",500,120,.25);}
+function waterSound(d){
+  if(!ac) return;
+  try{const n=ac.currentTime,buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),da=buf.getChannelData(0);
+    for(let i=0;i<da.length;i++)da[i]=Math.random()*2-1;
+    const s=ac.createBufferSource(),fl=ac.createBiquadFilter(),gn=ac.createGain();s.buffer=buf;fl.type="bandpass";fl.frequency.value=2600;fl.Q.value=.8;
+    gn.gain.setValueAtTime(.0001,n);gn.gain.linearRampToValueAtTime(.12,n+.15);gn.gain.setValueAtTime(.12,n+d-.3);gn.gain.linearRampToValueAtTime(.0001,n+d);
+    s.connect(fl);fl.connect(gn);gn.connect(ac.destination);s.start(n);}catch(e){}
+}
 /* a slow music box lullaby that drifts out of tune (original tune, about 8 seconds) */
 function lullaby(){
   if(!ac) return;
@@ -3266,7 +3402,6 @@ function ghoulFace(c,w,h,t,f,v){
 let raf=0,keyDown=null,keyUp=null;
 function showGame(on,endless){
   document.getElementById("gamebox").hidden=!on;
-  document.getElementById("gamebox").classList.toggle("full",!!(on&&endless));   /* "fake" mode = just the full game screen, no "Finding your leads" card */
   document.getElementById("gexit").hidden=!(on&&endless);
   const sc=document.getElementById("scare"); sc.hidden=true; window.onresize=null;
   cancelAnimationFrame(raf);bossMusic(false);hzAmbient(false);
