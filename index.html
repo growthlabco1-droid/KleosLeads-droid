@@ -828,11 +828,11 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
     h.pp[3]=74;h.pp[4]=88;
     h.mm=[0,1,2].map(i=>Math.random()<(i===0?.3:.45)?1:0);h.mmd=[0,0,0,0];   /* mimic seeds in the first three rooms */   /* the last pomegranate lies on the floor of the girl's room */
     if(keep)Object.assign(h,keep);
-    if(first)Object.assign(h,{spx:null,kitDone:0,fHint:0,fsCd:0,gf:0,cdone:0,bdone:0,dolldone:0,welldone:0,sig:0,crypt:0,chap:0,rel:0,t:0,seeds:0,got:[0,0,0,0],quiet:1,fake:0,wall:{d:0,open:1},alt:[0,0,0],slamDone:0,spawned:0,room:-1,toast:0,chase:0,ct:0,wh3:0,whR:60,crawlT:0,crawlDone:0,chDone:0,turnDone:0,pDone:0,dDone:0,fbDone:0,lw:Array(40).fill(0),hw:[0,0,0],mir:{s:0,t:0}});
+    if(first)Object.assign(h,{spx:null,kitDone:0,hgs:[0,0,0,0],echoDone:0,fHint:0,fsCd:0,gf:0,cdone:0,bdone:0,dolldone:0,welldone:0,sig:0,crypt:0,chap:0,rel:0,t:0,seeds:0,got:[0,0,0,0],quiet:1,fake:0,wall:{d:0,open:1},alt:[0,0,0],slamDone:0,spawned:0,room:-1,toast:0,chase:0,ct:0,wh3:0,whR:60,crawlT:0,crawlDone:0,chDone:0,turnDone:0,pDone:0,dDone:0,fbDone:0,lw:Array(40).fill(0),hw:[0,0,0],mir:{s:0,t:0}});
     else{
-      if(keep){h.x=h.spx;h.seeds=3;h.got=[1,1,1,0];h.chase=0;h.ct=0;h.hw[2]=0;h.t=Math.max(h.t,3600);h.quiet=1;h.spawned=1;h.fsCd=0;h.gf=0;hzSpawn();}
+      if(keep){h.x=h.spx;h.seeds=h.spn||3;h.got=(h.spg||[1,1,1,0]).slice();h.chase=0;h.ct=0;h.hw[2]=0;h.t=Math.max(h.t,3600);h.quiet=1;h.spawned=1;h.fsCd=0;h.gf=0;hzSpawn();if(h.seeds>=4){h.pend=0;hzChase(h);}}
       else{Object.assign(h,{t:0,seeds:0,got:[0,0,0,0],quiet:1,fake:0,wall:{d:0,open:1},alt:[0,0,0],slamDone:0,spawned:0,room:-1,toast:0,chase:0,ct:0,wh3:0,whR:60,crawlT:0,crawlDone:0,chDone:0,turnDone:0,pDone:0,dDone:0,fbDone:0,lw:Array(40).fill(0),hw:[0,0,0],mir:{s:0,t:0},
-        cdone:0,bdone:0,dolldone:0,welldone:0,sig:0,crypt:0,chap:0,rel:0,cl:0,cb:0,spx:null,xs:null,wf:null,loreCd:0,fsCd:0,gf:0,ds:null,kitDone:0,fHint:0});}hzSay(h,({girl:"She only wanted someone to stay.",ghost:"They only wanted to be remembered.",hanger:"Some of them never stop falling.",dog:"He only guards what he loves.",mimic:"Some seeds are hungry.",figure:"He walks the halls for a reason.",crawler:"It was a child once.",drowned:"The water remembers everyone it takes."})[kk]||"The seeds are hidden again.",230);h.q=[[({girl:"She is still waiting where you left her.",ghost:"Hades remembers every one of them.",hanger:"Look up before you walk under them.",dog:"Drop a candle. Make him wait.",mimic:"Shine your light before you reach for anything.",figure:"Wait until his back is turned.",crawler:"Do not let it reach you in the dark.",drowned:"Pull free. Do not stop pulling."})[kk]||"Every seed must be taken again.",230]];}   /* died: all pomegranates must be collected again */
+        cdone:0,bdone:0,dolldone:0,welldone:0,sig:0,crypt:0,chap:0,rel:0,cl:0,cb:0,spx:null,xs:null,wf:null,loreCd:0,fsCd:0,gf:0,ds:null,kitDone:0,hgs:[0,0,0,0],echoDone:0,fHint:0});}hzSay(h,({girl:"She only wanted someone to stay.",ghost:"They only wanted to be remembered.",hanger:"Some of them never stop falling.",dog:"He only guards what he loves.",mimic:"Some seeds are hungry.",figure:"He walks the halls for a reason.",crawler:"It was a child once.",drowned:"The water remembers everyone it takes."})[kk]||"The seeds are hidden again.",230);h.q=[[({girl:"She is still waiting where you left her.",ghost:"Hades remembers every one of them.",hanger:"Look up before you walk under them.",dog:"Drop a candle. Make him wait.",mimic:"Shine your light before you reach for anything.",figure:"Wait until his back is turned.",crawler:"Do not let it reach you in the dark.",drowned:"Pull free. Do not stop pulling."})[kk]||"Every seed must be taken again.",230]];}   /* died: all pomegranates must be collected again */
     /* CHANGED: exactly 4 ghosts in the whole game. They roam their own stretch of the hall like the tall man. No random spawns. */
     h.souls=HZ.gh.map((gx,i)=>({x:gx,lit:0,ch:i===2?1:0,tr:[],dis:0,rm:1,home:gx,rng:HZ.GR,dir:i%2?1:-1,p:300+Math.floor(Math.random()*300),st:0,bl:0,en:0,et:0,hold:0,ld:null,w:0}));
     /* CHANGED: 2 MORE ghosts (6 in total). They walk up and down a long stretch of the hall, sometimes stand still for 5 to 10 seconds, and sometimes slip into LOCKED doors only (they hide inside for 5 to 10 seconds, then come back out). */
@@ -905,6 +905,7 @@ const hzExtra=(h,sec,safeP,near)=>{
     h.souls.forEach(s=>{if(!s.ch||s.dis||h.seeds<1)return;if(h.t%5===0){s.tr.push(s.x);if(s.tr.length>8)s.tr.shift();}
       const d=Math.abs(s.x-h.x);if(!(--s.ck>0)){s.ck=22+Math.floor(Math.random()*26);if(!h.silent&&d<420)chainClink(hzCl((s.x-h.x)/50,-1,1),hzCl(.34-d/260,.05,.3),0);}});
     /* ceiling hangers: you hear a whisper as you get close. Walk under one and it drops on you, unless you flare the candle (SPACE) first */
+    h.hgs=h.hgs||[0,0,0,0];h.hg.forEach((q,i)=>{if(q.d)h.hgs[i]=1;});
     HZ.hang.forEach((p,i)=>{const q=h.hg[i];if(q.d)return;const dx=Math.abs(h.x-p);
       if(dx<36&&!q.w){q.w=1;whisper(0,.2);}
       if(dx<6&&!safeP&&!(q.bl>0)){q.d=1;h.catch=1;h.killer="hanger";}});
@@ -937,7 +938,7 @@ const hzExtra=(h,sec,safeP,near)=>{
     if(h.fb&&++h.fb.t>150)h.fb=null;
     /* something walks behind you: your footsteps get a second, lower set, then a whisper right at your back */
     if(h.echo>0){if(--h.echo===0)whisper(-h.dir,.3);}
-    else if(sec>=120&&--h.echoT<=0){h.echo=720;h.echoT=9000+Math.floor(Math.random()*6000);}
+    else if(sec>=120&&--h.echoT<=0){h.echoDone=1;h.echo=720;h.echoT=9000+Math.floor(Math.random()*6000);}
     /* the chase: events are timed from the moment the last pomegranate is taken */
     if(h.chase){h.ct++;
       if(h.ct===400){h.dark=12;whisper(1,.3);heartbeat(.8);}          /* fake scare */
@@ -1808,7 +1809,7 @@ const hzOverlays=(ctx,h)=>{
         else if(U.st===2&&U.t>=110){U.st=3;U.t=0;h.face=16;h.nflash=6;scream();}   /* the music stops. Silence. Then the crib. */
         else if(U.st===3&&U.t>=60){U.st=4;U.t=0;hzSay(h,"Something small fell to the floor.",170);hzAmbLevel(.02);}}
       else if(U.st===4&&!h.key&&Math.abs(R.x-70)<6){h.key=2;U.st=5;seedChime();hzSay(h,"A small silver key. It is still warm.",210);}}
-    if(R.i<4&&!h.got[R.i]&&Math.abs(R.x-h.pp[R.i])<6){h.got[R.i]=1;h.seeds++;seedChime();hzSpawn();if(h.seeds===3){h.spx=h.x;h.q=[["A flame is left burning here. If you fall, you wake at this spot.",230]];}
+    if(R.i<4&&!h.got[R.i]&&Math.abs(R.x-h.pp[R.i])<6){h.got[R.i]=1;h.seeds++;seedChime();hzSpawn();h.spx=h.x;h.spn=h.seeds;h.spg=h.got.slice();if(h.seeds<=3)h.q=[["A flame is left burning here. If you fall, you wake at this spot.",230]];   /* CHANGED: every seed is now a checkpoint */
       if(h.seeds===1)hzSay(h,"The first seed. A chain rattles in the dark.",210);
       else if(h.seeds===2){hzSay(h,"The second seed. Something howls, far away.",210);R.bk=90;}
       else if(h.seeds===3){hzSay(h,"The third seed. Someone is crying nearby.",230);h.wh3=1;h.crawlT=300+Math.floor(Math.random()*500);}
@@ -1936,6 +1937,7 @@ const hzOverlays=(ctx,h)=>{
       if(dr&&!dr.locked&&h.souls.some(q=>!(q.en>0)&&!(q.bl>0)&&Math.abs(q.x-dr.x)<14)){hzSay(h,"A ghost stands in front of the door. Wait, or flare your candle.",120);whisper(0,.15);}   /* NEW: a ghost standing at a door blocks it (a blinded ghost does not) */
       else if(dr){if(!dr.locked&&hzWatch(h,dr)){hzKill(h,"figure");return;}if(dr.locked){hzSay(h,["Locked.","Locked. Something scratches inside.","Locked. A soft laugh, very close.","Locked. Don't knock."][Math.floor(Math.random()*4)],110);whisper(0,.12);}
         else if(dr.i===3&&h.seeds<3){hzSay(h,"The door won't open. Not yet.",120);whisper(0,.12);}
+        else if(dr.i===3&&!h.got[3]&&(()=>{const xd=(h.xs&&h.xs.d)||{},hs=h.hgs||[0,0,0,0];const n=["kitDone","cdone","bdone","dolldone","welldone","pDone","dDone","fbDone","crawlDone","slamDone","echoDone"].filter(f=>!h[f]).length+HZ.hang.filter((p,i)=>!hs[i]).length+(h.mir&&h.mir.s>=2?0:1)+(xd.wsee?0:1)+HZ.lore.filter((l,i)=>!h.lw[i]&&(!(i%3)||l[1].startsWith("SIGN"))).length;if(n)hzSay(h,"Not yet. The house still has "+n+(n>1?" things":" thing")+" left to show you.",200);return n;})()){whisper(0,.12);}   /* NEW: the 4th seed only after every story part, room, jumpscare and event */
         else if(dr.i===3&&(h.rel||0)<2){hzSay(h,"Two offerings are missing: one from the crypt, one from the chapel.",200);whisper(0,.12);}
         else if(dr.i===3&&!h.sig){hzSay(h,"Sealed with wax and ash. Light the three-candle altar.",190);whisper(0,.12);}
         else if(dr.i===3&&!h.key&&!h.got[3]){hzSay(h,"Locked tight. The keyhole is very small.",170);whisper(0,.12);}
@@ -1978,6 +1980,28 @@ const hzOverlays=(ctx,h)=>{
     const cx=px+dir*5;c.fillStyle="#e9e2c8";c.fillRect(cx-1,py-12,2,5);
     if(on){c.fillStyle=(t>>2)%2?"#ffd05a":"#ffb347";c.fillRect(cx-1,py-15,2,3);c.fillStyle="#fff3b0";c.fillRect(cx-1,py-14,1,1);}};
   /* ---- new figures (low-res pixel buffer) ---- */
+  /* NEW: the ceiling hangers and the falling body. Same grey-skin, blood-red style as the other creatures: ripped open, one arm torn off, a leg torn at the knee, dripping onto the floor. y0 = neck height, bl = blinded by the candle (eye shut) */
+  const hzHanger=(c,gx,t,k,y0,bl)=>{gx=Math.round(gx);
+    const sw=Math.round(Math.sin(t*.035+k*2)*1.5),sw2=Math.round(Math.sin(t*.035+k*2-.8)*2);
+    const r=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(gx+x,y0+y,w,h);};
+    const SK="#8d8f89",SH="#62645f",RG="#26231f",HR="#0d0c0b",BL="#7a0f0f",BL2="#a01414",BN="#d8d2c0";
+    c.fillStyle="#3a3028";c.fillRect(gx,HZ.CT,1,Math.max(0,y0-HZ.CT+3));c.fillStyle="#2a2018";c.fillRect(gx-1,y0+1,3,2);
+    r(-1,4,3,3,SH);r(-3+sw,-1,6,6,SK);r(-3+sw,4,6,1,SH);
+    r(-4+sw,-2,8,3,HR);r(-4+sw,0,2,13,HR);r(2+sw,0,2,10,HR);
+    r(-2+sw,2,2,2,"#050505");r(-2+sw,2,1,1,bl?"#222222":"#ffffff");r(1+sw,2,2,2,BL);r(1+sw,4,1,3,BL2);
+    r(-1+sw,5,3,3,"#2a0808");r(-1+sw,5,1,1,BN);r(1+sw,5,1,1,BN);r(0+sw,8,1,5,BL2);
+    r(-4,7,9,11,SK);r(-5,9,1,3,SK);r(5,10,1,3,SH);
+    r(-3,8,7,8,BL);r(-3,9,7,1,BN);r(-3,11,7,1,BN);r(-3,13,6,1,BN);r(-3,8,1,8,BN);r(3,9,1,5,BN);
+    r(-1,10,2,2,BL2);r(1,13,2,2,BL2);r(-3,16,2,2,BL2);
+    for(let j=0;j<6;j++)r(-2+Math.round(Math.sin(t*.06+j+k)*1.3)+(j%2),17+j*2,2,2,j%2?BL:BL2);
+    r(-7+sw,8,2,13,SK);r(-7+sw,8,1,13,SH);r(-8+sw,21,3,3,SK);r(-8+sw,24,1,2,SK);r(-6+sw,24,1,2,SK);r(-7+sw,14,1,4,BL2);
+    r(5,8,2,3,SK);r(5,11,2,1,BN);r(5,12,2,2,BL);r(6,14,1,6,BL2);r(5,14,1,3,BL);
+    r(-4,18,9,3,RG);r(-3,21,1,5,BL);
+    r(-3+sw2,21,3,9,SK);r(-3+sw2,21,1,9,SH);r(-3+sw2,25,1,4,BL2);r(-3+sw2,30,3,1,SH);
+    r(1+sw2,21,3,4,SK);r(1+sw2,25,3,1,BN);r(1+sw2,26,1,5,BL2);r(2+sw2,26,1,3,BL);
+    [[-1,19],[-7+sw,24],[2+sw2,31],[-3+sw2,31]].forEach((d,i)=>{const o=(t*.9+i*23+k*11)%44;if(d[1]+o<44)r(d[0],d[1]+o,1,2,BL2);});
+    const py=122-y0,pw=7+((t>>5)&1);for(let yy=-1;yy<=1;yy++)r(-pw+(yy?1:0),py+yy,(pw-(yy?1:0))*2,1,yy?BL:"#5a0a0a");
+  };
   /* grey human: long arms that hang to the floor and drag behind, white eyes. dr = way it faces (toward you), 0 = hanging body */
   const hzGhost=(c,gx,fy,t,dis,dr,bl)=>{gx=Math.round(gx)+(dis?Math.round((Math.random()-.5)*3):0);dr=dr||0;
     const f=dr||1,ph=(t>>3)&1,bob=(t>>4)&1,Y=Math.round(fy)-1,sw=Math.round(Math.sin(t*.07+gx));
@@ -2182,10 +2206,10 @@ const hzOverlays=(ctx,h)=>{
     /* fires (safe spots) */
     HZ.fires.forEach((f,i)=>{const x=R(f-cam);if(x>-12&&x<V+12)hzFire(c,x,FY+2,i===3||i===4,t+i*9);});
     /* ceiling hangers */
-    HZ.hang.forEach((p,i)=>{if(h.hg[i].d)return;const x=R(p-cam);if(x<-8||x>V+8)return;c.fillStyle="#3a3028";c.fillRect(x,CT,1,56);hzGhost(c,x,104,h.hg[i].bl>0?0:t+i*5,0,0,h.hg[i].bl>0);});
+    HZ.hang.forEach((p,i)=>{if(h.hg[i].d)return;const x=R(p-cam);if(x<-8||x>V+8)return;hzHanger(c,x,h.hg[i].bl>0?0:t+i*5,i,82,h.hg[i].bl>0);});
     /* the falling body */
     if(h.fb){const k=Math.min(1,h.fb.t/8),fy=HZ.CT+30+(104-HZ.CT-30)*k,sw=Math.round(Math.sin(h.fb.t*.15)*3*(1-h.fb.t/150)),bx=R(h.fb.x-cam);
-      c.fillStyle="#3a3028";c.fillRect(bx,HZ.CT,1,Math.max(0,fy-22-HZ.CT));hzGhost(c,bx+sw,fy,t,0);}
+      hzHanger(c,bx+sw,t,7,Math.round(fy-30));}
     /* mirror reflection */
     const m=h.mir;
     if(m.s<2&&Math.abs(h.x-HZ.MX)<46){const mx=R(HZ.MX-cam),ox=hzCl(Math.round((h.x-HZ.MX)*.18),-3,3)*(m.s?-1:1)+(m.s?Math.round(Math.sin(t*.2)*1):0);
@@ -2216,17 +2240,20 @@ const hzOverlays=(ctx,h)=>{
   };
   /* the crying girl. s=0: kneeling, back to you, crying. s>=1: up on her feet, face toward you, running */
   const hzGirl=(c,gx,fy,G,t)=>{gx=Math.round(gx);const f=G.dir,r=(ox,oy,w,hh)=>c.fillRect(f>0?gx+ox:gx-ox-w,fy+oy,w,hh);
+    const SK="#b3ada3",SH="#7e7a74",DR="#566784",DR2="#3c4963",HR="#1c120b",RD="#6a0f0f",RD2="#8a1414";   /* CHANGED: pale grey skin, torn dark dress, blood - like the other creatures */
     if(G.s===0){const sh=(t>>2)%2;
-      c.fillStyle="#d8b89a";r(-9,-2,8,2);r(2,-15+sh,5,2);r(5,-19+sh,2,5);
-      c.fillStyle="#7f93b5";r(-5,-8,10,6);r(-3,-17+sh,6,10);
-      c.fillStyle="#d8b89a";r(-1,-24+sh,6,7);
-      c.fillStyle="#2a1a10";r(-4,-24+sh,5,17);r(-2,-26+sh,8,3);
+      c.fillStyle=SK;r(-9,-2,8,2);r(2,-15+sh,5,2);r(5,-19+sh,2,5);c.fillStyle=SH;r(-9,-1,8,1);r(5,-16+sh,2,1);r(2,-14+sh,5,1);
+      c.fillStyle=DR;r(-5,-8,10,6);r(-3,-17+sh,6,10);c.fillStyle=DR2;r(-5,-4,10,2);r(-3,-13+sh,2,6);r(-5,-2,1,2);r(-2,-2,1,1);
+      c.fillStyle=RD;r(0,-14+sh,2,5);r(-4,-5,1,3);r(3,-7,2,2);r(-1,-3,3,1);c.fillStyle=RD2;r(-1,-9,1,2);r(4,-3,1,2);r(6,-19+sh,1,3);
+      c.fillStyle=SK;r(-1,-24+sh,6,7);c.fillStyle=SH;r(-1,-18+sh,6,1);
+      c.fillStyle=HR;r(-4,-24+sh,5,17);r(-2,-26+sh,8,3);r(-5,-20+sh,1,14);
     }else{const sw=Math.round(Math.sin(G.w)*2);
-      c.fillStyle="#d8b89a";r(-3+sw,-6,2,6);r(1-sw,-6,2,6);r(2,-17,7,2);
-      c.fillStyle="#7f93b5";r(-3,-19,6,12);r(-5,-9,10,3);
-      c.fillStyle="#d8b89a";r(-2,-26,6,7);
-      c.fillStyle="#2a1a10";r(-6,-26,4,18);r(-3,-28,8,3);
-      c.fillStyle="#000";r(2,-24,2,3);r(2,-20,2,4);}};
+      c.fillStyle=SK;r(-3+sw,-6,2,6);r(1-sw,-6,2,6);r(2,-17,7,2);r(9,-19,1,3);r(9,-15,1,2);c.fillStyle=SH;r(-3+sw,-1,2,1);r(1-sw,-1,2,1);
+      c.fillStyle=DR;r(-3,-19,6,12);r(-5,-9,10,3);c.fillStyle=DR2;r(-5,-6,10,1);r(-5,-6,1,3);r(-2,-6,1,2);r(3,-6,1,3);r(-3,-19,2,12);
+      c.fillStyle=RD;r(-1,-16,3,7);r(-5,-8,2,2);r(2,-8,2,3);c.fillStyle=RD2;r(0,-18,1,3);r(9,-17,1,2);r(-3,-3+sw,1,2);
+      c.fillStyle=SK;r(-2,-26,6,7);c.fillStyle=SH;r(-2,-20,6,1);
+      c.fillStyle=HR;r(-6,-26,4,18);r(-3,-28,8,3);r(4,-27,1,10);
+      c.fillStyle="#050505";r(2,-24,2,3);r(2,-20,2,4);c.fillStyle="#fff";r(3,-23,1,1);c.fillStyle=RD2;r(3,-19,1,3);}};
   /* the nursery: crib, mobile, music box */
   const hzNursery=(c,h,R,t)=>{const U=h.nur,CT=HZ.CT,rk=U.st===1?Math.round(Math.sin(t*.12)*2):0;
     c.fillStyle="#6a5a48";c.fillRect(36+rk,106,30,2);c.fillRect(36+rk,118,30,2);for(let i=0;i<7;i++)c.fillRect(37+rk+i*4,106,1,14);
