@@ -43,6 +43,10 @@ a{color:#7a5c14}
 small{color:var(--muted)}
 #gamebox{position:fixed;inset:0;z-index:50;display:flex;background:linear-gradient(180deg,#121830,#0b1020)}
 #gamebox[hidden]{display:none}
+#gamebox.full{background:#000}
+#gamebox.full .gt,#gamebox.full .gs,#gamebox.full .gcard::before{display:none}
+#gamebox.full .gcard{padding:0;border-top:0}
+#gamebox.full #game{box-shadow:none;border-radius:0}
 #gexit{position:absolute;top:10px;right:12px;z-index:2;align-self:auto;padding:5px 12px;font-size:.68rem;letter-spacing:.12em;border-radius:8px;background:rgba(11,16,32,.85);color:#f3e3b0;border:1px solid #c59a3d;box-shadow:0 0 0 2px #0b1020,0 0 0 3px rgba(197,154,61,.6)}
 #gexit:hover{background:linear-gradient(135deg,#d9b863,#f6e8b8);color:#16202b}
 #gexit[hidden]{display:none}
@@ -991,7 +995,7 @@ const hzOverlays=(ctx,h)=>{
       if(T.stab%5===0)plop();}
     if(T.stab){T.stab++;if(T.stab===2){thunder(.7,0);hadesGrowl(1.8,.8);}
       if(T.stab>18&&T.stab<170){const c=(T.stab-18)/150;for(let i=0;i<3;i++)T.emb.push({x:60+(Math.random()-.5)*26,y:74-60*(1-c)+Math.random()*6,vx:(Math.random()-.5)*.3,vy:-.2-Math.random()*.5,l:60+Math.random()*50});}
-      if(T.stab>=260)hzWin();return;}
+      if(T.stab>=260)hzEndStep(h,T);return;}   /* CHANGED: no victory song or win screen any more, the ending below plays instead */
     let dx=(K.ArrowRight?1:0)-(K.ArrowLeft?1:0),dy=(K.ArrowDown?1:0)-(K.ArrowUp?1:0);
     if(!dx&&!dy&&g.tpt){const tx=g.tpt.x*HZ.VW/W-T.x,ty=g.tpt.y*HZ.VH/H-T.y;if(Math.hypot(tx,ty)>3){dx=tx;dy=ty;}}
     const ln=Math.hypot(dx,dy);
@@ -1001,8 +1005,68 @@ const hzOverlays=(ctx,h)=>{
     else if(press&&T.pr===2){T.stab=1;}               /* E: stab Hades */
     if(T.armed&&T.t%3===0)T.emb.push({x:T.x+4+Math.random()*3,y:T.y-12,vx:(Math.random()-.5)*.3,vy:-.4,l:18});
   };
+  /* ===== NEW ENDING after Hades dies: about 7 seconds of awkward silence (no victory song), he asks where it is, ~4 s later everything snaps back to the normal house: the living room, a bloody knife, his dead mom and sister on the floor. "What did I do." The black cutscreen comes later. ===== */
+  const hzEndStep=(h,T)=>{T.et=(T.et||0)+1;if(T.mt>0)T.mt--;if(T.fl>0)T.fl--;const et=T.et;
+    if(et===420){T.msg="What happened? Where's my victory song?";T.mt=240;}      /* after about 7 s of silence */
+    if(et===660){T.scene=1;T.et2=0;T.fl=10;T.mt=0;heartbeat(1);}                  /* about 4 s later: suddenly back in the house */
+    if(T.scene===1){T.et2++;if(T.et2===150){T.msg="What did I do.";T.mt=999999;heartbeat(1);}}};
+  const hzDeadMom=(c,x,fy)=>{x=Math.round(x);const r=(ox,oy,w,h,col)=>{c.fillStyle=col;c.fillRect(x+ox,fy+oy,w,h);};
+    const GW="#a8a29a",GS="#8a847c",SKN="#cfc7b8",BL="#7a0f0f",BL2="#a01414",BL3="#c42020";
+    r(-24,-1,50,2,"#4a0808");r(-19,1,40,1,"#6a0b0b");r(-12,2,28,1,"#3a0606");
+    r(8,-4,14,3,GW);r(8,-2,14,1,GS);r(20,-3,3,3,SKN);r(12,-3,3,2,BL2);
+    r(-8,-6,17,5,GW);r(-6,-6,6,5,BL);r(-2,-5,5,4,BL2);r(2,-6,4,3,BL);r(4,-4,3,2,BL3);r(-7,-3,2,2,BL2);r(-3,-5,2,1,"#2a0505");r(1,-4,2,1,"#2a0505");
+    r(-15,-6,7,5,SKN);r(-19,-5,5,3,"#2a1a10");r(-14,-4,2,1,"#2a2018");r(-11,-4,2,1,"#2a2018");r(-13,-2,2,2,BL2);
+    r(-11,-2,4,1,SKN);r(-9,-1,2,1,BL2);r(-8,-3,3,1,BL);};
+  const hzDeadGirl=(c,x,fy)=>{x=Math.round(x);const r=(ox,oy,w,h,col)=>{c.fillStyle=col;c.fillRect(x+ox,fy+oy,w,h);};
+    const SKN="#e0d8cc",BL="#7a0f0f",BL2="#a01414",HRR="#0d0c0b";
+    r(-17,-1,36,2,"#4a0808");r(-12,1,28,1,"#6a0b0b");
+    r(6,-3,10,2,SKN);r(15,-3,3,2,"#2a2a35");
+    r(-6,-5,13,4,"#7f93b5");r(-4,-5,6,4,BL);r(0,-4,5,3,BL2);r(3,-5,3,2,BL);r(-6,-3,2,2,BL2);
+    r(-12,-6,6,5,SKN);r(-18,-6,6,5,HRR);r(-14,-7,8,2,HRR);r(-19,-4,3,3,HRR);r(-10,-4,2,1,"#2a2018");r(-7,-4,1,1,"#2a2018");r(-9,-2,2,2,BL2);
+    r(-7,-1,5,1,SKN);r(-4,-1,2,1,BL2);};
+  const hzLivingDraw=(ctx,h)=>{const T=h.th,V=HZ.VW,VH=HZ.VH,t=T.t;
+    if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
+    const c=h.A.getContext("2d"),r=(col,x,y,w,hh)=>{c.fillStyle=col;c.fillRect(x,y,w,hh);};
+    const RD="#8a1414",RD2="#a01414",RD3="#6a0b0b";
+    /* the normal house again: wallpaper, panelling, wood floor, rug */
+    for(let x=0;x<V;x+=10){r((x/10)%2?"#4d4236":"#493e32",x,0,10,104);r("#3a3027",x+9,0,1,100);}
+    r("#2a1d12",0,0,V,4);r("#3a2616",0,66,V,38);r("#5a3a22",0,64,V,3);r("#2a1a10",0,100,V,5);
+    for(let x=0;x<V;x+=20){r(((x/20)|0)%2?"#3a2418":"#33200f",x,105,20,35);r("#25160e",x,105,1,35);}
+    r("#2f4a3a",10,112,100,22);r("#c9a24a",10,112,100,1);r("#c9a24a",10,133,100,1);for(let x=14;x<106;x+=12)r("#456a54",x,121,6,1);
+    r("#b48a2a",55,4,10,3);r("#e8c050",57,7,6,1);
+    /* window with rain and curtains */
+    r("#9aa2ac",10,26,24,46);r("#0a1230",12,28,20,42);r("#3a2a1a",21,28,2,42);r("#3a2a1a",12,47,20,2);r("#7a828c",8,71,28,3);r("#5a1a22",5,24,6,50);r("#5a1a22",33,24,6,50);
+    for(let i=0;i<9;i++){const px=12+((i*7+(t>>1))%19),py=28+((i*13+t*2)%38);r("#6a7aaa",px,py,1,2);}
+    /* family photos over the sofa */
+    [[44,34],[56,38],[68,34]].forEach(([fx,fy],i)=>{r("#8a6a2a",fx,fy,10,14);r("#1a1410",fx+1,fy+1,8,12);r("#d8b89a",fx+3,fy+4,4,3);r("#2a1a10",fx+2,fy+3,6,2);r(["#2b3f6e","#7f93b5","#8a1c24"][i],fx+2,fy+8,6,4);});
+    /* sofa */
+    r("#6a3a2a",38,76,42,16);r("#7a4632",38,92,42,12);r("#5a2e20",35,84,6,20);r("#5a2e20",77,84,6,20);r("#5a2e20",58,92,1,12);
+    /* tv on its cabinet, a game controller on the floor */
+    r("#4a2c18",88,86,26,20);r("#3a2414",90,88,10,16);r("#3a2414",102,88,10,16);r("#111",90,62,22,24);r("#0c0f14",92,64,18,20);r("#1a2230",93,65,5,8);r("#222",92,84,10,2);
+    r("#222",100,119,8,3);r("#333",101,118,2,1);r("#333",105,118,2,1);r(RD2,102,120,3,2);
+    /* blood on the wall, the photos and the sofa */
+    for(let i=0;i<10;i++){const bx=40+i*4+((i*7)%3),by=50+((i*11)%30);r(i%2?RD:RD2,bx,by,1,8+((i*5)%12));}
+    for(let i=0;i<26;i++){r(i%3?RD:RD2,36+((i*29)%52),40+((i*17)%58),1+(i%3===0?1:0),1+(i%4===0?1:0));}
+    r(RD,46,36,4,3);r(RD2,70,38,3,5);r(RD,58,92,6,4);r(RD3,42,94,5,6);r(RD2,70,96,6,5);
+    r(RD,22,56,3,5);r(RD,24,58,1,9);r(RD2,19,60,2,2);r(RD,26,57,1,1);r(RD2,28,56,1,4);
+    /* the floor: one big spreading pool, then the two of them */
+    r(RD3,26,119,76,4);r("#4a0808",34,123,60,3);r(RD3,48,126,40,3);
+    hzDeadMom(c,40,122);hzDeadGirl(c,96,122);
+    /* the boy: standing in it, soaked, knife in his hand */
+    const px=68,py=124;hzKitMan(c,px,py,0,0,1,1);
+    r(RD,px-3,py-13,4,3);r(RD2,px,py-10,3,3);r(RD3,px-2,py-8,3,2);r(RD,px-2,py-17,3,2);r(RD2,px+3,py-12,2,2);r(RD3,px-3,py-6,2,3);r(RD,px,py-4,3,2);
+    r(RD2,px+6,py-12,3,1);r(RD2,px+7,py-11,1,2+(t>>3)%3);r(RD,px+4,py-6+(t>>4)%2,1,2);
+    r(RD2,px-6,py+1,2,1);r(RD3,px+5,py+1,3,1);
+    c.globalCompositeOperation="lighter";const gr=c.createRadialGradient(60,8,4,60,40,90);gr.addColorStop(0,"rgba(255,200,120,.16)");gr.addColorStop(1,"rgba(255,200,120,0)");c.fillStyle=gr;c.fillRect(0,0,V,VH);c.globalCompositeOperation="source-over";
+    ctx.imageSmoothingEnabled=false;ctx.drawImage(h.A,0,0,V,VH,0,0,W,H);
+    ctx.fillStyle="rgba(0,0,0,.2)";ctx.fillRect(0,0,W,H);
+    for(let i=0;i<70;i++){ctx.fillStyle=Math.random()<.5?"rgba(255,255,255,.05)":"rgba(0,0,0,.15)";ctx.fillRect(Math.floor(Math.random()*W/3)*3,Math.floor(Math.random()*H/3)*3,3,3);}
+    const vg=ctx.createRadialGradient(W/2,H/2,H*.28,W/2,H/2,H*.7);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.75)");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+    if(T.mt>0){ctx.textAlign="center";ctx.font="11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(230,200,150,.9)";ctx.fillText(T.msg,W/2,34);ctx.textAlign="left";}
+    if(T.fl>0){ctx.fillStyle="rgba(255,255,255,"+T.fl/10*.9+")";ctx.fillRect(0,0,W,H);}};
   const hzThroneDraw=(ctx,h)=>{
     const T=h.th,V=HZ.VW,VH=HZ.VH,t=T.t;
+    if(T.scene===1){hzLivingDraw(ctx,h);return;}
     if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
     const c=h.A.getContext("2d");
     c.fillStyle="#1a0608";c.fillRect(0,0,V,60);
@@ -1024,7 +1088,7 @@ const hzOverlays=(ctx,h)=>{
     if(T.pr&&!T.stab){ctx.textAlign="center";ctx.font="bold 15px Cinzel,Georgia,serif";ctx.fillStyle="#fff";ctx.shadowColor="#000";ctx.shadowBlur=4;ctx.fillText("Press E",T.x*W/V,(T.y-16)*H/VH);ctx.shadowBlur=0;ctx.textAlign="left";}
     if(T.stab&&T.stab<26){ctx.fillStyle="rgba(255,255,255,"+(1-T.stab/26)+")";ctx.fillRect(0,0,W,H);}
     if(t<60){ctx.fillStyle="rgba(0,0,0,"+(1-t/60)+")";ctx.fillRect(0,0,W,H);}
-    if(t>=60){const m=T.stab>60?"Her light is free.":T.stab?"":T.armed?"Burn him for every tear.":"He did this. Take the flame sword.";
+    if(t>=60){const m=T.stab>=260?(T.mt>0?T.msg:""):T.stab>60?"Her light is free.":T.stab?"":T.armed?"Burn him for every tear.":"He did this. Take the flame sword.";
       ctx.textAlign="center";ctx.font="11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(230,200,150,.85)";ctx.fillText(m,W/2,24);ctx.textAlign="left";}
   };
   const hzFallStep=h=>{const f=h.fall;f.t++;
@@ -1039,20 +1103,50 @@ const hzOverlays=(ctx,h)=>{
   const hzKBlood=(k,n)=>{const d=k.stab?Math.min(1,Math.max(0,(k.stab-10)/200)):0,sk=Math.round(Math.min(1,d/.3)*6);
     for(let i=0;i<n&&k.bl.length<900;i++)k.bl.push({x:k.gx+(Math.random()-.5)*2,y:k.gy-10+sk,vx:(Math.random()-.5)*2.2,vy:-.6-Math.random()*1.8,fy:k.gy-2+Math.random()*7,st:0});};
   const hzKitStart=h=>{h.fall=null;h.mt=0;h.q=[];
-    h.kt={x:76,y:96,walk:0,foot:0,sa:0,dir:-1,t:0,e0:1,armed:0,knife:1,diary:0,dread:0,dn:0,girl:0,gt:0,gx:0,gy:112,side:1,stab:0,bl:[],hands:[],wave:0,key:0,kx:0,ky:0,got:0,leave:0,msg:"",mt:0,pr:0,fl:0};
+    h.kt={x:76,y:96,walk:0,foot:0,sa:0,dir:-1,t:0,e0:1,armed:0,knife:1,diary:0,dread:0,sp:0,kd:0,r0:1,l0:1,tp0:1,dn:0,girl:0,gt:0,gx:0,gy:112,side:1,stab:0,bl:[],hands:[],wave:0,key:0,kx:0,ky:0,got:0,leave:0,msg:"",mt:0,pr:0,fl:0};
     hzAmbLevel(0);thunder(.55,0);plop();heartbeat(1);};
   const hzKitEnd=h=>{h.kt=null;h.kitDone=1;h.x=HZ.fx;h.dir=1;h.walk=0;h.fl=1;h.dark=0;h.hid=null;h.inRoom=null;h.en0=true;h.catch=0;
     h.souls.forEach(s=>{if(Math.abs(s.x-h.x)<170)s.x=hzCl(h.x+(s.x>=h.x?1:-1)*190,26,HZ.WW-6);});
     if(h.wf&&Math.abs(h.wf.x-h.x)<220){h.wf.x=hzCl(h.x+(h.wf.x>=h.x?1:-1)*240,HZ.wlo,HZ.whi);h.wf.p=80;h.wf.hunt=0;}
     hzAmbLevel(.05);h.rmsg={t:0};};   /* back in the story: the two red messages (5.5 s each) */
+  /* the diary on the kitchen table: the mom's pages, then the red one */
+  const hzDiaryText=[
+    {t:"Dear diary,\nIt is almost midnight and the house is finally quiet, except for the sound coming from his room. The light under his door has not gone out in three nights. He says he is just finishing one more level. He is always just finishing one more level."},
+    {t:"Dear diary,\nI called him down for dinner three times tonight. When he finally came he did not touch his food. He stared at the red sauce on his plate for a long time, then pushed it away and said it looked like something. I did not ask what."},
+    {t:"Dear diary,\nHis father says it is only a phase. Boys and their damn video games, he says, and goes back to the newspaper. But a phase does not make a boy stop looking you in the eye. When I talk to him now he looks just past my shoulder, as if someone is standing behind me."},
+    {t:"Dear diary,\nI stood outside his door tonight and listened. Gunfire, screaming, that awful wet sound they make when something is hit. And under all of it, my son, laughing. Not a happy laugh. I have never heard him laugh like that before."},
+    {t:"Dear diary,\nIt is all blood with those games now. Every screen, every hour, red on everything he sees. I asked him to play something else, something gentle. He looked at me as if I had asked him to stop breathing."},
+    {t:"Dear diary,\nI took the controller away today. I should not have. He did not shout. He went very quiet and very pale and said, you do not understand, I have to finish it, they are all still in there. Then he sat in the dark with the screen off, rocking back and forth."},
+    {t:"Dear diary,\nHe told me this morning that the walls in his room were bleeding. I went in and touched them. They were dry. He looked so disappointed in me, as if I was the one who could not see."},
+    {t:"Dear diary,\nHe has stopped sleeping. I found him standing in the hallway at three in the morning, facing the wall, whispering. His little sister heard him too. She asked me why her brother talks to the dark. I had no answer for her."},
+    {t:"Dear diary,\nI called the school, and then the doctor. Everyone says the same thing. Teenagers, screens, stress. They say it will pass. Nobody has seen the way he looks at his sister when she laughs, like she is a door he wants to open."},
+    {t:"Dear diary,\nHe scratched something into his desk with a compass. I tried to read it and could not. The same few letters over and over, pressed so deep the wood split. When I asked him, he said the game told him to remember."},
+    {t:"Dear diary,\nI have hidden the kitchen knives in the high cupboard. How silly I feel writing that down. I told myself it was for the little ones. But I checked the lock on my own bedroom door twice before I slept."},
+    {t:"Dear diary,\nTonight he smiled at me across the table, a real smile, and for one moment I had my boy back. Then he asked, very softly, what I thought a person looked like on the inside. I told him to go to bed. I am writing this with shaking hands."},
+    {t:"Dear diary,\nI am afraid of what he will do. Every day he is stranger.",brk:1}];
+  const hzDiaryBuild=(ctx,PW)=>{const LINES=14,maxW=PW-30;ctx.font="italic 12px Georgia,serif";const pages=[];let cur=[];
+    const push=()=>{pages.push({ty:0,l:cur});cur=[];};
+    hzDiaryText.forEach(en=>{if(en.brk&&cur.length)push();
+      en.t.split("\n").forEach(par=>{let line="";const flush=()=>{cur.push(line);line="";if(cur.length>=LINES)push();};
+        par.split(" ").forEach(w=>{const tst=line?line+" "+w:w;if(line&&ctx.measureText(tst).width>maxW){flush();line=w;}else line=tst;});
+        if(line)flush();});
+      if(!en.brk&&cur.length&&cur.length<LINES)cur.push("");});
+    if(cur.length)push();
+    if((pages.length-1)%2===0)pages.splice(pages.length-1,0,{ty:3,l:[]});   /* the last page you can read sits on the right, so the next turn shows the red page */
+    pages.push({ty:1,l:[]},{ty:2,l:[]});
+    return pages;};
   const hzKitStep=h=>{const k=h.kt,K=window.GK||{};k.t++;if(k.fl>0)k.fl--;if(k.mt>0)k.mt--;
     const e=!!(K.e||K.E||K.Enter||g.tapE);g.tapE=0;const press=e&&!k.e0;k.e0=e;
     const say=(m,n)=>{k.msg=m;k.mt=n||190;};
     k.bl.forEach(p=>{if(p.st)return;p.x+=p.vx;p.y+=p.vy;p.vy+=.08;if(p.y>=p.fy){p.y=p.fy;p.st=1;p.vx=0;p.vy=0;}});
     if(k.leave){k.leave++;if(k.leave>=130)hzKitEnd(h);return;}   /* the door is open: walk out */
     if(k.t===70)say("A kitchen. Something lies on the table.",230);
-    if(k.diary){k.dread++;if(k.dread%5===0&&k.dread<75)windClick();   /* the diary is open: E closes it, and she appears */
-      if(press&&k.dread>75){k.diary=0;k.dn=1;k.girl=1;k.gt=0;k.gx=k.x<60?92:28;k.fl=10;thunder(.7,0);heartbeat(1);cry(0,.4);say("Something is standing in the kitchen with you.",230);}return;}
+    if(k.diary){k.dread++;   /* the diary is open: E turns the page. It cannot be closed until the last, red page; there E closes it, and she appears */
+      const last=(k.ns||1)-1;
+      if(press&&k.sp<last){k.sp++;windClick();if(k.sp===last){k.kd=0;heartbeat(1);whisper(0,.3);}}
+      else if(k.sp===last){k.kd++;if(k.kd%5===0&&k.kd<75)windClick();
+        if(press&&k.kd>75){k.diary=0;k.dn=1;k.girl=1;k.gt=0;k.gx=k.x<60?92:28;k.fl=10;thunder(.7,0);heartbeat(1);cry(0,.4);say("Something is standing in the kitchen with you.",230);}}
+      return;}
     let dx=(K.ArrowRight?1:0)-(K.ArrowLeft?1:0),dy=(K.ArrowDown?1:0)-(K.ArrowUp?1:0);
     if(!dx&&!dy&&g.tpt){const tx=g.tpt.x*HZ.VW/W-k.x,ty=g.tpt.y*HZ.VH/H-k.y;if(Math.hypot(tx,ty)>3){dx=tx;dy=ty;}}
     const ln=Math.hypot(dx,dy);
@@ -1063,7 +1157,7 @@ const hzOverlays=(ctx,h)=>{
     k.pr=nK?1:nD?2:(nG&&k.armed&&!k.stab)?3:nO?4:0;
     if(press){
       if(nK){k.knife=0;k.armed=1;windClick();say("A kitchen knife. It is still cold.",170);}
-      else if(nD){k.diary=1;k.dread=0;heartbeat(1);whisper(0,.45);}
+      else if(nD){k.diary=1;k.dread=0;k.sp=0;k.kd=0;k.r0=1;k.l0=1;k.tp0=1;heartbeat(1);whisper(0,.45);}
       else if(nG&&!k.stab){if(k.armed){k.stab=1;k.side=k.x<k.gx?1:-1;girlShriek(1.6,.7);thunder(.5,0);heartbeat(1);hzKBlood(k,40);}else say("You have nothing to hurt her with.",150);}
       else if(nO){if(k.got){k.leave=1;windClick();say("The lock gives way.",120);}else say(k.stab?"Locked. The key must be near her.":"Locked.",130);}}
     if(k.stab){k.stab++;const s=k.stab;
@@ -1137,11 +1231,22 @@ const hzOverlays=(ctx,h)=>{
     ctx.textAlign="center";ctx.font="bold 15px Cinzel,Georgia,serif";ctx.fillStyle="#fff";ctx.shadowColor="#000";ctx.shadowBlur=4;
     if(k.pr&&!k.diary&&!k.leave){const P=[0,[94,42],[34,78],[k.gx,k.gy-22],[60,16]][k.pr];ctx.fillText(k.pr===3?"Press E: stab":k.pr===4&&k.got?"Press E: unlock":"Press E",P[0]*3,P[1]*3);}
     ctx.shadowBlur=0;ctx.font="11px Cinzel,Georgia,serif";if(k.mt>0&&!k.diary){ctx.fillStyle="rgba(230,200,150,"+Math.min(.9,k.mt/30)+")";ctx.fillText(k.msg,W/2,44);}
-    if(k.diary){const bx=W/2-130,by=H/2-100,full="kill her inside",n=Math.min(full.length,Math.floor(k.dread/5)),sh2=()=>(Math.random()-.5)*1.5;
-      ctx.fillStyle="rgba(0,0,0,.84)";ctx.fillRect(0,0,W,H);ctx.fillStyle="#3a0e0e";ctx.fillRect(bx-8,by-8,276,216);ctx.fillStyle="#d8caa5";ctx.fillRect(bx,by,128,200);ctx.fillRect(bx+132,by,128,200);ctx.fillStyle="#a89a78";ctx.fillRect(bx+128,by,4,200);
-      ctx.fillStyle="rgba(60,40,30,.32)";for(let i=0;i<9;i++)ctx.fillRect(bx+14,by+24+i*18,70+((i*37)%34),2);ctx.fillStyle="rgba(120,20,20,.25)";ctx.fillRect(bx+60,by+120,34,14);
-      ctx.font="bold 30px Georgia,serif";ctx.fillStyle="#8a0808";const s=full.slice(0,n);ctx.fillText(s.slice(0,8),bx+196+sh2(),by+84+sh2());if(n>8)ctx.fillText(s.slice(8).trim(),bx+196+sh2(),by+124+sh2());
-      ctx.font="11px Cinzel,Georgia,serif";if(k.dread>75){ctx.fillStyle="rgba(230,200,150,.85)";ctx.fillText("E: close the diary",W/2,by+228);}}
+    if(k.diary){const PW=160,PH=276,bx=Math.round((W-2*PW-4)/2),by=Math.round((H-PH)/2)-10,full="kill her",sh2=()=>(Math.random()-.5)*1.5;
+      if(!k.pages){k.pages=hzDiaryBuild(ctx,PW);k.ns=k.pages.length/2;}
+      const sp=k.sp,last=k.ns-1,n=Math.min(full.length,Math.floor(k.kd/5));
+      ctx.fillStyle="rgba(0,0,0,.84)";ctx.fillRect(0,0,W,H);ctx.fillStyle="#3a0e0e";ctx.fillRect(bx-8,by-8,2*PW+4+16,PH+16);
+      ctx.fillStyle="#d8caa5";ctx.fillRect(bx,by,PW,PH);ctx.fillRect(bx+PW+4,by,PW,PH);ctx.fillStyle="#a89a78";ctx.fillRect(bx+PW,by,4,PH);
+      [[k.pages[sp*2],bx,sp*2],[k.pages[sp*2+1],bx+PW+4,sp*2+1]].forEach(([pg,px,pi])=>{
+        if(pg.ty===1){ctx.fillStyle="rgba(60,40,30,.32)";for(let i=0;i<10;i++)ctx.fillRect(px+16,by+30+i*20,80+((i*37)%50),2);ctx.fillStyle="rgba(120,20,20,.25)";ctx.fillRect(px+60,by+150,44,18);return;}
+        if(pg.ty===2){ctx.font="bold 30px Georgia,serif";ctx.fillStyle="#8a0808";const s2=full.slice(0,n);ctx.fillText(s2,px+PW/2+sh2(),by+PH/2+10+sh2());return;}
+        if(pg.ty===3)return;
+        const f=Math.min(1,pi/12);if(pi>=5){ctx.fillStyle="rgba(120,20,20,"+(.1+.08*f)+")";ctx.fillRect(px+30+((pi*53)%90),by+40+((pi*71)%170),22,14);}
+        ctx.font="italic 12px Georgia,serif";ctx.fillStyle="rgb("+Math.round(46+60*f)+","+Math.round(31-14*f)+","+Math.round(20-8*f)+")";ctx.textAlign="left";
+        pg.l.forEach((ln,i)=>ctx.fillText(ln,px+15+Math.sin(i*1.9+pi)*f*1.6,by+30+i*15.5+Math.cos(i*2.3+pi)*f*.8));
+        ctx.textAlign="center";ctx.font="9px Georgia,serif";ctx.fillStyle="rgba(60,40,30,.5)";ctx.fillText(String(pi+1),px+PW/2,by+PH-10);});
+      ctx.font="11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(230,200,150,.85)";
+      if(sp===last){if(k.kd>75)ctx.fillText("E: close the diary",W/2,by+PH+30);}
+      else ctx.fillText("E: turn the page   ("+(sp+1)+" / "+(last+1)+")",W/2,by+PH+30);}
     ctx.textAlign="left";
     if(k.fl>0){ctx.fillStyle="rgba(255,255,255,"+k.fl/10*.8+")";ctx.fillRect(0,0,W,H);}
     if(t<60){ctx.fillStyle="rgba(0,0,0,"+(1-t/60)+")";ctx.fillRect(0,0,W,H);}
@@ -3402,6 +3507,7 @@ function ghoulFace(c,w,h,t,f,v){
 let raf=0,keyDown=null,keyUp=null;
 function showGame(on,endless){
   document.getElementById("gamebox").hidden=!on;
+  document.getElementById("gamebox").classList.toggle("full",!!(on&&endless));   /* "fake" mode = just the full game screen, no "Finding your leads" card */
   document.getElementById("gexit").hidden=!(on&&endless);
   const sc=document.getElementById("scare"); sc.hidden=true; window.onresize=null;
   cancelAnimationFrame(raf);bossMusic(false);hzAmbient(false);
