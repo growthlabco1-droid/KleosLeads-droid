@@ -3609,6 +3609,28 @@ function ghoulFace(c,w,h,t,f,v){
   c.drawImage(hadesFaceBitmap(),Math.round(w/2-s/2),Math.round(h/2-s/2),Math.round(s),Math.round(s));
   c.restore();
 }
+/* NEW: the death jumpscare is now ANIMATED instead of a picture that pops and flickers. The same monster (same drawing, nothing redrawn) lunges out of the dark toward you,
+   rushing from far away to filling the screen, while its mouth stretches wide open. Then it stays right in your face, slowly creeping closer, the jaw breathing open and shut.
+   No jitter, no flashing, no blinking. n = steps since you were caught (60 per second). */
+function ghoulLunge(c,w,h,n){
+  const bm=hadesFaceBitmap(),N=HADES_FACE_N,ez=q=>1-(1-q)*(1-q);
+  const p=Math.min(1,n/16);                                   /* 0 to 16 steps: the lunge, slow at first then very fast */
+  let sc;
+  if(n<16)sc=.16+(1.3-.16)*p*p*p;                            /* from far away to a little too close... */
+  else if(n<36)sc=1.3-.18*ez((n-16)/20);                      /* ...then it settles right in front of you */
+  else sc=1.12+Math.min(.25,(n-36)*.0008);                    /* and keeps creeping closer, slowly */
+  let o=n<8?0:ez(Math.min(1,(n-8)/22));                       /* the mouth opens while it flies at you */
+  if(n>34)o*=.88+.12*Math.sin((n-34)*.09);                    /* then the jaw slowly breathes, smooth, no shaking */
+  const E=o*40,k=sc*Math.min(w,h)/N,rise=n<16?(1-p)*(1-p)*.2*h:0;   /* it also rises up out of the dark as it lunges */
+  const y0=h*.5+rise-60*k,A=64,B=74;                          /* rows A to B (the black throat just under the teeth) are the part that stretches open */
+  const x0=Math.round(w/2-N*k/2),ww=Math.round(N*k);
+  const y1=Math.round(y0),y2=Math.round(y0+A*k),y3=Math.round(y0+(B+E)*k),y4=Math.round(y0+(N+E)*k);
+  c.save();c.fillStyle="#000";c.fillRect(0,0,w,h);c.imageSmoothingEnabled=false;
+  c.drawImage(bm,0,0,N,A,x0,y1,ww,y2-y1);                    /* skull and upper teeth */
+  c.drawImage(bm,0,A,N,B-A,x0,y2,ww,y3-y2);                  /* the throat, stretched = the mouth opening */
+  c.drawImage(bm,0,B,N,N-B,x0,y3,ww,y4-y3);                  /* the rest of the body, pulled down by the opening mouth */
+  c.restore();
+}
 let raf=0,keyDown=null,keyUp=null;
 function showGame(on,endless){
   document.getElementById("gamebox").hidden=!on;
@@ -3675,8 +3697,7 @@ function showGame(on,endless){
   const loop=now=>{
     acc+=Math.max(0,Math.min(100,now-last));last=now;
     while(acc>=STEP){tick();acc-=STEP;}
-    if(hscare>0){const on=hscare<20||((hscare-20)%24)<15;   /* first 20 steps: the pop. Then the face stays still and blinks for the rest of the 5.5 s */
-      if(on)ghoulFace(sx,sc.width,sc.height,Math.min(1,hscare/20),hscare,hzFV%2);else{sx.fillStyle="#000";sx.fillRect(0,0,sc.width,sc.height);}}
+    if(hscare>0)ghoulLunge(sx,sc.width,sc.height,hscare);   /* CHANGED: animated lunge with the mouth opening (was a still picture that popped and blinked) */
     if(game.over&&!game.ready&&scare>0){const rd=game.round;(rd>=4?hades:rd>=3?poseidon:rd>=2?zeus:medusa)(sx,sc.width,sc.height,scare/SCARE,scare);}
     ctx.setTransform(cv.width/GW,0,0,cv.height/GH,0,0);game.draw(ctx);raf=requestAnimationFrame(loop);}; raf=requestAnimationFrame(loop);
 }
