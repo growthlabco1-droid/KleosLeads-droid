@@ -1726,7 +1726,10 @@ const hzOverlays=(ctx,h)=>{
         const dd=lt<73?lt*.55:lt<137?40:40+(lt-137)*.55;gx=x0+dir*dd;k.gd=dir;k.gtw=(lt>=73&&lt<137)?(lt-73):-1;}
       else if(lt>=165&&lt%18===0)plop();   /* you can hear it coming back */
       k.gx=gx;
-      if(k.tv<1&&gx>G0-3&&gx<G1+3&&k.x>G0-5&&k.x<G1+5){hzKill(h,"ghost");h.hlDie=1;return;}   /* it saw you */
+      /* CHANGED: it only sees you when it faces you. Walking, it faces the way it moves: if you are BEHIND it (its back is turned) it walks past and you are safe.
+        When it stops and twists its head all the way round, the head looks backwards too (twist frames 26 to 44), so then it does see you behind it. */
+      const gFront=(k.x-gx)*(k.gd||1)>=-2,gLook=k.gtw>=26&&k.gtw<=44;
+      if(k.tv<1&&gx>G0-3&&gx<G1+3&&k.x>G0-5&&k.x<G1+5&&(gFront||gLook)){hzKill(h,"ghost");h.hlDie=1;return;}   /* it saw you */
       /* the little tv area */
       if(k.tv===0&&k.x>=TV){k.tv=1;k.tu=0;k.walk=0;k.x=TV;heartbeat(.7);}
       if(k.tv===1){const u=++k.tu;
@@ -1795,9 +1798,10 @@ const hzOverlays=(ctx,h)=>{
         mv(HZ.SPEED);k.x=hzCl(k.x,k.back?HL.pd+14:HL.sd+26,HL.stx);
         if(k.x>1400&&!k.said.f){k.said.f=1;say("The kitchen is just ahead.",170);}
         if(k.x>HL.kd+30&&!k.said.g){k.said.g=1;say("The stairs... I have to go down.",200);}
-        k.nr=k.x>=HL.stx-14?8:Math.abs(k.x-HL.cl)<16?5:(k.back&&Math.abs(k.x-HL.wc)<16)?3:0;
+        k.nr=k.x>=HL.stx-14?8:Math.abs(k.x-HL.cl)<16?5:(k.back&&Math.abs(k.x-HL.wc)<16)?3:(k.back&&Math.abs(k.x-HL.sd)<18)?2:0;
         if(enter&&k.nr===5){if(!k.key){lockRattle();say("Locked. I need a key.",150);}else{doorCreak();hlGo(k,8,q=>{h.hl=null;hzBdEnd(h,"This is not my home.");});}}   /* CHANGED: the towel door (with the key) leads to the horror part */
         if(enter&&k.nr===3){doorCreak();k.ps=6;hlGo(k,7,hlWcStart);}
+        if(enter&&k.nr===2){doorCreak();hlGo(k,5,hlSisStart);}   /* NEW: after a respawn at the candle you can go through your sister's room again */
         if(enter&&k.nr===8){plop();thud();hlGo(k,6,hlLivStart);}
         return;}
       return;}
@@ -2008,20 +2012,34 @@ const hzOverlays=(ctx,h)=>{
   /* NEW: the thing that crawls out of your sister's mirror. Grey skin and rags like the ghosts, but a very long neck that arches up and bends down, because the head is too heavy.
      e = how far out of the mirror it is, up = 0 crawling and 1 standing, nk = how far the neck bends down to look under the bed */
   const hlCreature=(c,C,cam,t)=>{
-    const SK="#8d8f89",SH="#686a65",HI="#a5a7a0",RG="#26231f",HR="#171513",Y=121,e=C.e,mx=C.mx;
+    const SK="#8d8f89",SH="#62645f",HI="#a5a7a0",RG="#26231f",HR="#0d0c0b",BL="#7a0f0f",BL2="#a01414",BN="#d8d2c0",Y=121,e=C.e,mx=C.mx;
     const R=(col,x,y,w,h)=>{c.fillStyle=col;c.fillRect(Math.round(x-cam),Math.round(y),w,h);};
     const ln=(col,x0,y0,x1,y1,th)=>{const n=Math.max(Math.abs(x1-x0),Math.abs(y1-y0),1);for(let i=0;i<=n;i++)R(col,x0+(x1-x0)*i/n,y0+(y1-y0)*i/n,th,th);};
     if(C.gone)return;
+    /* a face for the glass and for the neck end: black sunken sockets, wide dropped jaw full of broken teeth. s = width of the head */
+    const face=(hx,hy,jit)=>{hx=Math.round(hx+jit);hy=Math.round(hy);
+      R(HR,hx-6,hy-3,13,6);R(HR,hx-7,hy,3,22);R(HR,hx+5,hy,3,19);R(HR,hx-6,hy+19,1,5);R(HR,hx+7,hy+17,1,6);   /* long wet hair */
+      R(SK,hx-4,hy+1,9,15);R(SH,hx+3,hy+2,2,14);R(HI,hx-3,hy+1,6,1);R(SH,hx-4,hy+14,9,2);
+      R(HR,hx-4,hy+1,2,7);R(HR,hx+3,hy+1,2,4);R(HR,hx-1,hy+1,1,3);                                                   /* hair across the face */
+      R("#000",hx-4,hy+5,4,4);R("#000",hx+1,hy+5,4,3);R("#000",hx-3,hy+9,1,3);R("#000",hx+3,hy+8,1,4);                /* sockets, black tears */
+      R("#f2f2ea",hx-2,hy+7,1,1);R("#f2f2ea",hx+3,hy+6,1,1);                                                           /* pin points of white deep inside */
+      R(SH,hx,hy+8,1,3);R(BL2,hx-1,hy+3,1,2);R(BL,hx+2,hy+3,2,1);                                                      /* nose, a cut, a bruise */
+      R("#120303",hx-3,hy+11,7,9);R("#000",hx-2,hy+12,5,7);                                                            /* mouth torn wide open */
+      R(BN,hx-3,hy+11,1,2);R(BN,hx-1,hy+11,1,1);R(BN,hx+1,hy+11,1,3);R(BN,hx+3,hy+11,1,2);                           /* top teeth */
+      R(BN,hx-2,hy+19,1,1);R(BN,hx,hy+18,1,2);R(BN,hx+2,hy+19,1,1);                                                   /* bottom teeth */
+      R(BL,hx-1,hy+14,3,4);R(BL2,hx,hy+14,1,2);                                                                        /* a tongue, wet */
+      R(SK,hx-4,hy+11,1,8);R(SH,hx+4,hy+11,1,8);R(SH,hx-3,hy+20,7,1);
+      R(BL2,hx,hy+21,1,3+((t>>3)%4));R(BL,hx-3,hy+20,1,2+((t>>4)%3));};                                                /* blood dripping from the jaw */
     if(e<.55){   /* still inside the glass: a pale handprint, then a face pressed against it */
-      c.save();c.beginPath();c.rect(Math.round(mx-10-cam),31,20,80);c.clip();
+      c.save();c.beginPath();c.rect(Math.round(mx-12-cam),28,24,84);c.clip();
       c.globalAlpha=Math.min(1,e/.12);
-      if(e>=.05){R(HI,mx-6,64,1,5);R(HI,mx-5,62,1,7);R(HI,mx-3,61,1,8);R(HI,mx-1,62,1,7);R(HI,mx+1,64,1,5);R(SK,mx-6,69,8,3);}
-      if(e>=.22){const fy=44+Math.round((e-.22)*14);
-        R(HR,mx-6,fy-2,12,18);R(SK,mx-3,fy+1,6,8);R("#e8e8e0",mx-2,fy+3,2,2);R("#e8e8e0",mx+1,fy+3,2,2);R("#000",mx-1,fy+4,1,1);R("#000",mx+2,fy+4,1,1);R("#111",mx-1,fy+7,3,1);
-        R(HI,mx+4,72,1,5);R(HI,mx+5,70,1,7);R(HI,mx+7,69,1,8);R(SK,mx+3,76,6,3);}
+      if(e>=.05){R(HI,mx-6,64,1,6);R(HI,mx-5,61,1,9);R(HI,mx-3,60,1,10);R(HI,mx-1,61,1,9);R(HI,mx+1,64,1,6);R(SK,mx-6,70,8,3);R(BL2,mx-5,73,1,3);R(BL2,mx-2,73,1,5);}
+      if(e>=.22){face(mx,32+Math.round((e-.22)*12),(t&2)?1:0);
+        R(HI,mx+5,72,1,6);R(HI,mx+6,69,1,9);R(HI,mx+8,68,1,10);R(SK,mx+4,77,6,3);R(BL2,mx+7,80,1,3);}
       c.restore();
       if(e>=.4){const len=Math.min(36,Math.round((e-.4)*240));   /* two long arms come out over the frame and reach for the floor */
-        [-8,9].forEach((ax,i)=>{ln(SK,mx+ax,86,mx+ax+(i?3:-3),86+len,1);if(len>=36){R(SK,mx+ax+(i?1:-6),Y-1,6,1);R(SH,mx+ax+(i?2:-5),Y,5,1);}});}
+        [-8,9].forEach((ax,i)=>{ln(SK,mx+ax,86,mx+ax+(i?3:-3),86+len,2);ln(SH,mx+ax+1,86,mx+ax+(i?4:-2),86+len,1);
+          if(len>=36){const fx=mx+ax+(i?1:-6);R(SK,fx,Y-2,7,2);R(BN,fx-1,Y-1,1,1);R(BN,fx+3,Y,1,1);R(BN,fx+7,Y-1,1,1);R(SH,fx+1,Y,5,1);R(BL2,fx+2,Y-3,1,2);}});}
       return;}
     const fade=Math.min(1,(e-.55)/.12),d=C.dir||-1,up=C.up,nk=C.nk||0;
     const cx=e<1?mx-4-(e-.55)/.45*16:C.x;
@@ -2029,25 +2047,33 @@ const hzOverlays=(ctx,h)=>{
     const hipY=Math.round(114-14*up)+bob,shY=Math.round(110-22*up)+bob;
     const hx=cx-d*Math.round((1-up)*12),sx=cx+d*Math.round(2*up+(1-up)*10);
     c.globalAlpha=fade;
-    /* legs */
+    /* legs: thin, bent the wrong way, one torn open to the bone */
     const sw=Math.round(Math.sin(C.w*1.2)*2*up);
-    if(up<.5){R(RG,Math.min(hx,hx-d*10),Y-5,10,3);R(SK,Math.min(hx-d*10,hx-d*16),Y-3,8,2);R(SK,Math.min(hx-d*10,hx-d*16),Y-1,8,1);}
-    else{[-2,2].forEach((o,i)=>{const lx=hx+o+(i?sw:-sw);R(RG,lx-1,hipY,3,9);R(SK,lx,hipY+9,2,Y-hipY-9);R(SH,lx-1,Y-1,3,1);});}
-    /* torso (ribs under a torn shirt) */
-    for(let i=0;i<=5;i++){const px=sx+(hx-sx)*i/5,py=shY+(hipY-shY)*i/5;R(SK,px-3,py,7,3);}
-    R(RG,(sx+hx)/2-3,(shY+hipY)/2,7,Math.max(3,Math.round(hipY-shY)*.5));
-    R(SH,sx-2,shY+2,1,1);R(SH,sx,shY+2,1,1);R(SH,sx+2,shY+3,1,1);
-    /* arms: very long, hands on the floor */
-    [-1,1].forEach(s=>{const ax=sx+s*4,hxd=up>.5?ax+s*1+(s>0?2:-2)*Math.sin(C.w*1.2)*.6:sx+d*(10+s*3);ln(SK,ax,shY+1,hxd,Y-2,1);R(SK,hxd-1,Y-1,3,1);R(SH,hxd,Y,2,1);});
-    /* the long neck: it rises, arches over and hangs down because the head is too heavy */
+    if(up<.5){const lx=Math.min(hx,hx-d*10);R(RG,lx,Y-5,10,3);R(SK,Math.min(hx-d*10,hx-d*16),Y-3,8,2);R(SK,Math.min(hx-d*10,hx-d*16),Y-1,8,1);R(BL,lx+2,Y-4,2,2);R(BN,lx+6,Y-3,1,2);}
+    else{[-2,2].forEach((o,i)=>{const lx=hx+o+(i?sw:-sw);R(RG,lx-1,hipY,4,9);R(SK,lx,hipY+9,2,Y-hipY-9);R(SH,lx+1,hipY+9,1,Y-hipY-9);R(SH,lx-1,Y-1,4,1);
+      R(BL,lx-1,hipY+13,3,3);R(BN,lx,hipY+14,1,2);R(BL2,lx,hipY+17,1,4);R(BN,lx-1,Y-2,1,1);R(BN,lx+2,Y-2,1,1);});}
+    /* torso: ribs showing through the skin, a torn rag, wounds, guts dripping */
+    for(let i=0;i<=5;i++){const px=sx+(hx-sx)*i/5,py=shY+(hipY-shY)*i/5;R(SK,px-3,py,8,3);R(SH,px+3,py,2,3);if(i%2)R(HR,px-2,py+1,6,1);else R(BN,px-2,py+1,1,1);R(BN,px+1,py+1,1,1);}
+    R(RG,(sx+hx)/2-3,(shY+hipY)/2,8,Math.max(3,Math.round(hipY-shY)*.5));
+    R(BL,sx-2,shY+3,4,5);R(BL2,sx-1,shY+4,2,3);R(BN,sx,shY+4,1,3);R(BL2,sx+2,shY+9,1,5);
+    for(let j=0;j<4;j++)R(j%2?BL:BL2,(sx+hx)/2-2+Math.round(Math.sin(t*.07+j)*1.4)+(j%2),(shY+hipY)/2+4+j*3,2,3);
+    [[-2,2],[1,7]].forEach((dd,i)=>{const o=(t*.8+i*29)%(Y-hipY);R(BL2,(sx+hx)/2+dd[0],hipY+3+o,1,2);});
+    /* arms: far too long, elbows bent backwards, long clawed fingers spread on the floor */
+    [-1,1].forEach(s=>{const ax=sx+s*4,hxd=up>.5?ax+s*1+(s>0?2:-2)*Math.sin(C.w*1.2)*.6:sx+d*(10+s*3);
+      ln(SK,ax,shY+1,hxd,Y-3,2);ln(SH,ax+1,shY+1,hxd+1,Y-3,1);R(BL,(ax+hxd)/2,(shY+Y)/2,2,3);R(BL2,(ax+hxd)/2,(shY+Y)/2+3,1,4);
+      const fx=Math.round(hxd)-2;R(SK,fx,Y-3,5,2);R(SH,fx,Y-1,5,1);R(SK,fx-2,Y-1,2,1);R(SK,fx+5,Y-1,2,1);
+      R(BN,fx-3,Y,1,1);R(BN,fx-1,Y+1,1,1);R(BN,fx+3,Y+1,1,1);R(BN,fx+7,Y,1,1);R(BL2,fx+1,Y-4,1,1);});
+    /* the long neck: it rises, arches over and hangs down. Bumpy spine, tendons, open wounds. */
     const S={x:sx,y:shY},E={x:sx+d*Math.round(20+16*nk+(1-up)*8),y:Math.round(66+up*0+nk*52+(1-up)*38)},sway=Math.sin(t*.05)*2,
       Cp={x:S.x+d*(6+nk*8)+sway,y:S.y-(70-nk*30-(1-up)*38)};
     let hxp=E.x,hyp=E.y;
-    for(let i=0;i<=22;i++){const s=i/22,a=(1-s)*(1-s),b=2*(1-s)*s,cc=s*s,px=a*S.x+b*Cp.x+cc*E.x,py=a*S.y+b*Cp.y+cc*E.y;R(i%4===2?SH:SK,px-1,py,3,3);}
-    /* the head, hanging at the end: long dark hair, sunken white eyes, a mouth that is too wide */
-    R(HR,hxp-4,hyp-2,9,6);R(SK,hxp-3,hyp+1,7,8);R(HR,hxp-4,hyp+1,2,12);R(HR,hxp+3,hyp+1,2,12);
-    R("#e8e8e0",hxp-2,hyp+3,2,2);R("#e8e8e0",hxp+1,hyp+3,2,2);R("#000",hxp-1,hyp+4,1,1);R("#000",hxp+2,hyp+4,1,1);
-    R("#1a0808",hxp-2,hyp+7,5,2);R("#e8e2d6",hxp-2,hyp+7,1,1);R("#e8e2d6",hxp,hyp+7,1,1);R("#e8e2d6",hxp+2,hyp+7,1,1);
+    for(let i=0;i<=40;i++){const s=i/40,a=(1-s)*(1-s),b=2*(1-s)*s,cc=s*s,px=a*S.x+b*Cp.x+cc*E.x,py=a*S.y+b*Cp.y+cc*E.y;
+      R(SK,px-2,py,5,4);R(SH,px+1,py,2,4);R(i%3===0?HI:SH,px-1,py+1,1,2);
+      if(i%6===3){R(BN,px-2,py,1,2);R(SH,px-2,py+2,5,1);}
+      if(i===9||i===22||i===31){R(BL,px-1,py,3,3);R(BL2,px,py+1,1,2);R(BL2,px,py+3,1,3+((t>>3)%3));}
+      if(i%7===5)R(HR,px-1,py+1,1,3);}
+    /* the head, hanging at the end of it */
+    face(hxp,hyp,nk>.4?((t>>1)&1?1:-1)*(nk>.7?1:0):0);
     c.globalAlpha=1;};
   /* NEW: your sister's room. Pink and girly. A tall mirror on the right, the bed on the left (you can hide under it). */
   const hlSis=(c,r,k,cam,t,fl,txt)=>{const V=HZ.VW,FY=HZ.FY,C=k.cr,mx=C.mx,bx0=36,ev=k.sp>=1;
@@ -2104,10 +2130,11 @@ const hzOverlays=(ctx,h)=>{
     r(hx-3,hy-1,7,2,HR);r(hx-3,hy+1,1,8,HR);r(hx+3,hy+1,1,8,HR);r(hx-2,hy+1,5,8,HR);
     if(bk>=.99){r(hx,hy+2,1,6,"#0a0908");return;}
     const fw=Math.max(1,Math.round(5*(1-bk))),fx=hx-2+Math.round((5-fw)*(f>0?1:0));
-    r(fx,hy,fw,6,SK);r(fx,hy+5,fw,1,SH);
-    if(fw>=3){r(fx,hy+2,fw,2,"#050505");
-      if(st){r(fx,hy+2,2,2,"#ffffff");r(fx+fw-2,hy+2,2,2,"#ffffff");r(fx+1,hy+3,1,1,"#c01010");r(fx+fw-2,hy+3,1,1,"#c01010");r(fx+1,hy+4,fw-2,3,"#050505");r(fx+1,hy+4,1,1,"#e8e2d6");r(fx+fw-2,hy+4,1,1,"#e8e2d6");r(fx+2,hy+6,1,1,"#a01010");}
-      else{r(fx,hy+3,1,1,"#ffffff");r(fx+fw-1,hy+3,1,1,"#ffffff");r(fx+Math.floor(fw/2),hy+5,1,1,"#2a2220");}}};
+    /* CHANGED: the face never changes. Pure black eyes, a crooked mouth hanging open. No white, no red, no stare. */
+    r(fx,hy,fw,7,SK);r(fx,hy+6,fw,1,SH);
+    if(fw>=3){r(fx,hy+2,2,2,"#000");r(fx+fw-2,hy+2,2,3,"#000");r(fx,hy+4,1,1,"#000");   /* eyes: pure black holes (the right one bigger), a black tear */
+      r(fx+1,hy+4,3,2,"#000");r(fx+2,hy+6,2,1,"#000");r(fx+fw-1,hy+5,1,2,"#000");                           /* mouth: crooked, torn open, jaw hanging off to one side */
+      r(fx+1,hy+4,1,1,"#e8e2d6");r(fx+3,hy+4,1,1,"#e8e2d6");}};
   /* NEW: the woman who screams "don't kill me" (faces left, towards you) */
   const hlWoman=(c,x,fy,t,mo)=>{x=Math.round(x);const Y=Math.round(fy)-1;
     const r=(ox,oy,w,h,col)=>{c.fillStyle=col;c.fillRect(x+ox,Y+oy,w,h);};
@@ -2123,6 +2150,20 @@ const hzOverlays=(ctx,h)=>{
     r(-2,-27,1,5,B2);r(2,-27,1,4,B2);r(-1,-33,2,2,BL);r(2,-31,2,1,"#6a3a5a");                        /* tears of blood, a cut, a bruise */
     const mh=2+Math.round(mo*3);r(-1,-24,3,mh,"#150404");r(-1,-24,3,1,"#e8e2d6");r(0,-24+mh-1,1,1,B2);};   /* mouth wide open */
   /* NEW: the restroom */
+  /* NEW: the hand that comes out of the blood and grabs you. Black, rotten, torn open to the bone, blood running down it, long bone claws. front = the fingers drawn over the player. */
+  const hlBHand=(r,hx,L,t,front)=>{const D1="#0a0a0d",D2="#18181d",D3="#26262c",D4="#3a3a42",BN="#d8d2c0",B1="#4a0404",B2="#7a0808",B3="#b01414";
+    if(!front){
+      r(D1,hx-5,82,11,L+6);r(D3,hx-3,84,7,L);r(D2,hx+1,84,3,L);r(D4,hx-3,84,1,L);
+      for(let i=2;i<L;i+=3)r(D1,hx-3,84+i,7,1);
+      r(B1,hx-3,84,7,4);r(B2,hx-2,85,5,2);r(B3,hx,86,1,2);
+      r(D1,hx-1,90,1,Math.max(0,L-7));
+      if(L>14){r(B1,hx-2,93,5,5);r(BN,hx-1,94,1,3);r(BN,hx+1,95,1,2);r(B3,hx-2,98,1,3);}
+      [-2,0,2].forEach((o,i)=>{const m=Math.max(2,L-2);r(B2,hx+o,89+(((t>>1)+i*5)%m),1,3);});
+      r(D1,hx-4,82+L,9,3);}
+    else{const y=85+L;
+      r(D2,hx-4,y,9,5);r(D3,hx-4,y,9,1);r(D4,hx-4,y,1,5);r(D1,hx+4,y,1,5);
+      for(let i=0;i<5;i++){const fx=hx-4+i*2,fl=5+(i%2)*2+((t>>3)+i)%2;r(D3,fx,y+5,2,fl);r(D1,fx+1,y+5,1,fl);r(D4,fx,y+5,1,fl-1);r(BN,fx,y+5+fl,1,3);r(BN,fx,y+7+fl,1,1);}
+      r(D3,hx+5,y+1,2,5);r(BN,hx+6,y+6,1,3);r(B2,hx-1,y+2,2,2);r(B3,hx-1,y+4,1,3);}};
   const hlWc=(c,r,k,cam,t,fl,txt)=>{const FY=HZ.FY,MX=172,wf=k.wf||0;
     for(let x=0;x<200;x+=8)for(let y=0;y<98;y+=8)r((((x+y)/8)|0)%2?"#9fb0a2":"#a8b8aa",x,y,8,8);
     r("#7a8a7c",0,98,200,6);r("#5a6a5c",0,103,200,1);
@@ -2158,10 +2199,12 @@ const hzOverlays=(ctx,h)=>{
     /* NEW: digging for the key: blood splashes, the hand that grabs you, then the key in your fist */
     const tb=k.tb||0,M=k.ms;let lift=0,wob=0;
     if(tb===1){for(let i=0;i<7;i++)r("#a01010",96+((i*17+k.tbt*2)%52),82-((k.tbt*3+i*5)%9),1,1);r("#8a0a0a",100+((k.tbt>>1)%36),83,12,1);}
+    let bh=null;
     if(tb===2||tb===3){const reach=tb===2?1:Math.max(0,1-k.tbt/24),L=Math.round(22*reach),hx=Math.round(k.x+k.dir*4);
-      if(L>0){r("#9a9a94",hx-1,86,3,L);r("#6a0606",hx-1,86,3,2);r("#7a0808",hx,91,1,Math.max(0,L-7));r("#b8b8b0",hx-2,85+L,5,3);r("#9a9a94",hx-2,88+L,1,2);r("#9a9a94",hx+2,88+L,1,2);}
+      if(L>0){bh={hx,L};hlBHand(r,hx,L,t,0);}
       if(tb===2&&M){lift=Math.max(0,Math.min(8,Math.round(M.t/36)-M.got*3));wob=(t&2)?1:-1;}}
     hzPerson(c,k.x-cam+wob,FY-lift,k.walk,k.foot,k.dir,t,1,0);
+    if(bh)hlBHand(r,bh.hx,bh.L,t,1);   /* the claws close over you */
     if(tb===3&&k.tbt>=30&&k.tbt<200){const kx=k.x+k.dir*5;r("#e8c050",kx-1,FY-18,3,3);r("#6a4a10",kx,FY-17,1,1);r("#e8c050",kx,FY-15,1,4);r("#e8c050",kx+1,FY-13,2,1);if((t>>3)%2)r("#fff",kx+2,FY-20,1,1);}};
   /* NEW: the room the key opens (empty for now) */
   const hlStore=(c,r,k,cam,t,fl,txt)=>{const FY=HZ.FY;
@@ -2344,7 +2387,7 @@ const hzOverlays=(ctx,h)=>{
       else if(m===2&&!k.kn){if(k.nr===1){ctx.fillStyle=pulse;ctx.fillText("SPACE: knock",px,py);}else if(k.nr===2){ctx.fillStyle=pulse;ctx.fillText("ENTER",px,py);}}
       else if(m===1&&!k.yell){const nm=k.nr===1?"ENTER: take the glass":k.nr===2?"ENTER: pour water":k.nr===3?"ENTER":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}}
       else if(m===3&&k.p===1&&k.pu>40){ctx.fillStyle=pulse;ctx.fillText("SPACE: speak",px,py);}
-      else if(m===4&&!k.hf){const nm=(k.s===1&&k.nr===1)?"ENTER: push the drawer":(k.s===4&&k.nr===7)?"ENTER: take the candle":(k.s===5&&k.nr===2)?"ENTER":(k.nr===3)?"ENTER: open the door":(k.s===6&&k.nr===5)?"ENTER: try the door":(k.s===6&&k.nr===8)?"ENTER: go downstairs":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}
+      else if(m===4&&!k.hf){const nm=(k.s===1&&k.nr===1)?"ENTER: push the drawer":(k.s===4&&k.nr===7)?"ENTER: take the candle":(k.s===5&&k.nr===2)?"ENTER":(k.nr===3)?"ENTER: open the door":(k.s===6&&k.nr===5)?"ENTER: try the door":(k.s===6&&k.nr===2)?"ENTER: open the door":(k.s===6&&k.nr===8)?"ENTER: go downstairs":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}
         if(k.s===2){ctx.fillStyle="rgba(255,255,255,.18)";ctx.fillRect(W/2-60,H-34,120,5);ctx.fillStyle="rgba(230,200,150,.9)";ctx.fillRect(W/2-60,H-34,Math.round(120*Math.min(1,k.pp/240)),5);}}
       else if(m===7&&k.wf!==1&&!k.tb){const nm=k.nr===2?((k.ysis&&!k.key)?"ENTER: reach into the blood":"ENTER"):k.nr===3?"ENTER: look in the mirror":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}}
       else if(m===5&&!k.cf){const nm=(k.sp===1&&k.nr===2)?"ENTER: hide under the bed":(k.sp===4)?"ENTER: get out":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,k.hid?(k.x-cam)*3:px,py);}}
