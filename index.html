@@ -1735,8 +1735,9 @@ const hzOverlays=(ctx,h)=>{
         if(u===150||u===185)girlShriek(1,.7);
         if(u===222){k.wm=0;k.lt=0;}   /* gone, instantly */
         if(u>=330){k.tv=3;say("...",60);}}
-      k.nr=((k.tv===0||k.tv===3)&&Math.abs(k.x-HLDR)<16)?1:0;
-      if(enter&&k.nr===1){doorCreak();hlGo(k,9,hlYardStart);}   /* NEW: the back door to the yard */
+      k.nr=((k.tv===0||k.tv===3)&&Math.abs(k.x-HLDR)<16)?1:((k.tv===0||k.tv===3)&&k.x<44)?2:0;   /* CHANGED: nr 2 = the stairs back up */
+      if(enter&&k.nr===1){doorCreak();hlGo(k,9,hlYardStart);}
+      if(enter&&k.nr===2){plop();doorCreak();hlGo(k,4,q=>{hlRespawn(q);q.x=HL.stx-22;q.dir=-1;});}   /* NEW: go back up the stairs to the hallway */   /* NEW: the back door to the yard */
       return;}
     if(m===4){   /* ---- NEW: back in the normal hallway after the parents' room ---- */
       if(--k.lc<=0){k.lc=500+Math.floor(Math.random()*400);k.lt=12;thunder(k.lo?.35:.2,0);}
@@ -1971,6 +1972,25 @@ const hzOverlays=(ctx,h)=>{
     r("#3a2414",x-11,111,3,2);r("#3a2414",x+8,111,3,2);
     if(candle){r("#c9a24a",x-3,81,7,2);r("#e9e2c8",x-1,75,3,6);r("#e8dcb8",x-1,75,1,6);r((t>>2)&1?"#ffd05a":"#ffb347",x,70,2,5);r("#fff3b0",x,72,1,2);}};
   /* NEW: everything extra in the hallway after the parents' room: the shaking door, the drawer, the dad when he breaks out, and the stairs */
+  /* NEW: nicer stairs. hlStairsDown = the stairs going down at the end of the upstairs hallway (steps drop to the right into the dark, with a banister).
+     hlStairsUp = the stairs going back up at the left end of the living room (steps rise to the left, banister on the right). Both: r(colour,x,y,w,h), absolute x */
+  const hlStairsDown=(r,X)=>{const N=12,RU=4,RI=3,Y0=108;   /* steps: 4 px run, 3 px drop, sized to the 19 px tall player */
+    r("#2a1a10",X-4,34,N*RU+9,3);r("#4a3220",X-4,37,N*RU+9,1);r("#2a1a10",X-4,34,4,74);r("#3a281a",X-4,34,1,74);r("#2a1a10",X+N*RU,34,5,74);
+    r("#0e0a07",X,38,N*RU,70);r("#171009",X,38,N*RU,8);                      /* the dark wall of the stairwell */
+    r("#050407",X,Y0,N*RU,33);                                                /* the drop below the floor */
+    for(let i=0;i<N;i++){const x=X+i*RU,y=Y0+i*RI,d=Math.max(.5,1-i*.05),col=(a,b)=>{const m=v=>Math.round(v*d).toString(16).padStart(2,"0");return "#"+m(a)+m(b)+m(a*.55);};
+      r(col(150,104),x,y,RU,1);r(col(104,68),x,y+1,RU,RI);r(col(58,36),x,y+RI+1,RU,2);}
+    for(let i=0;i<=N*RU;i++)r("#8a6a44",X+i,Y0-16+Math.round(i*RI/RU),1,2);        /* the banister rail */
+    for(let i=2;i<N*RU;i+=8)r("#5a3c20",X+i,Y0-14+Math.round(i*RI/RU),1,13);       /* the little posts under it */
+    r("#6a4a2a",X-2,Y0-24,4,26);r("#8a6a44",X-3,Y0-26,6,3);r("#3a2414",X-2,Y0+1,4,2);};
+  const hlStairsUp=r=>{const N=11,RU=4,RI=3,Y0=106,XR=48;   /* steps rise to the left */
+    r("#2a1a10",0,34,XR+9,3);r("#4a3220",0,37,XR+9,1);r("#2a1a10",XR+4,34,5,74);r("#3a281a",XR+4,34,1,74);
+    r("#0e0a07",0,38,XR+4,70);r("#171009",0,38,XR+4,8);
+    for(let i=0;i<N;i++){const x=XR-(i+1)*RU,y=Y0-(i+1)*RI,d=Math.max(.35,1-i*.04),col=(a,b)=>{const m=v=>Math.round(v*d).toString(16).padStart(2,"0");return "#"+m(a)+m(b)+m(a*.55);};
+      r(col(52,34),x,y+1,RU,Y0-y);r(col(120,84),x,y,RU,1);r(col(30,18),x,y+RI,1,Y0-y-RI);}   /* solid steps, tread highlight on top */
+    for(let i=0;i<=N*RU;i++)r("#8a6a44",XR-i,Y0-17-Math.round(i*RI/RU),1,2);
+    for(let i=2;i<N*RU;i+=8)r("#5a3c20",XR-i,Y0-15-Math.round(i*RI/RU),1,14+Math.round(i*RI/RU)-Math.floor(i/RU)*RI-RI);
+    r("#6a4a2a",XR-2,Y0-26,4,28);r("#8a6a44",XR-3,Y0-28,6,3);r("#3a2414",XR-2,Y0,4,2);};
   const hlHall4=(c,r,k,cam,t)=>{
     const sx=k.sh>0?Math.round((Math.random()-.5)*2):0,bt=k.bt||0,P=HL.pd;
     if(k.hf>2){   /* he broke out */
@@ -1983,13 +2003,8 @@ const hzOverlays=(ctx,h)=>{
         if(bt>380){r("#1a0a08",P+3+sx,50,1,12);r("#8a1010",P+4+sx,62,1,4);r("#1a0a08",P-6+sx,64,1,8);}
         if(bt>500){r("#050507",P-1+sx,48,2,14);r("#a01010",P+sx,52,1,6);}
         r((t>>3)&1?"rgba(190,20,20,.75)":"rgba(140,10,10,.75)",P-10,103,20,3);}}
-    hlDrawer(r,k.dX,k.lo&&!k.cd,t);
-    if(cam+HZ.VW>HL.stx-30){   /* the stairs going down */
-      const X=HL.stx+8;
-      r("#2a1a10",X-4,30,60,80);r("#050507",X,34,56,106);
-      for(let i=0;i<9;i++){r(i%2?"#5a3c24":"#4a3020",X+i*6,108+i*4,56-i*6,3);r("#2a1a10",X+i*6,111+i*4,56-i*6,1);}
-      r("#5a3c20",X-1,70,3,40);r("#7a5a34",X-2,68,5,3);for(let i=0;i<8;i++)r("#5a3c20",X+3+i*6,72+i*4,7,2);
-      r("#3a2414",X-8,106,10,2);}};
+    hlDrawer(r,k.dX,!k.cd,t);   /* CHANGED: the candle sits on the drawer from the start, before you push it */
+    if(cam+HZ.VW>HL.stx-30)hlStairsDown(r,HL.stx+8);};   /* CHANGED: new, nicer stairs */
   /* NEW: the thing that crawls out of your sister's mirror. Grey skin and rags like the ghosts, but a very long neck that arches up and bends down, because the head is too heavy.
      e = how far out of the mirror it is, up = 0 crawling and 1 standing, nk = how far the neck bends down to look under the bed */
   const hlCreature=(c,C,cam,t)=>{
@@ -2159,6 +2174,8 @@ const hzOverlays=(ctx,h)=>{
     for(let x=Math.floor(cam/16)*16;x<cam+V+16;x+=16)r(((x/16)|0)%2?"#4a4f58":"#464b54",x,0,16,104);
     r("#2a2420",cam,98,V,6);r("#1a1614",cam,0,V,5);
     for(let x=Math.floor(cam/20)*20;x<cam+V+20;x+=20)r(((x/20)|0)%2?"#4a3422":"#3e2c1c",x,105,20,35);
+    /* NEW: the stairs going back up (left end, where you came down) */
+    if(cam<70)hlStairsUp(r);
     /* the lit opening */
     if(cam+V>G0-6&&cam<G1+6){
       r("#241810",G0-4,22,G1-G0+8,86);r("#d4b866",G0,26,G1-G0,79);
@@ -2331,7 +2348,7 @@ const hzOverlays=(ctx,h)=>{
         if(k.s===2){ctx.fillStyle="rgba(255,255,255,.18)";ctx.fillRect(W/2-60,H-34,120,5);ctx.fillStyle="rgba(230,200,150,.9)";ctx.fillRect(W/2-60,H-34,Math.round(120*Math.min(1,k.pp/240)),5);}}
       else if(m===7&&k.wf!==1&&!k.tb){const nm=k.nr===2?((k.ysis&&!k.key)?"ENTER: reach into the blood":"ENTER"):k.nr===3?"ENTER: look in the mirror":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}}
       else if(m===5&&!k.cf){const nm=(k.sp===1&&k.nr===2)?"ENTER: hide under the bed":(k.sp===4)?"ENTER: get out":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,k.hid?(k.x-cam)*3:px,py);}}
-      else if(m===6&&k.nr===1){ctx.fillStyle=pulse;ctx.fillText("ENTER: go outside",px,py);}
+      else if(m===6&&(k.nr===1||k.nr===2)){ctx.fillStyle=pulse;ctx.fillText(k.nr===2?"ENTER: go upstairs":"ENTER: go outside",px,py);}
       else if(m===9&&!k.nt&&!k.lk&&!k.ms&&!k.yd){const nm=k.nr===1?"ENTER: go inside":k.nr===2?(k.ycode?"ENTER: read the note":"ENTER: reach inside"):k.nr===3?(k.yopen?"ENTER: go in":"ENTER: try the lock"):"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}}
       else if(m===10&&!k.nt){const nm=k.nr===1?"ENTER":k.nr===2?"ENTER: read the note":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}}
       if(m===0&&k.u>80&&k.u<1300){ctx.font="11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(200,190,170,"+Math.min(.6,(1300-k.u)/80)+")";ctx.fillText("arrows walk  -  ENTER to use  -  SPACE to knock",W/2,H-14);}}
