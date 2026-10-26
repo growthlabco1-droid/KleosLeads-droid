@@ -1377,8 +1377,8 @@ const hzOverlays=(ctx,h)=>{
   /* ===== NEW: THE BEDROOM (the start of the mini-game). After the black screen you wake up in your own room. It was just a dream. You get up, walk to the door, and when you walk out the horror begins. ===== */
   const hzBdCam=k=>hzCl(Math.round(k.x-HZ.VW/2),0,200-HZ.VW);
   const hzBdStart=h=>{hzAmbient(false);h.bd={t:0,st:0,x:24,dir:1,walk:0,foot:0,sa:0,msg:"",mt:0,en0:true,lt:0,lc:150,leave:0};};
-  const hzBdEnd=h=>{h.bd=null;h.x=40;h.dir=1;h.walk=0;h.fin=70;h.en0=true;hzAmbient(true);thunder(.45,0);rumble();
-    hzSayQ(h,[["This is not your house.",230],["Hades' halls. Take back the four seeds.",230],["Your little sister is somewhere in the dark.",230],["Do not let the candle die.",210]]);};
+  const hzBdEnd=(h,first)=>{h.bd=null;h.x=40;h.dir=1;h.walk=0;h.fin=70;h.en0=true;hzAmbient(true);thunder(.45,0);rumble();
+    hzSayQ(h,[[first||"This is not your house.",230],["Hades' halls. Take back the four seeds.",230],["Your little sister is somewhere in the dark.",230],["Do not let the candle die.",210]]);};
   const hzBdStep=h=>{const k=h.bd,K=window.GK||{};k.t++;const t=k.t;
     const tapped=g.tapE;g.tapE=0;
     const ent=!!(K.Enter||K.e||K.E);let enter=ent&&!k.en0;k.en0=ent;
@@ -1464,7 +1464,7 @@ const hzOverlays=(ctx,h)=>{
      dark: blood is coming up through a crack in the floor at your sister's door (locked). At your parents' room you knock with SPACE, the door opens and you go in.
      Dad eating mom, SPACE to ask him, he stands up and runs at you (about 3 seconds to get out), and when you leave the room the horror hall begins (hzBdEnd). ===== */
   const HL={x0:40,pd:200,wc:620,sd:1000,cl:1500,kd:2036,L:2116,chaseX:175,stopX:120,exitX:20,L2:2420,stx:2352};   /* CHANGED: L2 = the longer hallway after the parents' room, stx = the top of the stairs */
-  const hlCam=k=>hzCl(Math.round(k.x-HZ.VW/2),0,(k.m===0||k.m===2?HL.L:k.m===4?HL.L2:k.m===6?1200:200)-HZ.VW);
+  const hlCam=k=>hzCl(Math.round(k.x-HZ.VW/2),0,(k.m===0||k.m===2?HL.L:k.m===4?HL.L2:k.m===6?1200:k.m===9?400:200)-HZ.VW);
   const hzHlStart=h=>{h.bd=null;hzAmbient(false);
     h.hl={m:0,u:0,t:0,x:HL.x0,dir:1,walk:0,foot:0,sa:0,msg:"",mt:0,en0:true,sp0:true,lt:0,lc:240,fi:50,go:null,nr:0,said:{}};};
   const hlGo=(k,m,setup)=>{k.go={m,setup,t:0};};
@@ -1478,10 +1478,136 @@ const hzOverlays=(ctx,h)=>{
   const hlSisStart=k=>{k.m=5;k.u=0;k.x=24;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.sp=0;k.hid=0;k.hu=0;k.cf=0;k.sh=0;
     k.cr={t:0,e:0,x:166,mx:172,dir:-1,nk:0,up:0,w:0,gone:0};k.fi=36;};
   /* NEW: the restroom, the room that needs the key, the living room downstairs, and the respawn at the candle */
-  const hlWcStart=k=>{k.m=7;k.u=0;k.x=26;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.wf=k.wf||0;k.wt=0;k.sh=0;k.fi=36;};
+  const hlWcStart=k=>{k.m=7;k.u=0;k.x=26;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.wf=k.wf||0;k.wt=0;k.sh=0;k.fi=36;k.tb=0;k.tbt=0;k.ms=null;};
   const hlStoreStart=k=>{k.m=8;k.u=0;k.x=26;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.sh=0;k.fi=36;};
   const hlLivStart=k=>{k.m=6;k.u=0;k.x=24;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.gc=0;k.tv=0;k.tu=0;k.wm=0;k.gx=-999;k.said={};k.sh=0;k.fi=60;};
   const hlRespawn=k=>{k.m=4;k.u=0;k.x=HL.pd+26;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.said={};k.s=6;k.back=1;k.cd=1;k.lo=1;k.dX=HL.pd;k.hf=0;k.go=null;k.lc=320;k.lt=0;k.sh=0;k.fi=50;};
+  /* NEW: the backyard, the shed, the dog house notes and the "mash ENTER" fights. */
+  const HLDR=1150,HLDH=270,HLSX=372;
+  const hlYardStart=k=>{k.m=9;k.u=0;k.x=56;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.sh=0;k.fi=50;k.ms=null;k.nt=null;k.lk=null;k.yd=0;};
+  const hlShedStart=k=>{k.m=10;k.u=0;k.x=26;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.sh=0;k.fi=36;k.nt=null;};
+  /* k.ms = {n: presses needed, got, t, max: ticks you have}. Returns 1 when you made it, -1 when time is up, 0 while it runs. */
+  const hlMash=(k,enter)=>{const M=k.ms;M.t++;if(enter&&M.t>4){M.got++;thud();k.lt=6;}return M.got>=M.n?1:M.t>=M.max?-1:0;};
+  const hlLkX=i=>(W-(4*54+3*8))/2+27+i*62;
+  const hlHeart=(c,x,y,s,col)=>{c.fillStyle=col;c.beginPath();c.moveTo(x,y+s*.3);c.bezierCurveTo(x,y,x-s*.5,y,x-s*.5,y+s*.3);c.bezierCurveTo(x-s*.5,y+s*.6,x,y+s*.8,x,y+s);c.bezierCurveTo(x,y+s*.8,x+s*.5,y+s*.6,x+s*.5,y+s*.3);c.bezierCurveTo(x+s*.5,y,x,y,x,y+s*.3);c.fill();};
+  const hlStar=(c,x,y,rd,col)=>{c.fillStyle=col;c.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?rd*.45:rd;c.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}c.closePath();c.fill();};
+  /* the screens on top of the game: the ENTER fight, the shed lock and the two notes */
+  const hlOverlay=(c,k)=>{
+    c.save();c.textAlign="center";
+    if(k.ms){const M=k.ms,y0=H*.3,pu=.7+.3*Math.sin(k.t*.5);
+      c.font="bold 30px Cinzel,Georgia,serif";c.fillStyle="rgba(205,8,8,"+pu+")";c.fillText("ENTER!",W/2+(Math.random()-.5)*4,y0);
+      for(let i=0;i<M.n;i++){c.beginPath();c.arc(W/2+(i-(M.n-1)/2)*24,y0+24,7,0,6.283);c.fillStyle=i<M.got?"#e8d8a0":"rgba(255,255,255,.18)";c.fill();c.strokeStyle="rgba(230,200,150,.6)";c.lineWidth=1;c.stroke();}
+      c.fillStyle="rgba(255,255,255,.18)";c.fillRect(W/2-70,y0+42,140,6);c.fillStyle="rgba(205,30,30,.9)";c.fillRect(W/2-70,y0+42,Math.round(140*Math.max(0,1-M.t/M.max)),6);}
+    if(k.lk){const L=k.lk,sx=L.bad>0?Math.round((Math.random()-.5)*8):0;
+      c.fillStyle="rgba(0,0,0,.75)";c.fillRect(0,0,W,H);
+      const bw=290,bh=210,bx=Math.round((W-bw)/2)+sx,by=Math.round(H/2-bh/2);
+      c.fillStyle="#6a6a72";c.fillRect(bx-3,by-3,bw+6,bh+6);c.fillStyle="#26282e";c.fillRect(bx,by,bw,bh);
+      c.font="bold 13px Cinzel,Georgia,serif";c.fillStyle="rgba(230,200,150,.9)";c.fillText("THE SHED LOCK",W/2+sx,by+24);
+      for(let i=0;i<4;i++){const cx=hlLkX(i)+sx,sel=i===L.i;
+        c.fillStyle=sel?"#3a3c46":"#1a1c22";c.fillRect(cx-27,H/2-26,54,52);c.strokeStyle=sel?"#e8d8a0":"#5a5a62";c.lineWidth=2;c.strokeRect(cx-27,H/2-26,54,52);
+        c.font="bold 34px Georgia,serif";c.fillStyle=L.bad>0?"#e04040":"#f0e8d0";c.fillText(String(L.d[i]),cx,H/2+12);
+        c.fillStyle=sel?"#e8d8a0":"#6a6a72";
+        c.beginPath();c.moveTo(cx-9,H/2-34);c.lineTo(cx+9,H/2-34);c.lineTo(cx,H/2-44);c.fill();
+        c.beginPath();c.moveTo(cx-9,H/2+34);c.lineTo(cx+9,H/2+34);c.lineTo(cx,H/2+44);c.fill();}
+      c.font="11px Cinzel,Georgia,serif";c.fillStyle="rgba(200,190,170,.85)";
+      c.fillText("UP / DOWN (or tap a number): change it",W/2+sx,by+bh-46);
+      c.fillText("LEFT / RIGHT: next number",W/2+sx,by+bh-30);
+      c.fillText("ENTER: try the code   SPACE: step back",W/2+sx,by+bh-14);
+      if(L.bad>0){c.fillStyle="rgba(224,64,64,.95)";c.fillText("Wrong code.",W/2+sx,by+66);}}
+    if(k.nt){const N=k.nt,sis=N.w==="sis",p=Math.min(1,N.t/26),e=1-(1-p)*(1-p);
+      c.fillStyle="rgba(0,0,0,.78)";c.fillRect(0,0,W,H);
+      const pw=Math.min(W-40,290),fh=sis?270:176,ph=Math.round(fh*(.12+.88*e)),px=Math.round(W/2-pw/2),py=Math.round(H/2-ph/2);
+      c.fillStyle=sis?"#f6c0d8":"#e6dcc0";c.fillRect(px,py,pw,ph);c.strokeStyle=sis?"#e090b8":"#b8a880";c.lineWidth=2;c.strokeRect(px,py,pw,ph);
+      if(p<1){c.fillStyle="rgba(0,0,0,.14)";c.fillRect(px,py+Math.round(ph/3),pw,2);c.fillRect(px,py+Math.round(ph*2/3),pw,2);}
+      else{
+        if(sis){
+          c.fillStyle="rgba(255,240,170,.8)";c.fillRect(px-6,py+2,28,12);c.fillRect(px+pw-22,py+2,28,12);
+          hlHeart(c,px+pw-40,py+22,28,"#e8407a");hlHeart(c,px+22,py+fh-52,22,"#ff7ab0");hlStar(c,px+pw-34,py+fh-30,14,"#f8d848");hlStar(c,px+52,py+30,8,"#a878e8");hlHeart(c,px+pw-86,py+fh-44,14,"#a878e8");
+          c.fillStyle="#f8e058";c.beginPath();c.arc(px+pw-70,py+fh-24,12,0,6.283);c.fill();c.fillStyle="#6a3a10";c.fillRect(px+pw-75,py+fh-29,3,4);c.fillRect(px+pw-68,py+fh-29,3,4);c.fillRect(px+pw-76,py+fh-20,10,2);
+          const rb=["#e84a4a","#f8a040","#f8e058","#58c868","#5898e8"];rb.forEach((cl,i)=>{c.strokeStyle=cl;c.lineWidth=3;c.beginPath();c.arc(px+34,py+fh-4,22-i*3.4,Math.PI,0);c.stroke();});
+          c.font='bold 15px "Comic Sans MS","Segoe Print","Bradley Hand",cursive';c.fillStyle="#7a2a5a";
+          const L=["ugh!! my stupid brother","keeps playing video games","ALL day >:(","","so i hid his video games","in the towel room.","","he'll never know","the key is in the bathtub!!","","- your sister"];
+          L.forEach((ln,i)=>{c.save();c.translate(W/2,py+52+i*19);c.rotate(((i%3)-1)*.012);c.fillText(ln,0,0);c.restore();});}
+        else{
+          c.fillStyle="rgba(0,0,0,.06)";c.fillRect(px,py+Math.round(fh/3),pw,1);c.fillRect(px,py+Math.round(fh*2/3),pw,1);
+          c.font="italic 17px Georgia,serif";c.fillStyle="#2a2418";
+          c.fillText("In case we forget,",W/2,py+44);c.fillText("the password to the shed",W/2,py+70);
+          c.font="bold 26px Georgia,serif";c.fillStyle="#5a1010";c.fillText("is 5567.",W/2,py+108);
+          c.font="italic 17px Georgia,serif";c.fillStyle="#2a2418";c.fillText("- Dad",W/2,py+148);}
+        if(N.t>40){c.font="11px Cinzel,Georgia,serif";c.fillStyle="rgba(230,200,150,.85)";c.fillText("ENTER: put it away",W/2,py+ph+26);}}}
+    c.restore();};
+  /* NEW: the backyard at night. The back door is on the left, then flowers, a hose, the dog house, and the locked shed on the right. */
+  const hlYard=(c,r,k,cam,t,fl,txt)=>{const V=HZ.VW,FY=HZ.FY,DH=HLDH,SX=HLSX,x0=Math.floor(cam/8)*8,x1=cam+V+8;
+    const sk=["#080c1c","#0b1126","#0e1630","#121c3a","#16224a","#1a2850","#1e2e58"];
+    for(let i=0;i<7;i++)r(sk[i],cam,i*9,V,9);
+    for(let i=0;i<46;i++){const sx=(i*37+11)%400,sy=(i*19+3)%44;if(sx<cam-2||sx>cam+V+2)continue;if(((t>>4)+i)%9)r("#dfe6ff",sx,sy,1,1);}
+    r("#e8ecd0",196,12,10,10);r("#f6f8e6",197,13,6,6);r("#c4c8b0",203,17,2,2);r("#c4c8b0",199,19,2,1);
+    for(let i=0;i<3;i++){const cx=((i*150+(t>>3))%470)-40,cy=14+i*14;r("#0f1530",cx,cy,34,5);r("#0f1530",cx+6,cy-3,20,4);r("#0f1530",cx+10,cy+5,18,2);}
+    for(let x=x0;x<x1;x+=8){const od=((x/8)|0)%2;r(od?"#3a2c22":"#33261d",x,64,7,42);r(od?"#3a2c22":"#33261d",x+1,62,5,2);}
+    r("#241a14",cam,72,V,3);r("#241a14",cam,92,V,3);r("#10240f",cam,104,V,2);
+    for(let x=x0;x<x1;x+=6)r(((x/6)|0)%2?"#1c3d22":"#173320",x,106,6,34);
+    for(let i=0;i<70;i++){const gx=(i*29+5)%400,gy=108+((i*13)%28);if(gx<cam-3||gx>cam+V+3)continue;r("#2a5a30",gx,gy,1,2);r("#2a5a30",gx+2,gy+1,1,1);}
+    /* the house wall and the back door */
+    if(cam<50){for(let x=0;x<46;x+=6)r(((x/6)|0)%2?"#4c525c":"#474d57",x,0,6,106);r("#2a2420",0,100,46,6);r("#3a3a40",44,0,3,106);
+      r("#2a2a30",16,22,6,3);r((t>>3)%13===0?"#9a8a50":"#f0d070",16,25,6,5);
+      r("#2a1a10",6,34,28,72);r("#5a3a1e",8,36,24,70);r("#4a2c18",11,40,18,22);r("#4a2c18",11,66,18,34);r("#0e1428",13,42,14,18);r("#c9a24a",27,82,3,3);r("#5a5a60",2,106,36,4);}
+    /* the flower bed */
+    const FC=["#e84a8a","#e8d040","#c8a0e8","#e85a3a","#f4f4f4","#e84a8a","#6ab0f0"];
+    r("#2a1a12",60,116,92,8);r("#3a2a1c",60,116,92,1);r("#1e4a26",56,106,12,10);r("#1e4a26",146,108,12,8);
+    for(let i=0;i<15;i++){const fx=62+i*6,fh=7+((i*5)%6),col=FC[i%7];if(fx<cam-6||fx>cam+V+6)continue;const sw=Math.round(Math.sin(t*.04+i)*.6);
+      r("#2f7a34",fx+1+sw,116-fh,1,fh);r("#2f7a34",fx-1,116-(fh>>1),2,1);r(col,fx+sw,116-fh-2,3,3);r("#f4e070",fx+1+sw,116-fh-1,1,1);}
+    /* the hose on its reel */
+    r("#4a4a52",160,98,3,24);r("#4a4a52",182,98,3,24);r("#6a6a72",158,120,30,2);
+    for(let yy=-9;yy<=9;yy++){const w=Math.round(Math.sqrt(81-yy*yy));r("#2a7a3a",172-w,104+yy,w*2,1);}
+    for(let yy=-6;yy<=6;yy++){const w=Math.round(Math.sqrt(36-yy*yy));r("#1c5a2a",172-w,104+yy,w*2,1);}
+    for(let yy=-3;yy<=3;yy++){const w=Math.round(Math.sqrt(9-yy*yy));r("#3a9a4a",172-w,104+yy,w*2,1);}
+    r("#8a8a92",171,103,3,3);
+    for(let i=0;i<46;i++){r("#2f8a40",188+i,118+Math.round(Math.sin(i*.25)*2),1,2);}
+    r("#c9a24a",234,119,5,3);
+    /* the shed */
+    for(let x=340;x<398;x+=6)r(((x/6)|0)%2?"#52402f":"#4a3a2c",x,70,6,52);
+    r("#2a2a30",336,62,66,8);r("#1a1a20",336,68,66,2);r("#3a3a42",336,62,66,1);
+    r("#2a1a10",344,78,12,12);r("#0e1428",346,80,8,8);r("#9ab0d8",347,81,2,2);
+    r("#2a1a10",356,75,32,48);
+    if(!k.yopen){r("#5a4030",358,77,28,46);for(let x=361;x<386;x+=5)r("#4a3424",x,77,1,46);r("#6a6a72",358,96,28,3);
+      r("#a8a8b0",369,92,1,6);r("#a8a8b0",374,92,1,6);r("#a8a8b0",369,91,6,1);r("#c9a24a",368,98,8,7);r("#2a1a10",371,100,2,3);}
+    else{r("#0a0608",358,77,28,46);r("#3a3226",358,77,5,46);r("#5a4030",354,77,4,46);}
+    /* the dog house */
+    r("#8a8a90",236,118,10,4);r("#5a5a60",237,119,8,1);
+    const pulled=!!k.ms&&k.yd===3;
+    const pers=()=>hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,1,0);
+    if(pulled)pers();
+    r("#6a3a24",250,98,40,24);for(let x=253;x<290;x+=6)r("#5a2e1c",x,98,1,24);
+    for(let j=0;j<14;j++){const w=52-j*3;r(j%2?"#4a2a1a":"#52301e",DH-(w>>1),98-j,w,1);}
+    r("#2a160e",244,98,52,2);
+    r("#050304",262,104,16,18);r("#050304",264,101,12,3);r("#050304",266,99,8,2);
+    if(((t>>5)%11)===0||k.yd>=1){r("#c01818",266,109,2,2);r("#c01818",272,109,2,2);}
+    if(!pulled)pers();
+    /* the thing that grabs your leg */
+    if((k.yd===3&&k.ms)||k.yd===2){const px=Math.round(k.x),ex=k.yd===2?Math.round(px+(DH-px)*Math.min(1,k.yt/18)):px,lo=Math.min(ex,DH),hi=Math.max(ex,DH);
+      r("#2c2c34",lo,113,hi-lo,3);r("#16161c",lo,116,hi-lo,1);r("#4a1010",lo+((t>>2)%7),113,2,1);
+      if(k.yd===3||k.yt<14){r("#3a3a44",ex-3,111,6,6);r("#d8d2c0",ex-4,111,1,2);r("#d8d2c0",ex+3,111,1,2);r("#d8d2c0",ex-4,115,1,2);r("#d8d2c0",ex+3,115,1,2);}}
+    for(let i=0;i<7;i++){const fx=cam+((i*47+Math.round(t*.15*(1+(i%3)*.3)))%V),fy=70+Math.round(Math.sin(t*.03+i*2)*18)+(i%3)*8;if(((t>>3)+i)%4)r("#d8f070",fx,fy,1,1);}};
+  /* NEW: inside the shed: tools, and your sister's note on the workbench */
+  const hlShed=(c,r,k,cam,t,fl,txt)=>{const FY=HZ.FY;
+    for(let x=0;x<200;x+=10)r((x/10)%2?"#5a4636":"#52402f",x,0,10,104);
+    r("#2a1e14",0,98,200,6);r("#1a1410",0,0,200,5);
+    for(let x=0;x<200;x+=20)r(((x/20)|0)%2?"#3a2a1c":"#32241a",x,105,20,35);
+    r("#6e5a3a",3,36,26,70);r("#101a30",5,38,22,68);
+    r("#6a5a44",40,26,70,44);for(let x=44;x<108;x+=6)for(let y=30;y<68;y+=6)r("#4a3c2a",x,y,1,1);
+    r("#7a5a34",48,34,2,14);r("#8a8a92",45,32,8,4);
+    r("#aab0b8",58,32,22,6);r("#8a9098",58,38,22,1);r("#7a2a1a",80,32,5,6);
+    r("#8a8a92",90,32,3,18);r("#8a8a92",88,30,7,4);
+    r("#8a8a92",98,36,2,14);r("#8a8a92",101,36,2,14);r("#c01818",98,48,5,8);
+    r("#c01818",50,52,2,10);r("#c01818",53,52,2,10);r("#8a8a92",50,50,5,3);
+    r("#5a4028",40,76,70,3);r("#a82828",44,68,8,8);r("#2868a8",56,68,8,8);r("#d8c040",68,70,6,6);r("#58a858",80,66,10,10);r("#8a8a92",96,70,8,6);
+    r("#7a5a34",120,36,2,68);r("#8a8a92",118,100,6,8);r("#7a5a34",126,40,2,64);r("#8a8a92",122,38,10,3);
+    r("#6a4a2a",132,86,62,4);r("#4a2c18",132,90,62,2);r("#5a3a1e",134,92,3,30);r("#5a3a1e",188,92,3,30);
+    r("#8a8a92",178,78,10,8);r("#6a6a72",180,74,3,4);r("#9a8a50",166,80,6,6);
+    r("#f6b6d0",146,78,12,8);r("#e84a8a",148,80,3,2);r("#e84a8a",150,81,1,2);r("#f8e060",154,80,2,2);r("#a878e8",152,83,2,2);
+    if((t>>4)%2)r("#fff",158,77,1,1);
+    r("#5a8a9a",70,110,14,10);r("#4a7a8a",84,112,6,3);r("#8a8a92",100,108,12,14);r("#6a6a72",100,108,12,2);
+    hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,1,0);};
   const hzHlStep=h=>{const k=h.hl,K=window.GK||{};if(h.dead>0)return;k.t++;k.u++;
     const tapped=g.tapE;g.tapE=0;
     const ent=!!(K.Enter||K.e||K.E),spc=!!K[" "];
@@ -1494,6 +1620,48 @@ const hzOverlays=(ctx,h)=>{
     const mv=sp=>{if(dx){k.dir=dx;k.x+=dx*sp;k.walk+=.25;k.sa+=sp;if(k.sa>=HZ.STRIDE){k.sa-=HZ.STRIDE;k.foot^=1;plop();}}else k.walk=0;};
     if(k.go){k.go.t++;k.walk=0;if(k.go.t>=36){const G=k.go;k.go=null;k.m=G.m;k.u=0;k.fi=36;G.setup(k);}return;}
     const m=k.m;
+    if(m===9){   /* ---- NEW: the backyard ---- */
+      if(k.sh>0)k.sh--;
+      const DH=HLDH,SX=HLSX;
+      if(k.nt){k.nt.t++;k.walk=0;if(enter&&k.nt.t>40)k.nt=null;return;}
+      if(k.lk){const L=k.lk;L.t++;k.walk=0;if(L.bad>0)L.bad--;
+        const ar=[!!K.ArrowLeft,!!K.ArrowRight,!!K.ArrowUp,!!K.ArrowDown],e=ar.map((v,i)=>v&&!L.a0[i]);L.a0=ar;
+        if(e[0])L.i=(L.i+3)%4;if(e[1])L.i=(L.i+1)%4;
+        if(e[2]){L.d[L.i]=(L.d[L.i]+1)%10;plop();}if(e[3]){L.d[L.i]=(L.d[L.i]+9)%10;plop();}
+        if(tapped&&tp&&!bz){for(let i=0;i<4;i++)if(Math.abs(tp.x-hlLkX(i))<30){L.i=i;L.d[i]=(L.d[i]+(tp.y<H/2?1:9))%10;plop();}}
+        if(space){k.lk=null;}
+        else if(enter&&L.t>8){if(L.d.join("")==="5567"){k.lk=null;k.yopen=1;seedChime();windClick();say("Click. The lock opens.",180);}else{lockRattle();L.bad=30;}}
+        return;}
+      if(k.ms){   /* the dog house: something has your leg. ENTER x5 in 7 seconds or it pulls you in */
+        const M=k.ms,res=hlMash(k,enter);k.walk=0;
+        const fr=Math.min(1,Math.max(0,M.t/M.max*(1-.16*M.got)));
+        k.x=M.x0+(DH-M.x0)*(res===-1?1:fr);
+        if(M.t%34===2){dragSound();k.sh=5;}if(M.t%70===3)heartbeat(1);if(M.t%120===30)growl();if(M.t===150||M.t===300)crawlSting();
+        if(res===1){k.ms=null;k.yd=2;k.yt=0;angryRoar();thunder(.7,0);k.lt=14;rumble();k.sh=14;}
+        else if(res===-1){k.ms=null;k.yd=0;hzKill(h,"hand");h.hlDie=1;}
+        return;}
+      if(k.yd===1){   /* reaching into the dog house */
+        k.yt++;const tx=DH+k.ys*24;
+        if(Math.abs(k.x-tx)>.6){k.x+=Math.sign(tx-k.x)*.6;k.walk+=.25;k.sa+=.6;if(k.sa>=HZ.STRIDE){k.sa-=HZ.STRIDE;k.foot^=1;}}else k.walk=0;
+        k.dir=-k.ys;
+        if(k.yt===30)say("There is a folded piece of paper in here...",200);
+        if(k.yt>=96){k.yd=3;k.ms={n:5,got:0,t:0,max:420,x0:k.x};k.walk=0;crawlSting();growl();thunder(.6,0);k.lt=14;k.sh=12;say("Something grabbed my leg!",420);}
+        return;}
+      if(k.yd===2){k.yt++;k.walk=0;if(k.yt===24)say("It let go. I have the paper.",200);if(k.yt>=60){k.yd=0;k.ycode=1;k.nt={w:"dad",t:0};windClick();}return;}
+      if(k.u===50&&!k.yw){k.yw=1;say("It's so quiet out here.",190);}
+      mv(HZ.SPEED);k.x=hzCl(k.x,14,386);
+      k.nr=k.x<42?1:Math.abs(k.x-DH)<26?2:Math.abs(k.x-SX)<18?3:0;
+      if(enter&&k.nr===1){doorCreak();hlGo(k,6,q=>{q.x=HLDR-10;q.dir=-1;q.walk=0;q.foot=0;q.sa=0;q.nr=0;q.msg="";q.mt=0;q.sh=0;q.tv=3;q.wm=0;q.gx=-999;q.u=9999;q.nt=null;});}
+      else if(enter&&k.nr===2){if(k.ycode){k.nt={w:"dad",t:0};windClick();}else{k.yd=1;k.yt=0;k.ys=k.x<DH?-1:1;k.walk=0;}}
+      else if(enter&&k.nr===3){if(k.yopen){doorCreak();hlGo(k,10,hlShedStart);}else{k.lk={d:[0,0,0,0],i:0,t:0,bad:0,a0:[false,false,false,false]};lockRattle();}}
+      return;}
+    if(m===10){   /* ---- NEW: inside the shed ---- */
+      if(k.nt){k.nt.t++;k.walk=0;if(enter&&k.nt.t>40)k.nt=null;return;}
+      mv(HZ.SPEED);k.x=hzCl(k.x,14,186);k.nr=k.x<30?1:Math.abs(k.x-150)<22?2:0;
+      if(k.u===40)say("Tools... and something pink on the workbench.",200);
+      if(enter&&k.nr===1){doorCreak();hlGo(k,9,q=>{q.x=352;q.dir=-1;q.walk=0;q.foot=0;q.sa=0;q.nr=0;q.msg="";q.mt=0;q.sh=0;q.nt=null;q.u=100;});}
+      else if(enter&&k.nr===2){k.nt={w:"sis",t:0};k.ysis=1;windClick();}
+      return;}
     if(m===8){   /* ---- NEW: the room the key opens (empty for now) ---- */
       mv(HZ.SPEED);k.x=hzCl(k.x,14,186);k.nr=k.x<30?1:0;
       if(k.u===40)say("Nothing in here. Just dust.",170);
@@ -1507,10 +1675,21 @@ const hzOverlays=(ctx,h)=>{
         k.wt++;k.walk=0;if(k.wt===1||k.wt===90)heartbeat(.8);
         if(k.wt>=180){k.wf=2;glassBreak();noiseHit();k.sh=26;k.lt=12;say("The mirror shattered.",150);}
         return;}
+      if(k.tb){   /* NEW: digging for the key (3 s), a hand grabs you (ENTER x3 in 5 s), then you pull out with the key */
+        k.tbt++;k.walk=0;
+        if(k.tb===1){if(k.tbt%28===4)plop();if(k.tbt===60||k.tbt===120)heartbeat(.6);
+          if(k.tbt>=180){k.tb=2;k.tbt=0;k.ms={n:3,got:0,t:0,max:300};crawlSting();growl();thunder(.6,0);k.lt=14;say("Something grabbed me!",300);}
+          return;}
+        if(k.tb===2){const M=k.ms,res=hlMash(k,enter);
+          if(M.t%40===2)dragSound();if(M.t%70===3)heartbeat(1);
+          if(res===1){k.ms=null;k.tb=3;k.tbt=0;angryRoar();thunder(.8,0);k.lt=16;}
+          else if(res===-1){k.ms=null;k.tb=0;hzKill(h,"hand");h.hlDie=1;}
+          return;}
+        if(k.tb===3){if(k.tbt===30){k.key=1;seedChime();say("I got the key!",200);}if(k.tbt>=200)k.tb=0;return;}}
       mv(HZ.SPEED);k.x=hzCl(k.x,14,186);
       k.nr=k.x<30?1:(Math.abs(k.x-MX)<18&&k.wf===0)?3:(Math.abs(k.x-TB)<34)?2:0;
       if(enter&&k.nr===1){doorCreak();hlGo(k,4,q=>{q.x=HL.wc;q.dir=1;q.walk=0;q.foot=0;q.sa=0;q.nr=0;q.msg="";q.mt=0;q.s=q.ps||5;q.u=0;q.lc=300;q.lt=0;q.sh=0;});}
-      else if(enter&&k.nr===2){if(!k.key){k.key=1;seedChime();say("Something hard in the blood... a key.",230);}else say("Just blood.",100);}
+      else if(enter&&k.nr===2){if(k.key||!k.ysis)say("Just blood.",100);else{k.tb=1;k.tbt=0;k.x=hzCl(k.x,100,144);k.dir=k.x<TB?1:-1;k.walk=0;say("Digging through the blood...",170);waterSound(2.9);}}   /* CHANGED: the key is only found after reading your sister's note, and it costs a fight */
       else if(enter&&k.nr===3){k.wf=1;k.wt=0;k.x=MX-4;k.dir=1;windClick();}
       return;}
     if(m===6){   /* ---- NEW: downstairs, the living room ---- */
@@ -1535,6 +1714,8 @@ const hzOverlays=(ctx,h)=>{
         if(u===150||u===185)girlShriek(1,.7);
         if(u===222){k.wm=0;k.lt=0;}   /* gone, instantly */
         if(u>=330){k.tv=3;say("...",60);}}
+      k.nr=((k.tv===0||k.tv===3)&&Math.abs(k.x-HLDR)<16)?1:0;
+      if(enter&&k.nr===1){doorCreak();hlGo(k,9,hlYardStart);}   /* NEW: the back door to the yard */
       return;}
     if(m===4){   /* ---- NEW: back in the normal hallway after the parents' room ---- */
       if(--k.lc<=0){k.lc=500+Math.floor(Math.random()*400);k.lt=12;thunder(k.lo?.35:.2,0);}
@@ -1593,7 +1774,7 @@ const hzOverlays=(ctx,h)=>{
         if(k.x>1400&&!k.said.f){k.said.f=1;say("The kitchen is just ahead.",170);}
         if(k.x>HL.kd+30&&!k.said.g){k.said.g=1;say("The stairs... I have to go down.",200);}
         k.nr=k.x>=HL.stx-14?8:Math.abs(k.x-HL.cl)<16?5:(k.back&&Math.abs(k.x-HL.wc)<16)?3:0;
-        if(enter&&k.nr===5){if(!k.key){lockRattle();say("Locked. I need a key.",150);}else{doorCreak();hlGo(k,8,hlStoreStart);}}   /* NEW: this room opens with the key */
+        if(enter&&k.nr===5){if(!k.key){lockRattle();say("Locked. I need a key.",150);}else{doorCreak();hlGo(k,8,q=>{h.hl=null;hzBdEnd(h,"This is not my home.");});}}   /* CHANGED: the towel door (with the key) leads to the horror part */
         if(enter&&k.nr===3){doorCreak();k.ps=6;hlGo(k,7,hlWcStart);}
         if(enter&&k.nr===8){plop();thud();hlGo(k,6,hlLivStart);}
         return;}
@@ -1938,7 +2119,14 @@ const hzOverlays=(ctx,h)=>{
     else{r("#2a2a2c",162,29,22,34);r("#9ab0b8",162,29,7,9);r("#9ab0b8",176,29,8,6);r("#9ab0b8",166,50,8,13);r("#9ab0b8",178,54,6,9);
       r("#e8f0f4",166,38,1,1);r("#e8f0f4",168,41,1,1);r("#e8f0f4",170,44,1,1);r("#e8f0f4",172,47,1,1);r("#e8f0f4",178,36,1,1);r("#e8f0f4",176,39,1,1);r("#e8f0f4",174,42,1,1);
       r("#9ab0b8",164,74,2,1);r("#9ab0b8",178,76,3,1);r("#9ab0b8",160,112,3,1);r("#9ab0b8",186,114,2,1);r("#9ab0b8",170,110,3,1);}
-    hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,1,0);};
+    /* NEW: digging for the key: blood splashes, the hand that grabs you, then the key in your fist */
+    const tb=k.tb||0,M=k.ms;let lift=0,wob=0;
+    if(tb===1){for(let i=0;i<7;i++)r("#a01010",96+((i*17+k.tbt*2)%52),82-((k.tbt*3+i*5)%9),1,1);r("#8a0a0a",100+((k.tbt>>1)%36),83,12,1);}
+    if(tb===2||tb===3){const reach=tb===2?1:Math.max(0,1-k.tbt/24),L=Math.round(22*reach),hx=Math.round(k.x+k.dir*4);
+      if(L>0){r("#9a9a94",hx-1,86,3,L);r("#6a0606",hx-1,86,3,2);r("#7a0808",hx,91,1,Math.max(0,L-7));r("#b8b8b0",hx-2,85+L,5,3);r("#9a9a94",hx-2,88+L,1,2);r("#9a9a94",hx+2,88+L,1,2);}
+      if(tb===2&&M){lift=Math.max(0,Math.min(8,Math.round(M.t/36)-M.got*3));wob=(t&2)?1:-1;}}
+    hzPerson(c,k.x-cam+wob,FY-lift,k.walk,k.foot,k.dir,t,1,0);
+    if(tb===3&&k.tbt>=30&&k.tbt<200){const kx=k.x+k.dir*5;r("#e8c050",kx-1,FY-18,3,3);r("#6a4a10",kx,FY-17,1,1);r("#e8c050",kx,FY-15,1,4);r("#e8c050",kx+1,FY-13,2,1);if((t>>3)%2)r("#fff",kx+2,FY-20,1,1);}};
   /* NEW: the room the key opens (empty for now) */
   const hlStore=(c,r,k,cam,t,fl,txt)=>{const FY=HZ.FY;
     for(let x=0;x<200;x+=10)r((x/10)%2?"#4a4036":"#44392f",x,0,10,104);r("#2a2420",0,98,200,6);
@@ -1977,6 +2165,8 @@ const hzOverlays=(ctx,h)=>{
     r("#e84a8a",1010,28,40,2);r("#e84a8a",1010,28,2,12);r("#e84a8a",1048,28,2,12);r("#20c0e0",1010,38,40,2);r("#e84a8a",1018,32,6,3);r("#20c0e0",1028,32,6,3);   /* a neon sign */
     r("#2a2018",1074,60,46,46);r("#3a2e22",1076,62,42,3);r("#3a2e22",1076,80,42,3);r("#3a2e22",1076,96,42,3);r("#e84a4a",1078,50,6,10);r("#3a8ae8",1086,52,6,8);r("#d8c040",1094,64,4,16);r("#c8a0e8",1100,66,4,14);r("#38d858",1108,70,6,10);
     r("#5a2a3a",884,112,74,18);r("#6a3a4a",888,114,66,14);
+    /* NEW: the back door to the yard, past the gaming corner */
+    r("#2a1a10",1134,32,32,76);r("#5a3a1e",1137,35,26,73);r("#4a2c18",1140,38,20,22);r("#0e1a30",1142,40,16,18);r("#c8d4f0",1144,42,2,2);r("#4a2c18",1140,64,20,40);r("#c9a24a",1141,84,3,3);r("#4a2a2a",1136,118,28,4);
     /* the woman */
     if(k.wm)hlWoman(c,966-cam,FY,t,(k.tu>>3)&1);
     hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,1,0);};
@@ -2076,12 +2266,14 @@ const hzOverlays=(ctx,h)=>{
     else if(m===5)hlSis(c,r,k,cam,t,fl,txt);
     else if(m===6)hlLiv(c,r,k,cam,t,fl,txt);
     else if(m===7)hlWc(c,r,k,cam,t,fl,txt);
+    else if(m===9)hlYard(c,r,k,cam,t,fl,txt);
+    else if(m===10)hlShed(c,r,k,cam,t,fl,txt);
     else hlStore(c,r,k,cam,t,fl,txt);
-    ctx.imageSmoothingEnabled=false;{const shk=(k.sh>0&&m===5)?Math.round((Math.random()-.5)*10):0;ctx.drawImage(h.A,0,0,V,VH,shk,0,W,H);}
+    ctx.imageSmoothingEnabled=false;{const shk=(k.sh>0&&(m===5||m===9))?Math.round((Math.random()-.5)*10):0;ctx.drawImage(h.A,0,0,V,VH,shk,0,W,H);}
     /* darkness: warm and normal at first, blood-dark on the way back, very dark in the parents' room */
     const flick=(ret&&((t>>2)%23===0))?.25:0;
     ctx.save();if(m===6){ctx.beginPath();ctx.rect(0,0,W,H);ctx.rect((620-cam)*3,24*3,64*3,84*3);ctx.clip("evenodd");}   /* the opening with the light on is not darkened */
-    {const bas=m===4?(k.lo?(k.cd?.22:.8):.22+((k.lof>0&&((k.lof>>2)&1))?.5:0)):m===5?(k.hid?.6:.34+(k.sp>=1?.14:0)):m===6?.6:m===7?.3:m===8?.5:(m===0?.2:m===1?.3:m===2?.5+flick:.55);
+    {const bas=m===4?(k.lo?(k.cd?.22:.8):.22+((k.lof>0&&((k.lof>>2)&1))?.5:0)):m===5?(k.hid?.6:.34+(k.sp>=1?.14:0)):m===6?.6:m===7?.3:m===8?.5:m===9?.38:m===10?.5:(m===0?.2:m===1?.3:m===2?.5+flick:.55);
       ctx.fillStyle="rgba(0,0,0,"+(bas-.2*fl)+")";ctx.fillRect(0,0,W,H);}
     if((m===4&&k.lo)||m>=6){   /* the dark you can still see in: the candle on the drawer, then your own candle */
       const cx=(k.cd||m>=6)?(k.x-cam)*3+k.dir*14:(HL.pd-cam)*3,cy=(k.cd||m>=6)?(FY-16)*3:78*3;
@@ -2095,6 +2287,7 @@ const hzOverlays=(ctx,h)=>{
       if(cam+V>870&&k.tv<3&&!(k.tv===1&&k.tu>=222)){const tg=ctx.createRadialGradient((924-cam)*3,230,10,(924-cam)*3,230,220);tg.addColorStop(0,"rgba(150,190,255,"+(k.tv>=1?.22:.07)+")");tg.addColorStop(1,"rgba(150,190,255,0)");ctx.fillStyle=tg;ctx.fillRect(0,0,W,H);}ctx.restore();}
     else if(m===5){const lx=(100-cam)*3,lg=ctx.createRadialGradient(lx,230,6,lx,230,230);lg.addColorStop(0,"rgba(255,170,210,"+(k.sp>=1?.1:.22)+")");lg.addColorStop(1,"rgba(255,170,210,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();
       if(k.sp>=1&&k.sp<4&&!k.hid){const mx3=(k.cr.mx-cam)*3,g3=ctx.createRadialGradient(mx3,200,10,mx3,200,200);g3.addColorStop(0,"rgba(120,160,255,.16)");g3.addColorStop(1,"rgba(120,160,255,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=g3;ctx.fillRect(0,0,W,H);ctx.restore();}}
+    else if(m===9){const lx=(200-cam)*3,lg=ctx.createRadialGradient(lx,60,6,lx,60,260);lg.addColorStop(0,"rgba(150,170,255,.16)");lg.addColorStop(1,"rgba(150,170,255,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();}
     else{const lx=(122-cam)*3,lg=ctx.createRadialGradient(lx,270,6,lx,270,200);lg.addColorStop(0,"rgba(255,170,80,.16)");lg.addColorStop(1,"rgba(255,170,80,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();
       if(k.p>=3&&k.p!==6){ctx.fillStyle="rgba(120,0,0,"+(.1+.06*Math.sin(t*.4))+")";ctx.fillRect(0,0,W,H);}}
     if(fl>0){ctx.fillStyle="rgba(170,190,255,"+.14*fl+")";ctx.fillRect(0,0,W,H);}
@@ -2115,9 +2308,13 @@ const hzOverlays=(ctx,h)=>{
       else if(m===3&&k.p===1&&k.pu>40){ctx.fillStyle=pulse;ctx.fillText("SPACE: speak",px,py);}
       else if(m===4&&!k.hf){const nm=(k.s===1&&k.nr===1)?"ENTER: push the drawer":(k.s===4&&k.nr===7)?"ENTER: take the candle":(k.s===5&&k.nr===2)?"ENTER":(k.nr===3)?"ENTER: open the door":(k.s===6&&k.nr===5)?"ENTER: try the door":(k.s===6&&k.nr===8)?"ENTER: go downstairs":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}
         if(k.s===2){ctx.fillStyle="rgba(255,255,255,.18)";ctx.fillRect(W/2-60,H-34,120,5);ctx.fillStyle="rgba(230,200,150,.9)";ctx.fillRect(W/2-60,H-34,Math.round(120*Math.min(1,k.pp/240)),5);}}
-      else if(m===7&&k.wf!==1){const nm=k.nr===2?"ENTER: reach into the blood":k.nr===3?"ENTER: look in the mirror":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}}
+      else if(m===7&&k.wf!==1&&!k.tb){const nm=k.nr===2?((k.ysis&&!k.key)?"ENTER: reach into the blood":"ENTER"):k.nr===3?"ENTER: look in the mirror":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}}
       else if(m===5&&!k.cf){const nm=(k.sp===1&&k.nr===2)?"ENTER: hide under the bed":(k.sp===4)?"ENTER: get out":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,k.hid?(k.x-cam)*3:px,py);}}
+      else if(m===6&&k.nr===1){ctx.fillStyle=pulse;ctx.fillText("ENTER: go outside",px,py);}
+      else if(m===9&&!k.nt&&!k.lk&&!k.ms&&!k.yd){const nm=k.nr===1?"ENTER: go inside":k.nr===2?(k.ycode?"ENTER: read the note":"ENTER: reach inside"):k.nr===3?(k.yopen?"ENTER: go in":"ENTER: try the lock"):"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}}
+      else if(m===10&&!k.nt){const nm=k.nr===1?"ENTER":k.nr===2?"ENTER: read the note":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}}
       if(m===0&&k.u>80&&k.u<1300){ctx.font="11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(200,190,170,"+Math.min(.6,(1300-k.u)/80)+")";ctx.fillText("arrows walk  -  ENTER to use  -  SPACE to knock",W/2,H-14);}}
+    hlOverlay(ctx,k);
     ctx.textAlign="left";
     let blk=0;
     if(k.fi>0)blk=Math.max(blk,k.fi/(k.m===0?50:k.m===4?40:36));
