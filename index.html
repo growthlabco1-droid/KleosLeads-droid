@@ -4083,30 +4083,65 @@ function heartbeat(v){
     o.connect(gn);gn.connect(ac.destination);o.start(n);o.stop(n+.18);});}catch(e){}
 }
 /* whisper from one side: pan -1 (left) .. 1 (right) */
-/* slow, ragged breathing: a rough inhale, then a lower exhale. v = volume */
+/* ===== HUMAN VOICE ENGINE (new): voices are built the way real voices work: a soft pulsing "glottal" source (voiced sounds) or air noise (whispers/breath), pushed through three vocal-tract resonances (formants) that glide between vowels, with irregular pitch, breath and little cracks ===== */
+function nzBuf(d){const b=ac.createBuffer(1,Math.max(2,Math.floor(ac.sampleRate*d)),ac.sampleRate),a=b.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1;return b;}
+let _vw=null;
+function voiceWave(){if(_vw&&_vw.c===ac)return _vw.w;const N=48,re=new Float32Array(N),im=new Float32Array(N);for(let k=1;k<N;k++)im[k]=1/Math.pow(k,1.6);const w=ac.createPeriodicWave(re,im);_vw={c:ac,w};return w;}
+function voiceOut(pan,vol){const m=ac.createGain();m.gain.value=vol;if(ac.createStereoPanner){const p=ac.createStereoPanner();p.pan.value=pan||0;m.connect(p);p.connect(ac.destination);}else m.connect(ac.destination);return m;}
+/* noise shaped by 3 formants. pts = [[seconds,gain],...] envelope. fa->fb = formant glide */
+function fNoise(dest,t,pts,fa,fb,Qs,boost){
+  const dur=pts[pts.length-1][0],src=ac.createBufferSource(),env=ac.createGain();
+  src.buffer=nzBuf(dur+.1);env.gain.setValueAtTime(0,t);pts.forEach(p=>env.gain.linearRampToValueAtTime(p[1],t+p[0]));
+  [1,.7,.5].forEach((gv,j)=>{const bp=ac.createBiquadFilter(),g=ac.createGain();bp.type="bandpass";bp.Q.value=Qs[j];
+    bp.frequency.setValueAtTime(fa[j],t);bp.frequency.linearRampToValueAtTime(fb[j],t+dur);g.gain.value=gv*(boost||4);src.connect(bp);bp.connect(g);g.connect(env);});
+  env.connect(dest);src.start(t);src.stop(t+dur+.1);
+}
+/* a voiced sound: pitch f0a->f0b (pk = pitch bulge), vowel glide fa->fb, att = attack seconds, br = breathiness, crack = voice break near the end */
+function voiceSyn(dest,t,dur,f0a,f0b,fa,fb,vol,br,crack,pk,att){
+  att=att||.05;const o=ac.createOscillator();o.setPeriodicWave(voiceWave());
+  const steps=Math.max(8,Math.floor(dur*90)),c=new Float32Array(steps);let jit=0;
+  for(let i=0;i<steps;i++){const u=i/(steps-1);jit=jit*.75+(Math.random()-.5)*.025;
+    let f=(f0a+(f0b-f0a)*u)*(1+(pk||0)*Math.sin(Math.PI*u));
+    f*=1+jit+Math.sin(u*dur*6.283*5.6)*.022+Math.sin(u*dur*6.283*9.7)*.008;
+    if(crack&&u>.78&&u<.9)f*=1.5;c[i]=f;}
+  o.frequency.setValueCurveAtTime(c,t,dur);
+  const env=ac.createGain();env.gain.setValueAtTime(0,t);env.gain.linearRampToValueAtTime(vol,t+att);env.gain.setValueAtTime(vol,t+dur*.65);env.gain.linearRampToValueAtTime(0,t+dur);
+  [[1,9],[.55,11],[.28,13]].forEach(([gv,q],j)=>{const bp=ac.createBiquadFilter(),g=ac.createGain();bp.type="bandpass";bp.Q.value=q;
+    bp.frequency.setValueAtTime(fa[j],t);bp.frequency.linearRampToValueAtTime(fb[j],t+dur);g.gain.value=gv*2.2;o.connect(bp);bp.connect(g);g.connect(env);});
+  if(br){const ns=ac.createBufferSource(),hp=ac.createBiquadFilter(),ng=ac.createGain();ns.buffer=nzBuf(dur+.1);hp.type="bandpass";hp.frequency.value=fa[1];hp.Q.value=1.2;ng.gain.value=br;ns.connect(hp);hp.connect(ng);ng.connect(env);ns.start(t);ns.stop(t+dur+.1);}
+  env.connect(dest);o.start(t);o.stop(t+dur+.05);
+}
+/* slow, ragged breathing: a breathy inhale through the throat, a pause, then a lower exhale */
 function breathe(v){
   if(!ac) return;
-  try{const n=ac.currentTime,d=2.2,buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),data=buf.getChannelData(0);
-    for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
-    const s=ac.createBufferSource(),bp=ac.createBiquadFilter(),am=ac.createGain(),lf=ac.createOscillator(),lg=ac.createGain(),gn=ac.createGain();
-    s.buffer=buf;bp.type="bandpass";bp.Q.value=1.1;
-    bp.frequency.setValueAtTime(900,n);bp.frequency.linearRampToValueAtTime(1500,n+.7);bp.frequency.linearRampToValueAtTime(500,n+1.2);bp.frequency.linearRampToValueAtTime(350,n+d);
-    am.gain.value=.7;lf.frequency.value=19;lg.gain.value=.3;lf.connect(lg);lg.connect(am.gain);
-    gn.gain.setValueAtTime(0,n);gn.gain.linearRampToValueAtTime(v,n+.65);gn.gain.linearRampToValueAtTime(v*.15,n+.9);gn.gain.linearRampToValueAtTime(v*1.1,n+1.25);gn.gain.linearRampToValueAtTime(0,n+d);
-    s.connect(bp);bp.connect(am);am.connect(gn);gn.connect(ac.destination);s.start(n);lf.start(n);lf.stop(n+d);
+  try{const n=ac.currentTime+.02,out=voiceOut(0,v*1.3);
+    fNoise(out,n,[[0,0],[.5,1],[.85,.6],[1,0]],[600,1500,2600],[900,1900,2900],[2,3,3],5);
+    fNoise(out,n+1.15,[[0,0],[.25,.8],[.9,.35],[1.2,0]],[800,1250,2500],[500,900,2400],[3,4,4],5);
   }catch(e){}
 }
+/* a real whisper: no pitch at all, just air shaped into short "syllables" (a soft hiss like "sh" or "s" followed by a vowel that glides into another vowel) */
+/* a crowd of different people whispering at once: each whisperer has their own vocal-tract size (so they sound like different people), their own words, rhythm and position; whispered speech = breath noise carved into consonants + vowel resonances */
 function whisper(pan,v){
   if(!ac) return;
-  try{const n=ac.currentTime,d=1.1,buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),data=buf.getChannelData(0);
-    for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
-    const s=ac.createBufferSource(),bp=ac.createBiquadFilter(),am=ac.createGain(),lf=ac.createOscillator(),lg=ac.createGain(),gn=ac.createGain();
-    s.buffer=buf;bp.type="bandpass";bp.Q.value=3;bp.frequency.setValueAtTime(2200,n);bp.frequency.linearRampToValueAtTime(3200,n+d*.5);bp.frequency.linearRampToValueAtTime(1800,n+d);
-    am.gain.value=.5;lf.frequency.value=7+Math.random()*4;lg.gain.value=.5;lf.connect(lg);lg.connect(am.gain);
-    gn.gain.setValueAtTime(0,n);gn.gain.linearRampToValueAtTime(Math.min(.9,v*2.4),n+.25);gn.gain.linearRampToValueAtTime(0,n+d);
-    s.connect(bp);bp.connect(am);am.connect(gn);
-    if(ac.createStereoPanner){const p=ac.createStereoPanner();p.pan.value=pan;gn.connect(p);p.connect(ac.destination);}else gn.connect(ac.destination);
-    s.start(n);lf.start(n);lf.stop(n+d);}catch(e){}
+  try{const n=ac.currentTime+.02,out=voiceOut(0,Math.min(1,v*1.5)),
+    V=[[730,1090,2440],[270,2290,3010],[570,840,2410],[300,870,2240],[530,1840,2480],[660,1720,2410],[400,1600,2600]],
+    C=[[[5200,6500,8000],[2e3,2200,2500],.9],[[2500,3400,4600],[2e3,2400,2800],1],[[1500,3500,6500],[1,1,1],.35],[[1200,2200,3200],[1,1,1],.5]],
+    pn=Math.max(-1,Math.min(1,pan||0)),who=3+Math.floor(Math.random()*2);
+    for(let w=0;w<who;w++){
+      const sc=.82+Math.random()*.45,pp=ac.createStereoPanner?ac.createStereoPanner():null,vg=ac.createGain();
+      vg.gain.value=1.4/Math.sqrt(who)*(.75+Math.random()*.5);
+      if(pp){pp.pan.value=Math.max(-1,Math.min(1,pn*.5+(w/(who-1)*2-1)*.7+(Math.random()-.5)*.2));vg.connect(pp);pp.connect(out);}else vg.connect(out);
+      let t=n+Math.random()*.35;const end=n+1.55+Math.random()*.4;let inWord=0;
+      while(t<end){
+        const c=C[Math.floor(Math.random()*C.length)],a=V[Math.floor(Math.random()*V.length)],b=V[Math.floor(Math.random()*V.length)],
+          sy=.11+Math.random()*.07,amp=.55+Math.random()*.45,sf=x=>x.map(f=>f*sc);
+        fNoise(vg,t,[[0,0],[.012,c[2]*amp],[.045,c[2]*amp*.35],[.065,0]],sf(c[0]),sf(c[0]),[4,4,4],3);
+        fNoise(vg,t+.04,[[0,0],[.025,amp],[sy*.7,amp*.8],[sy,0]],sf(a),sf(b),[9,11,13],4.5);
+        t+=sy+.045+Math.random()*.04;inWord++;
+        if(inWord>=2+Math.floor(Math.random()*2)){inWord=0;t+=.09+Math.random()*.16;}
+      }
+    }
+  }catch(e){}
 }
 /* seed pickup: two soft rising notes */
 function seedChime(){
@@ -4148,33 +4183,23 @@ function howl(pan,v){
       o.frequency.setValueAtTime(150*dt,n);o.frequency.exponentialRampToValueAtTime(340*dt,n+d*.45);o.frequency.exponentialRampToValueAtTime(130*dt,n+d);
       l.frequency.value=5+i;lg.gain.value=8;l.connect(lg);lg.connect(o.frequency);o.connect(lp);o.start(n);o.stop(n+d);l.start(n);l.stop(n+d);});}catch(e){}
 }
-/* the crying girl: soft, broken sobbing (a wobbling, falling voice with breath) */
+/* the crying girl: a child's voice sobbing. Each sob is a voiced "ah-eh" with a falling pitch, a wobble and a little voice crack, and between the sobs she takes a wet, shaky breath in */
 function cry(pan,v){
   if(!ac) return;
-  try{const n=ac.currentTime,d=1.5,m=ac.createGain(),bp=ac.createBiquadFilter();
-    bp.type="bandpass";bp.frequency.value=1100;bp.Q.value=1.4;
-    m.gain.setValueAtTime(0,n);
-    [0,.4,.8,1.15].forEach((t,i)=>{m.gain.linearRampToValueAtTime(v*(1-i*.16),n+t+.07);m.gain.linearRampToValueAtTime(v*.08,n+t+.3);});
-    m.gain.linearRampToValueAtTime(0,n+d);
-    bp.connect(m);if(ac.createStereoPanner){const p=ac.createStereoPanner();p.pan.value=pan;m.connect(p);p.connect(ac.destination);}else m.connect(ac.destination);
-    const o=ac.createOscillator(),l=ac.createOscillator(),lg=ac.createGain();o.type="sawtooth";
-    o.frequency.setValueAtTime(540,n);o.frequency.exponentialRampToValueAtTime(320,n+d);
-    l.frequency.value=6.5;lg.gain.value=24;l.connect(lg);lg.connect(o.frequency);o.connect(bp);o.start(n);o.stop(n+d);l.start(n);l.stop(n+d);
-    const buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),data=buf.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
-    const ns=ac.createBufferSource(),hp=ac.createBiquadFilter(),ng=ac.createGain();ns.buffer=buf;hp.type="highpass";hp.frequency.value=3000;ng.gain.value=.25;ns.connect(hp);hp.connect(ng);ng.connect(bp);ns.start(n);
+  try{const n=ac.currentTime+.02,out=voiceOut(pan,v*1.6),b=400+Math.random()*60;
+    [[0,.4,1.12,.82,[900,1350,2900],[640,1850,2900],0],[.52,.38,1.2,.8,[880,1300,2900],[620,1800,2900],0],[1.02,.5,1.05,.68,[900,1400,2900],[560,1900,2900],1]].forEach(([t,d,fa,fb,Fa,Fb,cr],i)=>{
+      voiceSyn(out,n+t,d,b*fa,b*fb,Fa,Fb,1-i*.15,.4,cr,.05,.06);
+      if(i<2)fNoise(out,n+t+d+.01,[[0,0],[.06,.7],[.11,0]],[900,1700,2700],[1300,2200,3000],[3,4,4],4);});
   }catch(e){}
 }
-/* high, tearing shriek (the girl). d = seconds, v = volume */
+/* a girl's scream (d = seconds, v = volume): a high, strained voice with a pitch bulge, a fast wobble, lots of air and a rough edge */
 function girlShriek(d,v){
   if(!ac) return;
-  try{const n=ac.currentTime,m=ac.createGain(),ws=ac.createWaveShaper(),cv=new Float32Array(256);
-    for(let i=0;i<256;i++){cv[i]=Math.tanh((i/128-1)*7);} ws.curve=cv;
-    m.gain.setValueAtTime(0,n);m.gain.linearRampToValueAtTime(v,n+.03);m.gain.setValueAtTime(v,n+d*.7);m.gain.exponentialRampToValueAtTime(.001,n+d);m.connect(ws);ws.connect(ac.destination);
-    [[900,2300],[1350,3100],[450,1150]].forEach(([a,b],i)=>{const o=ac.createOscillator(),l=ac.createOscillator(),lg=ac.createGain();o.type=i===2?"square":"sawtooth";
-      o.frequency.setValueAtTime(a,n);o.frequency.exponentialRampToValueAtTime(b,n+d*.35);o.frequency.exponentialRampToValueAtTime(a*1.3,n+d);
-      l.frequency.value=26+i*6;lg.gain.value=90;l.connect(lg);lg.connect(o.frequency);o.connect(m);o.start(n);o.stop(n+d);l.start(n);l.stop(n+d);});
-    const buf=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate),data=buf.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
-    const ns=ac.createBufferSource(),bp=ac.createBiquadFilter(),ng=ac.createGain();ns.buffer=buf;bp.type="bandpass";bp.frequency.value=3200;bp.Q.value=.7;ng.gain.value=.5;ns.connect(bp);bp.connect(ng);ng.connect(m);ns.start(n);
+  try{const n=ac.currentTime+.01,ws=ac.createWaveShaper(),cv=new Float32Array(256);
+    for(let i=0;i<256;i++){cv[i]=Math.tanh((i/128-1)*2.2);} ws.curve=cv;
+    const m=ac.createGain();m.gain.value=v;m.connect(ws);ws.connect(ac.destination);
+    voiceSyn(m,n,d,720,1050,[1000,1700,3000],[880,1550,2900],1,.45,0,.3,.03);
+    voiceSyn(m,n+.01,d,730*1.012,1060*1.012,[1000,1700,3000],[880,1550,2900],.6,.2,0,.3,.03);
   }catch(e){}
 }
 /* the girl kills you: very loud */
