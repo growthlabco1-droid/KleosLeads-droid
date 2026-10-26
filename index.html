@@ -843,7 +843,7 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
     h.open=h.seeds>=4?1:0;};
   const hzInit=()=>{g.hz={};hzReset(true);hzBdStart(g.hz);};   /* CHANGED: you now wake up in your bedroom first (hzBdStart). The hall and its sounds start when you walk out of the door (hzBdEnd). */
   g.hzDead=()=>g.bs===6&&!!g.hz&&g.hz.dead>0;
-  g.hzRevive=()=>{hzReset(false);hzAmbLevel(.05);};
+  g.hzRevive=()=>{const h=g.hz;if(h&&h.hl&&h.hlDie){h.dead=0;h.hlDie=0;h.killer=null;hlRespawn(h.hl);hzAmbLevel(.05);return;}hzReset(false);hzAmbLevel(.05);};   /* CHANGED: caught downstairs = back at the candle */
   const hzFinish=()=>hzThroneStart();   /* gate reached -> throne room */
   const startDark=()=>{g.cutDone=1;g.bs=6;g.dt=0;g.balls=[];g.burn=[];g.embers=[];g.souls=[];g.hz=null;g.tpt=null;thunder(.5,0);rumble();angryRoar();};
   const darkStep=()=>{g.dt++;if(g.dt<150)return;
@@ -872,9 +872,9 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
   if(x.eyes>0)x.eyes--;if(x.tt>0)x.tt--;if(x.gl>0)x.gl--;
   const flash=m=>{x.txt=m;x.tt=45;x.gl=16;thunder(.6,0);heartbeat(1);};
   once("s1",h.seeds>=1,()=>{flash("HADES DID THIS");hzSayQ(h,[["The dream was his first lie.",200],["He promised her a quiet place.",200]]);});
-  once("s2",h.seeds>=2,()=>{h.skull=12;hadesGrowl(1.6,.5);hzSayQ(h,[["He took the name out of her mouth.",200],["Every locked door is a promise he broke.",200]]);});
+  once("s2",h.seeds>=2,()=>{if(hzApFree(h)){h.skull=12;hadesGrowl(1.6,.5);}hzSayQ(h,[["He took the name out of her mouth.",200],["Every locked door is a promise he broke.",200]]);});
   once("s3",h.seeds>=3,()=>{x.eyes=130;hadesGrowl(2.2,.4);flash("HE IS CLOSE");hzSayQ(h,[["He fed on her crying. It made him stronger.",220]]);});
-  once("fire",h.room===3,()=>{h.skull=12;hadesGrowl(1.8,.6);});
+  once("fire",h.room===3,()=>{if(hzApFree(h)){h.skull=12;hadesGrowl(1.8,.6);}});
   once("mir",h.room===2&&h.mir.s>=2&&Math.abs(h.x-HZ.MX)<40,()=>{flash("HE STANDS BEHIND YOU");whisper(-h.dir,.35);});
   if(sec>=240&&--x.vt<=0){x.vt=9000+Math.floor(Math.random()*5400);
     const L=["Come closer.","She called for you for years. I let her.","Why did you leave her?","I only wanted company.","She is so quiet now."];
@@ -895,7 +895,7 @@ const hzCl=(v,a,b)=>Math.max(a,Math.min(b,v));
 };
 const hzExtra=(h,sec,safeP,near)=>{
     hzMore(h,sec,safeP);
-    if(h.face>0)h.face--;if(h.skull>0)h.skull--;if(h.nflash>0)h.nflash--;
+    hzApTick(h);if(h.face>0)h.face--;if(h.skull>0)h.skull--;if(h.nflash>0)h.nflash--;
     /* Cerberus howls far away at 3 points (1:15, second seed, start of the chase) */
     
     
@@ -921,7 +921,7 @@ const hzExtra=(h,sec,safeP,near)=>{
       if(k.s===0){k.x+=k.ux*.3;k.d-=.3;if(k.d<=9){k.s=1;dragSound();}}
       else{k.x-=k.ux*2.6;k.d+=2.6;if(k.d>90){h.smear=[k.x0,k.x];h.crawl=null;h.crawlDone=1;}}}
     /* NEW jumpscare 1: walk past the old portrait and it screams (no danger) */
-    if(!h.pDone&&sec>=25&&h.walk>0&&Math.abs(h.x-HZ.PX)<16){h.pDone=1;h.face=14;scream();}
+    if(!h.pDone&&sec>=25&&h.walk>0&&Math.abs(h.x-HZ.PX)<16&&hzApFree(h)){h.pDone=1;h.face=14;scream();}
     /* NEW jumpscare 2: a locked door bangs open and a dark figure stares at you for a moment (no danger) */
     if(!h.dDone&&sec>=240){const d=h.doors.find(d=>d.locked&&Math.abs(d.x-h.x)<18);if(d){h.dDone=1;h.ds={x:d.x,t:0};thunder(.7,0);h.nflash=6;}}
     if(h.ds&&++h.ds.t>55)h.ds=null;
@@ -950,7 +950,77 @@ const hzExtra=(h,sec,safeP,near)=>{
       else if(e.t<1200||h.chase){if(h.chase)h.cp.forEach(c=>{if(Math.abs(e.x-c.x)<26)c.t=Math.min(c.t,150);});e.x+=Math.sign(ex)*(hzCan(h,e.x,26)?.12:.68);if(d<6&&(h.chase||!safeP)){h.catch=1;h.killer="dog";}}
       else{e.x-=Math.sign(ex)*.8;if(d>110||e.t>1400)h.cer=null;}}
   };
-  const hzFace=(ctx,k)=>{if(((k>>2)&1)===0)ghoulFace(ctx,W,H,1,k+4,hzFV%2);};   /* two quick pops */
+  /* CHANGED: NO MORE FULL-SCREEN SCARE PICTURES (death scares are untouched). The old pop-ups are replaced by a figure that exists IN the game: a ghost, grey, deformed and covered in blood,
+     that appears next to you, stares, lunges at you with the same loud noise, and then melts into the floor. Only ONE of these can happen at a time, and there is a 25 second rest after each. */
+  const hzFace=(ctx,k)=>{};
+  const hzApFree=h=>!h.ap&&!(h.apcd>0)&&!h.slam;
+  const hzApStart=(h,kind)=>{if(h.ap)return;
+    const R=h.inRoom,px=R?R.x:h.x-hzCamX(h),d=(R?R.dir:h.dir)||1;
+    let sx=px+d*46;if(sx<12||sx>HZ.VW-12)sx=px-d*46;sx=hzCl(sx,10,HZ.VW-10);
+    h.ap={t:0,sx,x:sx,d:sx>=px?-1:1,px,rm:R?1:0,kind:kind||"face"};};
+  const hzApTick=h=>{
+    if(h.apcd>0)h.apcd--;
+    if(h.dead>0){h.ap=null;return;}
+    const on=h.face>0||h.skull>0;   /* the old pop-ups: each one now starts the in-game figure instead */
+    if(on&&!h.apEdge){h.apEdge=1;if(hzApFree(h))hzApStart(h,h.skull>0?"skull":"face");}else if(!on)h.apEdge=0;
+    const a=h.ap;if(!a)return;
+    a.t++;const R=h.inRoom;a.px=R?R.x:h.x-hzCamX(h);
+    if((R?1:0)!==a.rm){h.ap=null;h.apcd=600;return;}   /* you walked through a door: it is gone */
+    if(a.t>=8&&a.t<26){const p=(a.t-8)/18,e=p*p;a.x=a.sx+(a.px-a.sx)*e*.88;a.d=a.px>=a.x?1:-1;}   /* CHANGED: it is just there, and it RUSHES at you */
+    else if(a.t<8)a.d=a.px>=a.x?1:-1;
+    if(a.t===26){whisper(0,.4);}
+    if(a.t===42)crawlSting();
+    if(a.t>=64){h.ap=null;h.apcd=1500;}};
+  /* the figure, drawn facing right with its feet at (28,62) of a small buffer. mo = mouth open (0 to 1), rc = how far the long arm reaches (0 to 1) */
+  const hzApFigure=(f,mo,rc,t)=>{
+    const R=(x,y,w,h,col)=>{f.fillStyle=col;f.fillRect(28+x,62+y,w,h);};
+    const SK="#8d8f89",SH="#686a65",HI="#a5a7a0",RG="#26231f",HR="#171513",B1="#7a0a0a",B2="#a01010",B3="#3a0404",BN="#e8e2d6";
+    const tw=Math.round(Math.sin(t*.45));
+    /* legs: ragged, one bent the wrong way */
+    R(-3,-10,3,6,RG);R(1,-10,3,6,RG);R(-3,-4,2,4,SK);R(2,-4,2,3,SK);R(4,-5,2,1,SK);R(-4,-1,3,1,SH);R(2,-1,4,1,SH);
+    /* torso: hunched, one shoulder far too high, torn open */
+    R(-4,-24,9,14,SK);R(-7,-28,6,6,SK);R(-6,-27,2,2,SH);
+    R(-3,-22,7,11,B3);R(-2,-21,5,9,B1);R(0,-19,3,6,B2);
+    R(-3,-23,1,7,BN);R(-1,-22,1,7,BN);R(1,-22,1,6,BN);R(3,-22,1,5,BN);
+    R(-1,-11,1,9,B2);R(2,-11,1,6,B1);R(-3,-10,1,4,B1);
+    /* a second, small face on the hump */
+    R(-7,-33,5,4,SK);R(-6,-32,1,1,"#fff");R(-4,-32,1,1,"#fff");R(-6,-30,3,1,B3);
+    /* arms: one hangs to the floor, the other is far too long and reaches for you */
+    for(let i=0;i<26;i++)R(-6-(i>18?1:0),-25+i,1,1,i%5===2?SH:SK);R(-8,0,3,1,SK);R(-9,1,2,1,SH);
+    const rl=10+Math.round(rc*14),ry=-25+Math.round(rc*3);
+    for(let i=0;i<rl;i++)R(4+i,ry+Math.round(i*(.9-rc*.7)),2,1,i%5===2?SH:SK);
+    R(4+rl,ry+Math.round(rl*(.9-rc*.7)),1,1,B2);
+    for(let i=0;i<4;i++)R(4+rl+1+i,ry+Math.round(rl*(.9-rc*.7))-1+(i%2)*2,3,1,SK);   /* claws */
+    R(1,-20,1,5,SH);R(0,-16,3,1,SH);   /* a third small arm out of the ribs */
+    /* the neck: bent to one side, the head tilted and heavy */
+    R(0,-30,3,6,SK);R(2,-33,3,4,SK);
+    const hx=4+tw,hy=-41;
+    R(hx-2,hy-1,9,3,HR);R(hx-2,hy+2,2,12,HR);R(hx+1,hy+2,1,6,HR);
+    R(hx,hy+2,7,6,SK);R(hx+6,hy+3,1,4,SH);
+    R(hx+1,hy+3,3,3,"#fff");R(hx+2,hy+4,1,2,"#d01010");R(hx+5,hy+4,1,1,"#fff");   /* one eye far bigger than the other */
+    const jy=hy+8+Math.round(mo*4);
+    R(hx+1,hy+8,6,Math.round(mo*4)+1,"#1a0404");R(hx+2,hy+8,1,1,BN);R(hx+4,hy+8,1,1,BN);R(hx+6,hy+8,1,1,BN);
+    R(hx+1,jy,6,2,SK);R(hx+2,jy+1,1,1,BN);R(hx+5,jy+1,1,1,BN);
+    R(hx+3,jy+1,1,3+Math.round(mo*7),B2);R(hx+5,jy+1,1,2+Math.round(mo*4),B1);   /* blood from the mouth */
+    R(hx+1,hy+6,1,3,B1);};
+  const hzApDraw=(ctx,h)=>{const a=h.ap;if(!a)return;
+    const VW=HZ.VW,VH=HZ.VH,FY=HZ.FY;
+    if(!h.apcv){h.apcv=document.createElement("canvas");h.apcv.width=VW;h.apcv.height=VH;h.apf=document.createElement("canvas");h.apf.width=56;h.apf.height=64;}
+    const c=h.apcv.getContext("2d"),f=h.apf.getContext("2d"),t=a.t;
+    const lg=t<8?0:Math.min(1,(t-8)/18),ml=t<26?0:Math.min(1,(t-26)/36);
+    const mo=t<8?.6:1,app=1;   /* CHANGED: no flicker, no twitching */
+    c.clearRect(0,0,VW,VH);f.clearRect(0,0,56,64);
+    hzApFigure(f,mo,lg,t);
+    c.imageSmoothingEnabled=false;
+    const sc=1+.6*lg,sy=Math.max(.06,1-.94*ml),wd=1+.5*ml,jx=0;
+    /* blood pool under the feet that grows as it melts */
+    if(t>=1){const pw=Math.round(5+ml*17+lg*4);for(let yy=-1;yy<=1;yy++){c.fillStyle=yy?"#4a0404":"#6a0808";const w=Math.round(pw*Math.sqrt(1-yy*yy/4));c.fillRect(Math.round(a.x)-w+jx,FY+yy,w*2,1);}}
+    /* smeared copies behind it while it lunges */
+    if(lg>0&&lg<1){[.22,.12].forEach((al,i)=>{c.save();c.globalAlpha=al;c.translate(Math.round(a.x-a.d*(4+i*5)),FY);c.scale(a.d*sc,sc);c.drawImage(h.apf,-28,-62);c.restore();});}
+    c.save();c.globalAlpha=app*(1-Math.max(0,(ml-.6)/.4));c.translate(Math.round(a.x)+jx,FY);c.scale(a.d*sc*wd,sc*sy);c.drawImage(h.apf,-28,-62);c.restore();
+    /* the eyes are the last thing to go */
+    if(ml>.45&&ml<.95){c.fillStyle="#e8e8e0";const ey=FY-Math.round(40*(1-.85*ml))-2;c.fillRect(Math.round(a.x)+a.d*3-1,ey,2,2);c.fillRect(Math.round(a.x)+a.d*7,ey+1,1,1);}
+    ctx.save();ctx.imageSmoothingEnabled=false;ctx.globalAlpha=.92;ctx.drawImage(h.apcv,0,0,VW,VH,0,0,W,H);ctx.restore();};
   const hzMoreDraw=(ctx,h)=>{const x=h.xs;if(!x)return;
   /* drawn in the same low-res 120x140 pixel buffer as the rest of the hall, then scaled up with no smoothing, dull colours only */
   const VW=HZ.VW,VH=HZ.VH;if(!x.cv){x.cv=document.createElement("canvas");x.cv.width=VW;x.cv.height=VH;}
@@ -965,15 +1035,12 @@ const hzExtra=(h,sec,safeP,near)=>{
   if(x.tt>0){ctx.textAlign="center";ctx.font=fitFont(ctx,x.txt,"%px Cinzel,Georgia,serif",W-30,20);ctx.fillStyle=(x.tt%7<5)?"rgba(120,12,12,"+Math.min(.9,x.tt/15)+")":"rgba(60,6,6,.3)";ctx.fillText(x.txt,W/2+(Math.random()-.5)*3,H/2+(Math.random()-.5)*3);ctx.textAlign="left";}
 };
 const hzOverlays=(ctx,h)=>{
-  hzMoreDraw(ctx,h);
+  hzMoreDraw(ctx,h);hzApDraw(ctx,h);   /* CHANGED: the in-game figure replaces the full-screen faces */
   if(h.hid){const q=h.hid,bw=150,bx=W/2-bw/2,by=H*.6;ctx.fillStyle="rgba(0,0,0,.3)";ctx.fillRect(0,0,W,H);ctx.textAlign="center";ctx.font="11px Cinzel,Georgia,serif";
     ctx.fillStyle=q.near?"rgba(190,40,30,.95)":"rgba(200,190,170,.7)";ctx.fillText(q.gasp?"HE KNOWS. RUN OR HIDE":q.near?"HOLD SPACE - HOLD YOUR BREATH":"Hidden.  ENTER: come out",W/2,by-8);
     ctx.fillStyle="rgba(0,0,0,.65)";ctx.fillRect(bx,by,bw,8);ctx.fillStyle=q.br<30?"rgba(170,20,20,.9)":"rgba(170,160,140,.85)";ctx.fillRect(bx,by,bw*Math.max(0,q.br)/100,8);
     if(q.near){ctx.fillStyle="rgba(130,20,20,.85)";ctx.fillRect(bx,by+11,bw*Math.min(1,q.ns/70),3);}ctx.textAlign="left";}
     if(h.face>0||h.skull>0){if(!h.fvOn){h.fvOn=1;hzFV++;}}else h.fvOn=0;
-    if(h.face>0)hzFace(ctx,14-h.face);
-    if(h.gf>0&&((h.gf>>2)&1)===0)ghoulFace(ctx,W,H,1,h.gf,hzFV%2);   /* the hanging girl's face */
-    if(h.skull>0&&((h.skull>>2)&1)===0)ghoulFace(ctx,W,H,1,h.skull,hzFV%2);   /* the Hades skull flash (does not kill you) */
     if(h.nflash>0){ctx.fillStyle="rgba(255,255,255,"+h.nflash/8+")";ctx.fillRect(0,0,W,H);}
     if(h.chase&&h.ct<240){ctx.textAlign="center";ctx.font="bold 15px Cinzel,Georgia,serif";ctx.fillStyle="rgba(255,50,40,"+Math.min(.9,(240-h.ct)/60)+")";ctx.fillText("RUN TO THE GATE",W/2+(Math.random()-.5)*3,48);ctx.font="11px Cinzel,Georgia,serif";ctx.fillText("C: drop a candle behind you to stall the dog",W/2,66);ctx.textAlign="left";}
   };
@@ -1375,7 +1442,7 @@ const hzOverlays=(ctx,h)=>{
     r("#cfd3d8",166,56,28,61);r("#050507",168,58,24,59);if(o>0)r("rgba(110,140,170,"+(.28*o)+")",168,58,24,59);
     r("#5a3a1e",168,58,lw,59);if(lw>10){r("#4a2c18",171,62,lw-6,20);r("#4a2c18",171,86,lw-6,26);r("#c9a24a",168+lw-5,88,3,3);}
     /* the player */
-    if(k.st>=3)hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,0);
+    if(k.st>=3)hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,0,1);
     /* edges: dark corners, lamp glow, grain */
     c.globalCompositeOperation="source-over";
     ctx.imageSmoothingEnabled=false;ctx.drawImage(h.A,0,0,V,VH,0,0,W,H);
@@ -1396,13 +1463,26 @@ const hzOverlays=(ctx,h)=>{
      In the kitchen you take a cup (E), pour water at the faucet (E), and a loud yell comes from far away. You drop the glass and run back. The same hallway is now
      dark: blood is coming up through a crack in the floor at your sister's door (locked). At your parents' room you knock with SPACE, the door opens and you go in.
      Dad eating mom, SPACE to ask him, he stands up and runs at you (about 3 seconds to get out), and when you leave the room the horror hall begins (hzBdEnd). ===== */
-  const HL={x0:40,pd:200,wc:620,sd:1000,cl:1500,kd:2036,L:2116,chaseX:175,stopX:120,exitX:20};
-  const hlCam=k=>hzCl(Math.round(k.x-HZ.VW/2),0,(k.m===0||k.m===2?HL.L:200)-HZ.VW);
+  const HL={x0:40,pd:200,wc:620,sd:1000,cl:1500,kd:2036,L:2116,chaseX:175,stopX:120,exitX:20,L2:2420,stx:2352};   /* CHANGED: L2 = the longer hallway after the parents' room, stx = the top of the stairs */
+  const hlCam=k=>hzCl(Math.round(k.x-HZ.VW/2),0,(k.m===0||k.m===2?HL.L:k.m===4?HL.L2:k.m===6?1200:200)-HZ.VW);
   const hzHlStart=h=>{h.bd=null;hzAmbient(false);
     h.hl={m:0,u:0,t:0,x:HL.x0,dir:1,walk:0,foot:0,sa:0,msg:"",mt:0,en0:true,sp0:true,lt:0,lc:240,fi:50,go:null,nr:0,said:{}};};
   const hlGo=(k,m,setup)=>{k.go={m,setup,t:0};};
   const hlRoomStart=k=>{k.m=3;k.u=0;k.x=24;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.p=0;k.pu=0;k.dad={x:HL.chaseX,t:0,ft:0};k.cu=0;k.ps=[];k.dop=1;k.esc=0;k.msg="";k.mt=0;};
-  const hzHlStep=h=>{const k=h.hl,K=window.GK||{};k.t++;k.u++;
+  /* NEW (hallway after the parents' room): you run out, he starts pounding on the door. 10 seconds to push the drawer against it (the push itself takes 4 seconds).
+     Then the lights go out while you walk, and you find a candle on top of the drawer. Then your sister's room, then on to the stairs. s = stage:
+     0 running out  1 barricade (timer)  2 pushing  3 blocked, walking  4 lights go out, find the candle  5 you have the candle  6 after your sister's room, walk to the stairs */
+  const hlHallStart=k=>{k.m=4;k.u=0;k.x=HL.pd+8;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.said={};k.kn=0;k.ku=0;k.dopen=0;k.go=null;k.lc=320;k.lt=0;
+    k.s=0;k.bt=0;k.nb=20;k.sh=0;k.dX=HL.pd+34;k.pp=0;k.cd=0;k.lo=0;k.lof=0;k.lu=0;k.hf=0;k.dd=null;k.cm=0;k.fi=40;};
+  /* NEW: your sister's room. sp: 0 arriving  1 the mirror wakes, the thing crawls out (hide with ENTER)  4 it has left, you are still under the bed  5 free */
+  const hlSisStart=k=>{k.m=5;k.u=0;k.x=24;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.sp=0;k.hid=0;k.hu=0;k.cf=0;k.sh=0;
+    k.cr={t:0,e:0,x:166,mx:172,dir:-1,nk:0,up:0,w:0,gone:0};k.fi=36;};
+  /* NEW: the restroom, the room that needs the key, the living room downstairs, and the respawn at the candle */
+  const hlWcStart=k=>{k.m=7;k.u=0;k.x=26;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.wf=k.wf||0;k.wt=0;k.sh=0;k.fi=36;};
+  const hlStoreStart=k=>{k.m=8;k.u=0;k.x=26;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.sh=0;k.fi=36;};
+  const hlLivStart=k=>{k.m=6;k.u=0;k.x=24;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.gc=0;k.tv=0;k.tu=0;k.wm=0;k.gx=-999;k.said={};k.sh=0;k.fi=60;};
+  const hlRespawn=k=>{k.m=4;k.u=0;k.x=HL.pd+26;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.said={};k.s=6;k.back=1;k.cd=1;k.lo=1;k.dX=HL.pd;k.hf=0;k.go=null;k.lc=320;k.lt=0;k.sh=0;k.fi=50;};
+  const hzHlStep=h=>{const k=h.hl,K=window.GK||{};if(h.dead>0)return;k.t++;k.u++;
     const tapped=g.tapE;g.tapE=0;
     const ent=!!(K.Enter||K.e||K.E),spc=!!K[" "];
     let enter=ent&&!k.en0,space=spc&&!k.sp0;k.en0=ent;k.sp0=spc;
@@ -1414,6 +1494,149 @@ const hzOverlays=(ctx,h)=>{
     const mv=sp=>{if(dx){k.dir=dx;k.x+=dx*sp;k.walk+=.25;k.sa+=sp;if(k.sa>=HZ.STRIDE){k.sa-=HZ.STRIDE;k.foot^=1;plop();}}else k.walk=0;};
     if(k.go){k.go.t++;k.walk=0;if(k.go.t>=36){const G=k.go;k.go=null;k.m=G.m;k.u=0;k.fi=36;G.setup(k);}return;}
     const m=k.m;
+    if(m===8){   /* ---- NEW: the room the key opens (empty for now) ---- */
+      mv(HZ.SPEED);k.x=hzCl(k.x,14,186);k.nr=k.x<30?1:0;
+      if(k.u===40)say("Nothing in here. Just dust.",170);
+      if(enter&&k.nr===1){doorCreak();hlGo(k,4,q=>{q.x=HL.cl;q.dir=1;q.walk=0;q.foot=0;q.sa=0;q.nr=0;q.msg="";q.mt=0;q.s=6;q.u=0;q.lc=300;q.lt=0;q.sh=0;});}
+      return;}
+    if(m===7){   /* ---- NEW: the restroom ---- */
+      if(k.sh>0)k.sh--;
+      const MX=172,TB=122;
+      if(k.u===40&&!k.said.w){k.said.w=1;say("What... is all this blood?",210);heartbeat(.8);}
+      if(k.wf===1){   /* you look at yourself and cannot move for 3 seconds, then the mirror breaks */
+        k.wt++;k.walk=0;if(k.wt===1||k.wt===90)heartbeat(.8);
+        if(k.wt>=180){k.wf=2;glassBreak();noiseHit();k.sh=26;k.lt=12;say("The mirror shattered.",150);}
+        return;}
+      mv(HZ.SPEED);k.x=hzCl(k.x,14,186);
+      k.nr=k.x<30?1:(Math.abs(k.x-MX)<18&&k.wf===0)?3:(Math.abs(k.x-TB)<34)?2:0;
+      if(enter&&k.nr===1){doorCreak();hlGo(k,4,q=>{q.x=HL.wc;q.dir=1;q.walk=0;q.foot=0;q.sa=0;q.nr=0;q.msg="";q.mt=0;q.s=q.ps||5;q.u=0;q.lc=300;q.lt=0;q.sh=0;});}
+      else if(enter&&k.nr===2){if(!k.key){k.key=1;seedChime();say("Something hard in the blood... a key.",230);}else say("Just blood.",100);}
+      else if(enter&&k.nr===3){k.wf=1;k.wt=0;k.x=MX-4;k.dir=1;windClick();}
+      return;}
+    if(m===6){   /* ---- NEW: downstairs, the living room ---- */
+      const G0=620,G1=684,TV=930,EN=1150;
+      if(k.sh>0)k.sh--;
+      if(k.u===70)say("It's so dark down here...",210);
+      if(k.u===500&&!k.said.a)say("There is a light on ahead.",190);
+      if(k.tv===0||k.tv===3){mv(HZ.SPEED);k.x=hzCl(k.x,14,EN);}else k.walk=0;
+      /* the ghost in the lit opening. 3.5 s in view (it stops in the middle and twists its head), 3.5 s off screen to the side, then back the other way */
+      k.gc=(k.gc+1)%840;
+      const ph=Math.floor(k.gc/210),lt=k.gc%210;let gx=-999;k.gtw=0;
+      if(ph===0||ph===2){const dir=ph===0?1:-1,x0=ph===0?G0-8:G1+8;
+        const dd=lt<73?lt*.55:lt<137?40:40+(lt-137)*.55;gx=x0+dir*dd;k.gd=dir;k.gtw=(lt>=73&&lt<137)?(lt-73):-1;}
+      else if(lt>=165&&lt%18===0)plop();   /* you can hear it coming back */
+      k.gx=gx;
+      if(k.tv<1&&gx>G0-3&&gx<G1+3&&k.x>G0-5&&k.x<G1+5){hzKill(h,"ghost");h.hlDie=1;return;}   /* it saw you */
+      /* the little tv area */
+      if(k.tv===0&&k.x>=TV){k.tv=1;k.tu=0;k.walk=0;k.x=TV;heartbeat(.7);}
+      if(k.tv===1){const u=++k.tu;
+        if(u===60){whisper(0,.3);k.lt=8;}
+        if(u===120){k.wm=1;girlShriek(1,.9);thunder(.9,0);k.sh=14;k.lt=14;say("DON'T KILL ME!",100);}
+        if(u===150||u===185)girlShriek(1,.7);
+        if(u===222){k.wm=0;k.lt=0;}   /* gone, instantly */
+        if(u>=330){k.tv=3;say("...",60);}}
+      return;}
+    if(m===4){   /* ---- NEW: back in the normal hallway after the parents' room ---- */
+      if(--k.lc<=0){k.lc=500+Math.floor(Math.random()*400);k.lt=12;thunder(k.lo?.35:.2,0);}
+      if(k.sh>0)k.sh--;
+      const hallLim=k.s>=6?HL.stx:k.s>=5?HL.sd+14:HL.pd+200;
+      if(k.hf){   /* too slow: he breaks out of the room */
+        k.hf++;k.walk=0;
+        if(k.hf===2){scream();thunder(.9,0);k.lt=18;rumble();doorCreak();k.dd={x:HL.pd+4,ft:0};}
+        if(k.dd&&k.hf>2&&k.hf<=75){const D=k.dd;D.ft++;D.x+=Math.sign(k.x-D.x||1)*2;if(D.ft%13===0)thud();if(Math.abs(D.x-k.x)<8)k.hf=76;}
+        if(k.hf===76){scream();thunder(.9,0);k.lt=18;}
+        if(k.hf===110)say("He got you...",110);
+        if(k.hf>=230)hlHallStart(k);
+        return;}
+      if(k.s===0){   /* you burst out of the door and run a few steps */
+        if(k.u===1){thud();thunder(.5,0);k.lt=10;growl();}
+        if(k.u<=44){k.dir=1;k.x+=1.15;k.walk+=.35;k.sa+=1.15;if(k.sa>=HZ.STRIDE){k.sa-=HZ.STRIDE;k.foot^=1;plop();}}
+        else{k.walk=0;k.s=1;k.bt=0;k.nb=20;say("He is coming out! Push the drawer against the door! (ENTER)",300);heartbeat(1);}
+        return;}
+      if(k.s===1||k.s===2){
+        k.bt++;
+        if(k.bt>=k.nb){thud();k.sh=7;if(Math.random()<.4)growl();k.nb=k.bt+Math.max(14,58-Math.floor(k.bt/11));}
+        if(k.bt>=600){k.hf=1;k.walk=0;return;}   /* 10 seconds are up */
+        if(k.s===1){
+          mv(HZ.SPEED);k.x=hzCl(k.x,HL.pd+14,HL.pd+150);
+          const nd=Math.abs(k.x-k.dX)<34;k.nr=nd?1:0;
+          if(enter&&nd){k.s=2;k.pp=0;k.x=k.dX+16;k.dir=-1;k.walk=0;dragSound();}}
+        else{   /* pushing: it takes 4 seconds */
+          k.pp++;k.walk+=.2;k.sa+=.5;if(k.sa>=HZ.STRIDE){k.sa-=HZ.STRIDE;k.foot^=1;}
+          if(k.pp%50===1)dragSound();
+          const p=Math.min(1,k.pp/240);k.dX=HL.pd+34-Math.round(34*p);k.x=k.dX+16;k.dir=-1;
+          if(k.pp>=240){k.s=3;k.dX=HL.pd;k.x=HL.pd+16;k.walk=0;k.nb=k.bt+50;say("It holds... for now.",210);heartbeat(1);windClick();}}
+        return;}
+      if(k.s===3){   /* blocked. he keeps pounding while you walk away */
+        k.bt++;if(k.bt>=k.nb){thud();k.sh=4;k.nb=k.bt+70+Math.floor(Math.random()*40);}
+        mv(HZ.SPEED);k.x=hzCl(k.x,HL.pd+14,hallLim);
+        if(k.x>=HL.pd+74){k.s=4;k.lof=1;k.sh=0;}
+        return;}
+      if(k.s===4){   /* the lights flicker and go out. A glow on top of the drawer. */
+        if(k.lof>0&&!k.lo){k.lof++;if(k.lof>=52){k.lo=1;k.lof=0;thunder(.4,0);rumble();heartbeat(1);windClick();k.lt=0;say("The lights... I can't see anything.",220);}}
+        if(k.lo){k.lu++;if(k.lu===240)say("There is a glow behind me. On the drawer.",250);}
+        mv(HZ.SPEED);k.x=hzCl(k.x,HL.pd+14,k.lo?HL.pd+170:hallLim);
+        if(k.lo&&k.x>=HL.pd+169&&!k.said.c){k.said.c=1;say("I can barely see. That glow behind me...",200);}
+        const nd=k.lo&&Math.abs(k.x-HL.pd)<34;k.nr=nd?7:0;
+        if(enter&&nd){k.cd=1;k.s=5;k.cm=0;seedChime();windClick();say("A candle. It is still lit. Who left it here?",230);}
+        return;}
+      if(k.s===5){   /* you have the candle: on to your sister's room */
+        k.cm++;if(k.cm===270)say("My sister's room. I have to find her.",230);
+        if(k.x>520&&!k.said.e){k.said.e=1;say("The whole house is silent.",190);}
+        mv(HZ.SPEED);k.x=hzCl(k.x,HL.pd+14,hallLim);
+        k.nr=Math.abs(k.x-HL.sd)<18?2:Math.abs(k.x-HL.wc)<16?3:0;
+        if(enter&&k.nr===2){doorCreak();hlGo(k,5,hlSisStart);}
+        if(enter&&k.nr===3){doorCreak();k.ps=5;hlGo(k,7,hlWcStart);}   /* NEW: the restroom */
+        return;}
+      if(k.s===6){   /* past your sister's room, all the way down the hall, past the kitchen, to the stairs */
+        mv(HZ.SPEED);k.x=hzCl(k.x,k.back?HL.pd+14:HL.sd+26,HL.stx);
+        if(k.x>1400&&!k.said.f){k.said.f=1;say("The kitchen is just ahead.",170);}
+        if(k.x>HL.kd+30&&!k.said.g){k.said.g=1;say("The stairs... I have to go down.",200);}
+        k.nr=k.x>=HL.stx-14?8:Math.abs(k.x-HL.cl)<16?5:(k.back&&Math.abs(k.x-HL.wc)<16)?3:0;
+        if(enter&&k.nr===5){if(!k.key){lockRattle();say("Locked. I need a key.",150);}else{doorCreak();hlGo(k,8,hlStoreStart);}}   /* NEW: this room opens with the key */
+        if(enter&&k.nr===3){doorCreak();k.ps=6;hlGo(k,7,hlWcStart);}
+        if(enter&&k.nr===8){plop();thud();hlGo(k,6,hlLivStart);}
+        return;}
+      return;}
+    if(m===5){   /* ---- NEW: your sister's room ---- */
+      const C=k.cr,bx=75;
+      if(k.sh>0)k.sh--;
+      if(k.cf){k.cf++;k.walk=0;if(k.cf===2){scream();thunder(.9,0);k.lt=16;}if(k.cf===40)say("It found you...",110);if(k.cf>=170)hlSisStart(k);return;}
+      if(k.sp===0){
+        if(k.u===40)say("Her room... it's so pink. Hello? Are you here?",230);
+        mv(HZ.SPEED);k.x=hzCl(k.x,14,186);
+        k.nr=k.x<30?1:0;
+        if(enter&&k.nr===1)say("I have to find her first.",120);
+        if((k.x>=130&&k.u>90)||k.u>1400){k.sp=1;C.t=0;}
+        return;}
+      if(k.sp===1){
+        C.t++;
+        if(!k.hid){mv(HZ.SPEED);k.x=hzCl(k.x,14,186);}else k.walk=0;
+        k.nr=(!k.hid&&Math.abs(k.x-bx)<36&&C.t>=20)?2:0;
+        if(C.t===1){say("The mirror... something is moving inside it.",200);heartbeat(.8);k.lt=8;}
+        if(C.t===70){crawlSting();dragSound();}
+        if(C.t===150)say("Hide! Under the bed! (ENTER)",270);
+        if(C.t<=330){C.e=Math.min(1,C.t/330);if(C.t%80===0)whisper(0,.22);}
+        else{C.e=1;
+          if(!k.hid){C.dir=k.x<C.x?-1:1;C.x+=C.dir*.34;C.w+=.3;if(C.t%120===0)heartbeat(1);
+            if(Math.abs(C.x-k.x)<9){k.cf=1;k.walk=0;return;}}}
+        C.up=Math.max(0,Math.min(1,(C.t-300)/60));
+        if(enter&&k.nr===2){k.hid=1;k.hu=0;k.x=bx;k.walk=0;k.nr=0;windClick();}
+        if(k.hid&&C.t>330){   /* you hold your breath for about 10 seconds */
+          const hu=++k.hu;
+          if(hu<170){const tx=118;if(Math.abs(C.x-tx)>1){C.dir=C.x<tx?1:-1;C.x+=C.dir*.4;C.w+=.3;}else C.dir=-1;if(hu%60===0)heartbeat(1);}
+          else if(hu<470){C.dir=-1;C.w=0;C.nk=Math.min(.86,(hu-170)/300);if(hu%65===0)heartbeat(1);if(hu%95===0)whisper(0,.3);}
+          else{
+            if(hu===470){thud();thunder(.9,0);rumble();k.sh=22;k.lt=14;}   /* a loud BANG somewhere in the house, right before it looks */
+            C.nk=Math.max(0,C.nk-.04);
+            if(hu>=488){C.dir=-1;C.x-=.9;C.w+=.35;if(C.x<=8){C.gone=1;k.sp=4;say("...It's gone. I think it's gone.",220);heartbeat(.6);}}}}
+        return;}
+      if(k.sp===4){k.walk=0;if(enter){k.hid=0;k.sp=5;k.x=bx;k.dir=1;windClick();say("Nothing. I have to keep going.",200);}return;}
+      if(k.sp===5){
+        mv(HZ.SPEED);k.x=hzCl(k.x,14,186);k.nr=k.x<30?1:0;
+        if(enter&&k.nr===1){doorCreak();hlGo(k,4,q=>{q.u=0;q.x=HL.sd;q.dir=1;q.walk=0;q.foot=0;q.sa=0;q.nr=0;q.msg="";q.mt=0;q.s=6;q.said={};q.lc=300;q.lt=0;q.hf=0;q.sh=0;});}
+        return;}
+      return;}
     if(m===0||m===2){   /* ---- the hallway ---- */
       if(--k.lc<=0){k.lc=m===2?260+Math.floor(Math.random()*200):520+Math.floor(Math.random()*400);k.lt=12;thunder(m===2?.35:.2,0);}
       const kn=m===2&&k.kn;
@@ -1479,7 +1702,7 @@ const hzOverlays=(ctx,h)=>{
       else if(k.p===5){   /* you are out. the door slams behind you and the dark begins */
         d.x-=.7;d.ft++;if(d.ft%13===0)thud();
         if(k.pu===30){thunder(.7,0);rumble();}
-        if(k.pu>=96){h.hl=null;hzBdEnd(h);}}
+        if(k.pu>=96)hlHallStart(k);}   /* CHANGED: back to the normal hallway (was: the horror hall) */
       else if(k.p===6){k.cu++;if(k.cu===40)say("He got you...",110);if(k.cu>=150){hlRoomStart(k);k.fi=40;}}
       return;}};
   const FYK=()=>HZ.FY-14;
@@ -1524,10 +1747,10 @@ const hzOverlays=(ctx,h)=>{
       r("#e8dcb8",x-10,41,20,18);r("#c8b890",x-10,41,20,1);r("#b83030",x-1,39,2,3);
       txt.push(["NO",x,47],["NERDS",x,52],["ALLOWED",x,57]);}
     /* wall decorations */
-    const sp=[90,170,300,380,455,540,700,780,860,930,1090,1170,1250,1330,1410,1570,1640,1720,1800,1880,1950];
+    const sp=[90,170,300,380,455,540,700,780,860,930,1090,1170,1250,1330,1410,1570,1640,1720,1800,1880,1950].concat(k.m===4?[2100,2180,2260]:[]);
     sp.forEach((x,i)=>{if(x>cam-30&&x<cam+V+30)hlDeco(c,r,x,hzH(i,7)%10,t,fl);});
     /* ceiling lamps */
-    for(let x=120;x<HL.L;x+=220){if(x>cam-10&&x<cam+V+10){r("#8a6a2a",x-5,5,10,3);r("#e8d090",x-4,8,8,2);}}
+    for(let x=120;x<(k.m===4?HL.L2:HL.L);x+=220){if(x>cam-10&&x<cam+V+10){r("#8a6a2a",x-5,5,10,3);r("#e8d090",x-4,8,8,2);}}
     if(ret){   /* the crack in the floor and the blood that comes up through it */
       const x=HL.sd;
       if(x>cam-60&&x<cam+V+60){
@@ -1539,6 +1762,224 @@ const hzOverlays=(ctx,h)=>{
         for(let j=0;j<5;j++){const o=(t*.8+j*37)%60;r("#b01010",x-30+j*14,106+Math.round(o*.4),1,2);}
         r("#7a0a0a",x-9,50,2,3);r("#7a0a0a",x-8,53,1,7);r("#7a0a0a",x+4,60,2,3);r("#7a0a0a",x+4,63,1,9);r("#7a0a0a",x-3,70,6,2);
       }}};
+  /* NEW: the chest of drawers you push against the door (cd = candle on top) */
+  const hlDrawer=(r,x,candle,t)=>{
+    r("#2a1a10",x-12,82,24,31);r("#6a4a2a",x-11,84,22,27);r("#7a5a34",x-12,82,24,3);r("#8a6a44",x-12,82,24,1);
+    for(let i=0;i<3;i++){r("#5a3c20",x-9,87+i*8,18,6);r("#4a2c18",x-9,87+i*8,18,1);r("#c9a24a",x-2,89+i*8,4,2);}
+    r("#3a2414",x-11,111,3,2);r("#3a2414",x+8,111,3,2);
+    if(candle){r("#c9a24a",x-3,81,7,2);r("#e9e2c8",x-1,75,3,6);r("#e8dcb8",x-1,75,1,6);r((t>>2)&1?"#ffd05a":"#ffb347",x,70,2,5);r("#fff3b0",x,72,1,2);}};
+  /* NEW: everything extra in the hallway after the parents' room: the shaking door, the drawer, the dad when he breaks out, and the stairs */
+  const hlHall4=(c,r,k,cam,t)=>{
+    const sx=k.sh>0?Math.round((Math.random()-.5)*2):0,bt=k.bt||0,P=HL.pd;
+    if(k.hf>2){   /* he broke out */
+      r("#2a1a10",P-13,35,26,71);r("#050507",P-11,38,22,68);r("#6a4a2a",P-11,38,3,68);
+      if(k.dd)hlDad(c,r,k.dd.x,3,t,1,k.dd.ft);}
+    else{
+      hlDoor(r,P+sx,38,"#6a4a2a","#5a3c20");
+      if(k.s<4){
+        if(bt>200){r("#1a0a08",P-4+sx,46,1,10);r("#1a0a08",P-3+sx,55,1,6);}
+        if(bt>380){r("#1a0a08",P+3+sx,50,1,12);r("#8a1010",P+4+sx,62,1,4);r("#1a0a08",P-6+sx,64,1,8);}
+        if(bt>500){r("#050507",P-1+sx,48,2,14);r("#a01010",P+sx,52,1,6);}
+        r((t>>3)&1?"rgba(190,20,20,.75)":"rgba(140,10,10,.75)",P-10,103,20,3);}}
+    hlDrawer(r,k.dX,k.lo&&!k.cd,t);
+    if(cam+HZ.VW>HL.stx-30){   /* the stairs going down */
+      const X=HL.stx+8;
+      r("#2a1a10",X-4,30,60,80);r("#050507",X,34,56,106);
+      for(let i=0;i<9;i++){r(i%2?"#5a3c24":"#4a3020",X+i*6,108+i*4,56-i*6,3);r("#2a1a10",X+i*6,111+i*4,56-i*6,1);}
+      r("#5a3c20",X-1,70,3,40);r("#7a5a34",X-2,68,5,3);for(let i=0;i<8;i++)r("#5a3c20",X+3+i*6,72+i*4,7,2);
+      r("#3a2414",X-8,106,10,2);}};
+  /* NEW: the thing that crawls out of your sister's mirror. Grey skin and rags like the ghosts, but a very long neck that arches up and bends down, because the head is too heavy.
+     e = how far out of the mirror it is, up = 0 crawling and 1 standing, nk = how far the neck bends down to look under the bed */
+  const hlCreature=(c,C,cam,t)=>{
+    const SK="#8d8f89",SH="#686a65",HI="#a5a7a0",RG="#26231f",HR="#171513",Y=121,e=C.e,mx=C.mx;
+    const R=(col,x,y,w,h)=>{c.fillStyle=col;c.fillRect(Math.round(x-cam),Math.round(y),w,h);};
+    const ln=(col,x0,y0,x1,y1,th)=>{const n=Math.max(Math.abs(x1-x0),Math.abs(y1-y0),1);for(let i=0;i<=n;i++)R(col,x0+(x1-x0)*i/n,y0+(y1-y0)*i/n,th,th);};
+    if(C.gone)return;
+    if(e<.55){   /* still inside the glass: a pale handprint, then a face pressed against it */
+      c.save();c.beginPath();c.rect(Math.round(mx-10-cam),31,20,80);c.clip();
+      c.globalAlpha=Math.min(1,e/.12);
+      if(e>=.05){R(HI,mx-6,64,1,5);R(HI,mx-5,62,1,7);R(HI,mx-3,61,1,8);R(HI,mx-1,62,1,7);R(HI,mx+1,64,1,5);R(SK,mx-6,69,8,3);}
+      if(e>=.22){const fy=44+Math.round((e-.22)*14);
+        R(HR,mx-6,fy-2,12,18);R(SK,mx-3,fy+1,6,8);R("#e8e8e0",mx-2,fy+3,2,2);R("#e8e8e0",mx+1,fy+3,2,2);R("#000",mx-1,fy+4,1,1);R("#000",mx+2,fy+4,1,1);R("#111",mx-1,fy+7,3,1);
+        R(HI,mx+4,72,1,5);R(HI,mx+5,70,1,7);R(HI,mx+7,69,1,8);R(SK,mx+3,76,6,3);}
+      c.restore();
+      if(e>=.4){const len=Math.min(36,Math.round((e-.4)*240));   /* two long arms come out over the frame and reach for the floor */
+        [-8,9].forEach((ax,i)=>{ln(SK,mx+ax,86,mx+ax+(i?3:-3),86+len,1);if(len>=36){R(SK,mx+ax+(i?1:-6),Y-1,6,1);R(SH,mx+ax+(i?2:-5),Y,5,1);}});}
+      return;}
+    const fade=Math.min(1,(e-.55)/.12),d=C.dir||-1,up=C.up,nk=C.nk||0;
+    const cx=e<1?mx-4-(e-.55)/.45*16:C.x;
+    const bob=up>.5?Math.round(Math.sin(C.w*1.2)*1):0;
+    const hipY=Math.round(114-14*up)+bob,shY=Math.round(110-22*up)+bob;
+    const hx=cx-d*Math.round((1-up)*12),sx=cx+d*Math.round(2*up+(1-up)*10);
+    c.globalAlpha=fade;
+    /* legs */
+    const sw=Math.round(Math.sin(C.w*1.2)*2*up);
+    if(up<.5){R(RG,Math.min(hx,hx-d*10),Y-5,10,3);R(SK,Math.min(hx-d*10,hx-d*16),Y-3,8,2);R(SK,Math.min(hx-d*10,hx-d*16),Y-1,8,1);}
+    else{[-2,2].forEach((o,i)=>{const lx=hx+o+(i?sw:-sw);R(RG,lx-1,hipY,3,9);R(SK,lx,hipY+9,2,Y-hipY-9);R(SH,lx-1,Y-1,3,1);});}
+    /* torso (ribs under a torn shirt) */
+    for(let i=0;i<=5;i++){const px=sx+(hx-sx)*i/5,py=shY+(hipY-shY)*i/5;R(SK,px-3,py,7,3);}
+    R(RG,(sx+hx)/2-3,(shY+hipY)/2,7,Math.max(3,Math.round(hipY-shY)*.5));
+    R(SH,sx-2,shY+2,1,1);R(SH,sx,shY+2,1,1);R(SH,sx+2,shY+3,1,1);
+    /* arms: very long, hands on the floor */
+    [-1,1].forEach(s=>{const ax=sx+s*4,hxd=up>.5?ax+s*1+(s>0?2:-2)*Math.sin(C.w*1.2)*.6:sx+d*(10+s*3);ln(SK,ax,shY+1,hxd,Y-2,1);R(SK,hxd-1,Y-1,3,1);R(SH,hxd,Y,2,1);});
+    /* the long neck: it rises, arches over and hangs down because the head is too heavy */
+    const S={x:sx,y:shY},E={x:sx+d*Math.round(20+16*nk+(1-up)*8),y:Math.round(66+up*0+nk*52+(1-up)*38)},sway=Math.sin(t*.05)*2,
+      Cp={x:S.x+d*(6+nk*8)+sway,y:S.y-(70-nk*30-(1-up)*38)};
+    let hxp=E.x,hyp=E.y;
+    for(let i=0;i<=22;i++){const s=i/22,a=(1-s)*(1-s),b=2*(1-s)*s,cc=s*s,px=a*S.x+b*Cp.x+cc*E.x,py=a*S.y+b*Cp.y+cc*E.y;R(i%4===2?SH:SK,px-1,py,3,3);}
+    /* the head, hanging at the end: long dark hair, sunken white eyes, a mouth that is too wide */
+    R(HR,hxp-4,hyp-2,9,6);R(SK,hxp-3,hyp+1,7,8);R(HR,hxp-4,hyp+1,2,12);R(HR,hxp+3,hyp+1,2,12);
+    R("#e8e8e0",hxp-2,hyp+3,2,2);R("#e8e8e0",hxp+1,hyp+3,2,2);R("#000",hxp-1,hyp+4,1,1);R("#000",hxp+2,hyp+4,1,1);
+    R("#1a0808",hxp-2,hyp+7,5,2);R("#e8e2d6",hxp-2,hyp+7,1,1);R("#e8e2d6",hxp,hyp+7,1,1);R("#e8e2d6",hxp+2,hyp+7,1,1);
+    c.globalAlpha=1;};
+  /* NEW: your sister's room. Pink and girly. A tall mirror on the right, the bed on the left (you can hide under it). */
+  const hlSis=(c,r,k,cam,t,fl,txt)=>{const V=HZ.VW,FY=HZ.FY,C=k.cr,mx=C.mx,bx0=36,ev=k.sp>=1;
+    for(let x=0;x<200;x+=10){r((x/10)%2?"#e9b6ca":"#e3a9c0",x,0,10,104);if((x/10)%2){r("#f6d0de",x+4,14,2,2);r("#f6d0de",x+4,46,2,2);r("#f6d0de",x+4,78,2,2);}}
+    r("#c88aa4",0,0,200,4);r("#f4e4ec",0,4,200,2);r("#f4e4ec",0,98,200,6);r("#d8a0b8",0,100,200,1);
+    for(let x=0;x<200;x+=20)r(((x/20)|0)%2?"#c9a27a":"#bf966c",x,105,20,35);
+    r("#8a6a4a",0,105,200,2);
+    /* fluffy round rug */
+    for(let yy=-7;yy<=7;yy++){const w=Math.round(46*Math.sqrt(1-(yy*yy)/64));r(yy%2?"#f4c6d8":"#f9d4e2",132-w,127+yy,w*2,1);}
+    /* fairy lights along the top */
+    for(let x=0;x<200;x+=5){const y=9+Math.round(3*Math.sin(x*.12));r("#6a4a5a",x,y,5,1);if(x%10===0){const on=ev?((t>>2)+x)%7>1:true;r(on?["#ffd0e0","#fff0a0","#c0e8ff","#d0ffd0"][(x/10)%4]:"#5a4a52",x+1,y+1,2,3);}}
+    /* the door you came in by */
+    r("#d8a0b8",3,36,26,70);r("#0a0608",5,38,22,68);r("#c88aa4",3,36,26,2);
+    /* unicorn poster */
+    r("#f4e4ec",56,22,18,24);r("#d8c4f0",58,24,14,20);r("#fff",62,32,7,6);r("#fff",66,28,2,5);r("#f4d84a",67,25,1,3);r("#f08cb0",58,40,14,1);r("#a8d8f0",58,41,14,1);r("#f4e4a0",58,42,14,1);
+    /* window with pink curtains (the storm outside) */
+    r("#f4e4ec",118,20,26,38);r(fl>0?"#9aaad8":"#0a1230",120,22,22,34);for(let j=0;j<5;j++){const px=120+((j*7+(t>>1))%19),py=22+((j*11+t*2)%30);r(fl>0?"#d8e4ff":"#6a7aaa",px,py,1,2);}
+    r("#f4e4ec",130,22,2,34);r("#f08cb0",114,18,8,42);r("#f08cb0",140,18,8,42);r("#d8789c",114,18,2,42);r("#d8789c",146,18,2,42);
+    /* bookshelf with plushies */
+    r("#f4e4ec",118,66,28,40);r("#e0cdd8",120,68,24,36);r("#f4e4ec",120,80,24,2);r("#f4e4ec",120,92,24,2);
+    r("#c8a078",122,72,6,8);r("#d89aa8",130,73,5,7);r("#a8c8e8",137,71,6,9);                          /* teddy and friends */
+    r("#7a9ad8",122,84,3,8);r("#d878a0",125,85,3,7);r("#f4d84a",128,84,3,8);r("#8ad8a0",131,86,3,6);r("#c8a0e8",134,84,3,8);r("#f08cb0",137,85,3,7);   /* books */
+    r("#f4e4ec",124,96,8,8);r("#f8b8cc",125,97,6,6);r("#000",126,99,1,1);r("#000",129,99,1,1);                                                        /* bunny */
+    /* the bed (head on the left): a gap underneath to hide in */
+    r("#1a0f14",bx0+3,108,70,13);
+    r("#f4e4ec",bx0,100,76,6);r("#f4e4ec",bx0,108,3,13);r("#f4e4ec",bx0+73,108,3,13);
+    r("#f4e4ec",bx0-3,60,6,48);r("#f4b6cc",bx0-2,64,4,7);r("#d8789c",bx0-1,65,2,2);
+    r("#fff3f8",bx0+4,90,70,10);r("#f08cb0",bx0+18,88,56,12);r("#d8789c",bx0+18,88,56,1);
+    for(let x=bx0+22;x<bx0+72;x+=10){r("#fff",x,92,2,2);r("#fff",x+3,92,2,2);r("#fff",x+1,94,3,1);}
+    r("#fff",bx0+4,83,16,7);r("#e8d0dc",bx0+4,89,16,1);
+    r("#e8d4dc",bx0+8,72,9,11);r("#e8d4dc",bx0+9,66,2,7);r("#e8d4dc",bx0+13,66,2,7);r("#f8b8cc",bx0+9,67,1,5);r("#000",bx0+10,76,1,1);r("#000",bx0+14,76,1,1);   /* plush bunny on the pillow */
+    /* little vanity with perfume bottles */
+    r("#f4e4ec",150,86,12,20);r("#e0cdd8",151,92,10,1);r("#d8789c",152,80,3,6);r("#a8d8f0",156,82,3,4);r("#f4d84a",158,84,2,2);
+    /* the tall mirror */
+    const gl=ev?"#26364c":"#9ab6cc";
+    r("#f4d4e0",mx-14,22,28,92);r("#e8b4c8",mx-14,22,28,2);r("#d8789c",mx-2,16,4,6);r("#d8789c",mx-4,18,2,3);r("#d8789c",mx+2,18,2,3);r("#c88aa4",mx-12,26,24,86);
+    r(gl,mx-10,30,20,80);
+    if(!ev){r("#c8dcea",mx-7,34,2,12);r("#c8dcea",mx-4,34,1,6);r("#b0cade",mx+3,60,2,10);}
+    else{for(let y=32;y<108;y+=4)r("rgba(140,180,230,.28)",mx-10+((t>>1)+y)%4,y,15,1);if(C.t<60)r("rgba(180,210,255,.15)",mx-10,30,20,80);}
+    /* the thing */
+    if(k.sp>=1)hlCreature(c,C,cam,t);
+    /* you, hiding under the bed */
+    if(k.hid){r("#2b3f6e",bx0+16,115,22,4);r("#232a45",bx0+30,115,12,4);r("#cfa77a",bx0+11,114,6,5);r("#3a2a1a",bx0+11,114,6,2);r("#e8e8e0",bx0+14,116,1,1);r("#1a1a22",bx0+40,118,4,2);}
+    /* the front of the bed hides most of you */
+    if(k.hid){r("#f4e4ec",bx0,100,76,6);r("#f4e4ec",bx0,108,3,13);r("#f4e4ec",bx0+73,108,3,13);}
+    else hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,1,0);};
+  /* NEW: the ghost for the lit opening. Same ghost as in the hall, but when it stops in the middle its head twists all the way round, then snaps back to stare at you. tw = frames since it stopped (0 to 63), -1 = walking */
+  const hzGhostTw=(c,gx,fy,t,dr,tw)=>{
+    const f=dr||1,Y=Math.round(fy)-1,bob=(t>>4)&1,sw=Math.round(Math.sin(t*.07+gx)),SK="#8d8f89",SH="#686a65",HR="#171513";
+    const r=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h);};
+    c.save();c.beginPath();c.rect(gx-14,Y-16,28,24);c.clip();hzGhost(c,gx,fy,tw<0?t:0,0,tw<0?dr:0);c.restore();
+    const u=Math.max(0,tw),bk=u<12?0:u<28?(u-12)/16:u<40?1:u<46?1-(u-40)/6:0,st=u>=44&&u<60?1:0;
+    const hx=Math.round(gx+f+(tw<0?sw:0)),hy=Y-23+bob+1-Math.round(bk*2)+(u>=12&&u<44&&((u>>2)&1)?0:0);
+    r(hx-3,hy-1,7,2,HR);r(hx-3,hy+1,1,8,HR);r(hx+3,hy+1,1,8,HR);r(hx-2,hy+1,5,8,HR);
+    if(bk>=.99){r(hx,hy+2,1,6,"#0a0908");return;}
+    const fw=Math.max(1,Math.round(5*(1-bk))),fx=hx-2+Math.round((5-fw)*(f>0?1:0));
+    r(fx,hy,fw,6,SK);r(fx,hy+5,fw,1,SH);
+    if(fw>=3){r(fx,hy+2,fw,2,"#050505");
+      if(st){r(fx,hy+2,2,2,"#ffffff");r(fx+fw-2,hy+2,2,2,"#ffffff");r(fx+1,hy+3,1,1,"#c01010");r(fx+fw-2,hy+3,1,1,"#c01010");r(fx+1,hy+4,fw-2,3,"#050505");r(fx+1,hy+4,1,1,"#e8e2d6");r(fx+fw-2,hy+4,1,1,"#e8e2d6");r(fx+2,hy+6,1,1,"#a01010");}
+      else{r(fx,hy+3,1,1,"#ffffff");r(fx+fw-1,hy+3,1,1,"#ffffff");r(fx+Math.floor(fw/2),hy+5,1,1,"#2a2220");}}};
+  /* NEW: the woman who screams "don't kill me" (faces left, towards you) */
+  const hlWoman=(c,x,fy,t,mo)=>{x=Math.round(x);const Y=Math.round(fy)-1;
+    const r=(ox,oy,w,h,col)=>{c.fillStyle=col;c.fillRect(x+ox,Y+oy,w,h);};
+    const SKN="#c8a888",HRR="#2a1a14",GN="#d8d0c4",BL="#7a0a0a",B2="#a01010";
+    r(-3,-9,2,9,SKN);r(1,-9,2,9,SKN);r(-4,-1,3,1,"#a88868");r(1,-1,3,1,"#a88868");              /* bare legs and feet */
+    r(-5,-27,10,19,GN);r(-6,-10,12,3,GN);r(-6,-8,2,2,GN);r(2,-8,3,2,GN);                         /* torn nightgown */
+    r(-3,-22,2,10,BL);r(1,-18,3,8,BL);r(-1,-14,2,6,B2);r(-5,-12,1,6,BL);r(3,-9,2,3,BL);          /* blood */
+    r(-8,-30,2,9,SKN);r(-9,-33,3,4,SKN);r(-11,-35,5,2,SKN);r(-12,-37,1,3,SKN);r(-10,-38,1,3,SKN);r(-8,-37,1,2,SKN);   /* one hand up, begging */
+    r(5,-28,2,8,SKN);r(5,-34,2,7,SKN);r(3,-35,3,2,SKN);                                          /* the other arm shielding her face */
+    r(-4,-35,9,2,HRR);r(-5,-34,2,26,HRR);r(4,-34,2,24,HRR);r(-3,-34,7,3,HRR);                    /* long dark hair */
+    r(-3,-32,7,9,SKN);r(-3,-25,7,1,"#a88868");
+    r(-3,-30,3,3,"#ffffff");r(1,-30,3,3,"#ffffff");r(-2,-29,1,1,"#1a1a22");r(2,-29,1,1,"#1a1a22");    /* huge eyes */
+    r(-2,-27,1,5,B2);r(2,-27,1,4,B2);r(-1,-33,2,2,BL);r(2,-31,2,1,"#6a3a5a");                        /* tears of blood, a cut, a bruise */
+    const mh=2+Math.round(mo*3);r(-1,-24,3,mh,"#150404");r(-1,-24,3,1,"#e8e2d6");r(0,-24+mh-1,1,1,B2);};   /* mouth wide open */
+  /* NEW: the restroom */
+  const hlWc=(c,r,k,cam,t,fl,txt)=>{const FY=HZ.FY,MX=172,wf=k.wf||0;
+    for(let x=0;x<200;x+=8)for(let y=0;y<98;y+=8)r((((x+y)/8)|0)%2?"#9fb0a2":"#a8b8aa",x,y,8,8);
+    r("#7a8a7c",0,98,200,6);r("#5a6a5c",0,103,200,1);
+    for(let x=0;x<200;x+=10)for(let y=105;y<140;y+=7)r(((((x/10)|0)+(((y-105)/7)|0))%2)?"#d8d8d0":"#3a3a3c",x,y,10,7);
+    r("#6e5a3a",3,36,26,70);r("#0a0608",5,38,22,68);
+    /* written on the wall in blood: WHAT DID YOU DO */
+    const G={W:"101101101111101",H:"101101111101101",A:"010101111101101",T:"111010010010010",D:"110101101101110",I:"111010010010111",Y:"101101010010010",O:"010101101101010",U:"101101101101111"};
+    let cx=88;"WHAT DID YOU DO".split("").forEach((ch,i)=>{if(ch===" "){cx+=3;return;}const g=G[ch];for(let j=0;j<15;j++)if(g[j]==="1")r("#8a0a0a",cx+(j%3),30+Math.floor(j/3),1,1);
+      if(i%2===0)r("#6a0606",cx+1,35,1,3+(i*5)%9);cx+=4;});
+    r("#8a0a0a",56,50,7,8);r("#8a0a0a",56,47,1,4);r("#8a0a0a",58,46,1,5);r("#8a0a0a",60,46,1,5);r("#8a0a0a",62,48,1,4);r("#6a0606",58,58,2,6);   /* a bloody handprint */
+    /* the bathtub, full of blood */
+    r("#e8e8e4",90,78,64,4);r("#7a0808",93,82,58,7);r("#a01010",96,83,22,1);r("#5a0606",122,86,26,2);
+    r("#e8e8e4",90,89,64,3);r("#d8d8d2",92,92,60,16);r("#b8b8b2",92,106,60,2);r("#9a9a94",94,108,4,4);r("#9a9a94",146,108,4,4);
+    r("#7a0808",100,92,2,13);r("#6a0606",133,92,3,16);r("#8a0a0a",118,92,1,8);r("#6a0606",96,112,52,5);r("#7a0808",100,113,40,3);
+    /* the toilet, red too */
+    r("#e8e8e4",56,66,16,22);r("#d8d8d2",58,68,12,18);r("#e8e8e4",62,88,22,6);r("#7a0808",64,88,18,2);r("#d8d8d2",64,94,18,10);r("#7a0808",78,88,3,13);r("#6a0606",66,94,2,9);r("#b8b8b2",64,104,18,3);r("#6a0606",60,110,26,4);
+    r("#a0a0a0",62,64,4,2);
+    /* the sink under the mirror, also full of blood */
+    r("#e8e8e4",160,76,28,6);r("#7a0808",163,76,22,3);r("#a01010",165,77,8,1);r("#e8e8e4",168,82,12,24);r("#c8c8c2",168,104,12,2);
+    r("#7a0808",172,82,2,18);r("#6a0606",177,82,1,10);r("#6a0606",166,108,22,4);r("#a0a0a0",172,70,3,6);r("#a0a0a0",170,70,7,1);
+    /* the mirror */
+    r("#8a7a5a",159,26,28,40);
+    if(wf<2){r("#9ab0b8",162,29,22,34);r("#c8dce4",164,31,2,12);r("#c8dce4",167,31,1,6);r("#6a0606",180,31,2,12);
+      if(wf===1){   /* you, looking at yourself */
+        const w=k.wt;r("#7a8a96",162,29,22,34);
+        r("#2b3f6e",164,53,18,10);r("#cfa77a",170,38,7,9);r("#3a2a1a",169,36,9,4);r("#3a2a1a",169,38,1,6);r("#3a2a1a",177,38,1,6);
+        if(w<100){r("#1a1a22",171,42,1,2);r("#1a1a22",175,42,1,2);}else{r("#000",170,41,3,4);r("#000",174,41,3,4);}
+        if(w>140){r("#8a0a0a",171,45,1,8);r("#8a0a0a",175,45,1,10);}
+        r("#8a4a3a",172,47,3,1);r((t>>2)&1?"#ffd05a":"#ffb347",179,46,2,3);}}
+    else{r("#2a2a2c",162,29,22,34);r("#9ab0b8",162,29,7,9);r("#9ab0b8",176,29,8,6);r("#9ab0b8",166,50,8,13);r("#9ab0b8",178,54,6,9);
+      r("#e8f0f4",166,38,1,1);r("#e8f0f4",168,41,1,1);r("#e8f0f4",170,44,1,1);r("#e8f0f4",172,47,1,1);r("#e8f0f4",178,36,1,1);r("#e8f0f4",176,39,1,1);r("#e8f0f4",174,42,1,1);
+      r("#9ab0b8",164,74,2,1);r("#9ab0b8",178,76,3,1);r("#9ab0b8",160,112,3,1);r("#9ab0b8",186,114,2,1);r("#9ab0b8",170,110,3,1);}
+    hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,1,0);};
+  /* NEW: the room the key opens (empty for now) */
+  const hlStore=(c,r,k,cam,t,fl,txt)=>{const FY=HZ.FY;
+    for(let x=0;x<200;x+=10)r((x/10)%2?"#4a4036":"#44392f",x,0,10,104);r("#2a2420",0,98,200,6);
+    for(let x=0;x<200;x+=20)r(((x/20)|0)%2?"#4a3422":"#3e2c1c",x,105,20,35);
+    r("#6e5a3a",3,36,26,70);r("#0a0608",5,38,22,68);
+    hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,1,0);};
+  /* NEW: downstairs. A plain wall, an opening with a light on and something walking past it, then the living room with a sofa, a tv and a gaming corner. */
+  const hlLiv=(c,r,k,cam,t,fl,txt)=>{const V=HZ.VW,FY=HZ.FY,G0=620,G1=684;
+    for(let x=Math.floor(cam/16)*16;x<cam+V+16;x+=16)r(((x/16)|0)%2?"#4a4f58":"#464b54",x,0,16,104);
+    r("#2a2420",cam,98,V,6);r("#1a1614",cam,0,V,5);
+    for(let x=Math.floor(cam/20)*20;x<cam+V+20;x+=20)r(((x/20)|0)%2?"#4a3422":"#3e2c1c",x,105,20,35);
+    /* the lit opening */
+    if(cam+V>G0-6&&cam<G1+6){
+      r("#241810",G0-4,22,G1-G0+8,86);r("#d4b866",G0,26,G1-G0,79);
+      for(let y=30;y<104;y+=10)r("#c8a850",G0,y,G1-G0,1);
+      r("#fff6c8",G0+14,26,36,3);r("#6a4a2a",G0+6,88,3,16);r("#f4e4a0",G0+3,78,9,10);r("#fff8d0",G0+5,79,5,3);   /* a lamp that is on */
+      r("#6a4a2a",G0+38,44,18,14);r("#a8c8a0",G0+40,46,14,10);                                           /* a picture */
+      r("#8a6a44",G0,105,G1-G0,35);
+      if(k.gx>-900){c.save();c.beginPath();c.rect(G0-cam,26,G1-G0,100);c.clip();hzGhostTw(c,k.gx-cam,FY-4,t,k.gd||1,k.gtw);c.restore();}}
+    /* the living room */
+    const LR=730;
+    for(let x=Math.max(LR,Math.floor(cam/16)*16);x<cam+V+16;x+=16)r(((x/16)|0)%2?"#4e4238":"#4a3e34",x,5,16,93);
+    r("#6a3a2a",778,74,86,22);r("#7a4a34",778,92,86,14);r("#5a2e22",770,80,10,26);r("#5a2e22",862,80,10,26);r("#6a3a2a",772,78,6,4);r("#6a3a2a",864,78,6,4);   /* the sofa */
+    r("#8a5a44",784,90,22,3);r("#8a5a44",810,90,22,3);r("#8a5a44",836,90,22,3);r("#2b3f6e",788,84,14,8);r("#1a1a22",846,92,10,3);r("#e84a4a",848,92,2,1);   /* cushions, a blanket, a controller */
+    r("#2a1a10",792,34,40,28);r("#a8b8b0",794,36,36,24);r("#6a8a7a",794,48,36,12);r("#e8d8a0",820,38,6,6);                              /* a picture above the sofa */
+    r("#2a2018",890,94,68,12);r("#1a140e",892,96,30,8);r("#1a1a1e",896,97,20,6);r("#38d858",898,98,2,1);r("#3a8ae8",902,98,2,1);r("#1a1a22",926,99,8,4);r("#1a1a22",936,99,8,4);r("#2a2a30",922,100,6,1);   /* tv stand, console, controllers */
+    r("#101014",898,60,52,34);
+    if(k.tv>=1&&k.tv<3&&k.tu<222){for(let y=0;y<30;y+=2)for(let x=0;x<48;x+=2)if(Math.random()<.5)r(Math.random()<.5?"#d8dce0":"#788088",900+x,62+y,2,2);r("#e8ecf0",900,62+((t>>1)%30),48,1);}
+    else{r("#0a0e12",900,62,48,30);r("#1a2228",902,64,12,8);}
+    r("#1e1e24",974,82,84,4);r("#1e1e24",978,86,3,20);r("#1e1e24",1050,86,3,20);r(((t>>5)&1)?"#b020e0":"#20c0e0",974,86,84,1);          /* gaming desk with a light strip */
+    r("#101014",978,54,32,26);r("#162a3a",980,56,28,22);r("#3a8ae8",982,60,14,2);r("#3a8ae8",982,64,20,1);r("#38d858",982,68,10,1);r("#2a2a30",990,80,6,2);
+    r("#101014",1016,58,26,22);r("#2a1a3a",1018,60,22,18);r("#b020e0",1020,64,12,2);r("#20c0e0",1020,68,16,1);
+    r("#2a2a30",984,82,22,2);r("#2a2a30",1046,82,6,2);r("#c01818",1012,78,3,4);r("#18a838",1052,78,3,4);                                     /* keyboard, mouse, cans */
+    r("#1a1a22",966,60,2,16);r("#2a2a30",964,58,7,3);r("#1a1a22",962,74,6,4);                                                              /* headset on a hook */
+    r("#1a1a22",996,70,14,30);r("#a01818",998,72,10,24);r("#1a1a22",996,98,18,4);r("#1a1a22",1002,102,3,6);r("#2a2a30",996,108,16,2);       /* gaming chair */
+    r("#e84a8a",1010,28,40,2);r("#e84a8a",1010,28,2,12);r("#e84a8a",1048,28,2,12);r("#20c0e0",1010,38,40,2);r("#e84a8a",1018,32,6,3);r("#20c0e0",1028,32,6,3);   /* a neon sign */
+    r("#2a2018",1074,60,46,46);r("#3a2e22",1076,62,42,3);r("#3a2e22",1076,80,42,3);r("#3a2e22",1076,96,42,3);r("#e84a4a",1078,50,6,10);r("#3a8ae8",1086,52,6,8);r("#d8c040",1094,64,4,16);r("#c8a0e8",1100,66,4,14);r("#38d858",1108,70,6,10);
+    r("#5a2a3a",884,112,74,18);r("#6a3a4a",888,114,66,14);
+    /* the woman */
+    if(k.wm)hlWoman(c,966-cam,FY,t,(k.tu>>3)&1);
+    hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,1,0);};
   const hlKit=(c,r,k,cam,t,fl,txt)=>{const V=HZ.VW,FY=HZ.FY;
     for(let x=0;x<200;x+=8){r((x/8)%2?"#a09062":"#98885c",x,0,8,106);}
     for(let x=0;x<200;x+=4)for(let y=60;y<106;y+=4)r(((x+y)/4)%2?"#c9c4b0":"#b8b3a0",x,y,4,4);
@@ -1565,7 +2006,7 @@ const hzOverlays=(ctx,h)=>{
     k.sh.forEach(s=>{if(s.l>0)r("rgba(210,230,245,.9)",s.x,s.y,1,1);});
     if(k.cup===4)r("rgba(200,225,245,.85)",k.cx-1,k.cy,3,4);
     /* player (and the glass in his hand) */
-    hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,0);
+    hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,0,1);
     if(k.cup===1||(k.cup===3&&!k.yell)){const px=Math.round(k.x-cam)+k.dir*4;c.fillStyle="rgba(200,225,245,.85)";c.fillRect(px-1,FY-15,3,5);c.fillStyle="#fff";c.fillRect(px,FY-15,1,4);if(k.cup===3){c.fillStyle="rgba(110,170,230,.85)";c.fillRect(px-1,FY-13,3,3);}}};
   /* the dad. st: 0 eating  1 turns his head  2 standing up, deformed  3 running at you */
   const hlDad=(c,r,x,st,t,rise,ft)=>{
@@ -1620,23 +2061,40 @@ const hzOverlays=(ctx,h)=>{
     for(let yy=-3;yy<=3;yy++){const w=Math.round(24*Math.sqrt(1-(yy*yy)/16));r(yy%2?"#4a0404":"#5a0606",150-w,124+yy,w*2,1);}
     hlDad(c,r,d.x,st,k.p===2?0:t,st>=2?(k.p===3?Math.min(1,k.pu/60):1):0,d.ft);
     k.ps.forEach(s=>r("#b01010",s.x,s.y,1,1));
-    if((k.p!==6||k.cu<12)&&!(k.p===5&&k.pu>12))hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,0);};
+    if((k.p!==6||k.cu<12)&&!(k.p===5&&k.pu>12))hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,0,1);};
   const hzHlDraw=(ctx,h)=>{const k=h.hl,V=HZ.VW,VH=HZ.VH,FY=HZ.FY,t=k.t,m=k.m;
     if(!h.A){h.A=document.createElement("canvas");h.B=document.createElement("canvas");h.A.width=h.B.width=V;h.A.height=h.B.height=VH;}
     const c=h.A.getContext("2d"),cam=hlCam(k),r=(col,x,y,w,hh)=>{c.fillStyle=col;c.fillRect(Math.round(x-cam),y,w,hh);};
     c.globalCompositeOperation="source-over";const fl=k.lt>0?Math.min(1,k.lt/6):0,txt=[];
     const ret=m===2;
-    if(m===0||m===2){hlHall(c,r,k,cam,t,fl,txt,ret);
+    if(m===0||m===2||m===4){hlHall(c,r,k,cam,t,fl,txt,ret);
+      if(m===4)hlHall4(c,r,k,cam,t);
       if(k.kn&&k.ku>=120){const o=Math.min(1,(k.ku-120)/40);r("#2a1a10",HL.pd-13,35,26,71);r("#050507",HL.pd-11,38,22,68);if(o>0)r("rgba(120,60,40,"+(.4*o)+")",HL.pd-11,38,22,68);r("#6a4a2a",HL.pd-11,38,Math.max(3,Math.round(22*(1-o))),68);}
-      hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,0);}
+      if(!(m===4&&k.hf>75))hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,(m===4&&k.cd)?1:0,(m===4&&k.cd)?0:1);}
     else if(m===1)hlKit(c,r,k,cam,t,fl,txt);
-    else hlRoom(c,r,k,cam,t,fl,txt);
-    ctx.imageSmoothingEnabled=false;ctx.drawImage(h.A,0,0,V,VH,0,0,W,H);
+    else if(m===3)hlRoom(c,r,k,cam,t,fl,txt);
+    else if(m===5)hlSis(c,r,k,cam,t,fl,txt);
+    else if(m===6)hlLiv(c,r,k,cam,t,fl,txt);
+    else if(m===7)hlWc(c,r,k,cam,t,fl,txt);
+    else hlStore(c,r,k,cam,t,fl,txt);
+    ctx.imageSmoothingEnabled=false;{const shk=(k.sh>0&&m===5)?Math.round((Math.random()-.5)*10):0;ctx.drawImage(h.A,0,0,V,VH,shk,0,W,H);}
     /* darkness: warm and normal at first, blood-dark on the way back, very dark in the parents' room */
     const flick=(ret&&((t>>2)%23===0))?.25:0;
-    ctx.fillStyle="rgba(0,0,0,"+((m===0?.2:m===1?.3:m===2?.5+flick:.55)-.2*fl)+")";ctx.fillRect(0,0,W,H);
-    if(m===0||m===2){for(let x=120;x<HL.L;x+=220){if(x<cam-90||x>cam+V+90)continue;const lx=(x-cam)*3,lg=ctx.createRadialGradient(lx,26,6,lx,26,ret?150:210);lg.addColorStop(0,ret?"rgba(255,150,90,.18)":"rgba(255,200,110,.3)");lg.addColorStop(1,"rgba(255,180,90,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();}}
+    ctx.save();if(m===6){ctx.beginPath();ctx.rect(0,0,W,H);ctx.rect((620-cam)*3,24*3,64*3,84*3);ctx.clip("evenodd");}   /* the opening with the light on is not darkened */
+    {const bas=m===4?(k.lo?(k.cd?.22:.8):.22+((k.lof>0&&((k.lof>>2)&1))?.5:0)):m===5?(k.hid?.6:.34+(k.sp>=1?.14:0)):m===6?.6:m===7?.3:m===8?.5:(m===0?.2:m===1?.3:m===2?.5+flick:.55);
+      ctx.fillStyle="rgba(0,0,0,"+(bas-.2*fl)+")";ctx.fillRect(0,0,W,H);}
+    if((m===4&&k.lo)||m>=6){   /* the dark you can still see in: the candle on the drawer, then your own candle */
+      const cx=(k.cd||m>=6)?(k.x-cam)*3+k.dir*14:(HL.pd-cam)*3,cy=(k.cd||m>=6)?(FY-16)*3:78*3;
+      const gr=ctx.createRadialGradient(cx,cy,10,cx,cy,(k.cd||m>=6)?240:170);gr.addColorStop(0,"rgba(255,190,100,"+(.32+.05*Math.sin(t*.3))+")");gr.addColorStop(1,"rgba(255,190,100,0)");
+      ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);ctx.restore();
+      if(k.cd||m>=6){const g2=ctx.createRadialGradient(cx,cy,24,cx,cy,250);g2.addColorStop(0,"rgba(0,0,0,0)");g2.addColorStop(1,"rgba(0,0,0,"+(m===7?.5:.7)+")");ctx.fillStyle=g2;ctx.fillRect(0,0,W,H);}}
+    ctx.restore();
+    if(m===0||m===2||(m===4&&!k.lo)){for(let x=120;x<HL.L;x+=220){if(x<cam-90||x>cam+V+90)continue;const lx=(x-cam)*3,lg=ctx.createRadialGradient(lx,26,6,lx,26,ret?150:210);lg.addColorStop(0,ret?"rgba(255,150,90,.18)":"rgba(255,200,110,.3)");lg.addColorStop(1,"rgba(255,180,90,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();}}
     else if(m===1){const lx=70*3-cam*3,lg=ctx.createRadialGradient(lx,60,10,lx,60,300);lg.addColorStop(0,"rgba(255,220,150,.22)");lg.addColorStop(1,"rgba(255,200,120,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();}
+    else if(m===6){const og=ctx.createRadialGradient((652-cam)*3,200,10,(652-cam)*3,200,170);og.addColorStop(0,"rgba(255,210,110,.28)");og.addColorStop(1,"rgba(255,210,110,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=og;ctx.fillRect(0,0,W,H);
+      if(cam+V>870&&k.tv<3&&!(k.tv===1&&k.tu>=222)){const tg=ctx.createRadialGradient((924-cam)*3,230,10,(924-cam)*3,230,220);tg.addColorStop(0,"rgba(150,190,255,"+(k.tv>=1?.22:.07)+")");tg.addColorStop(1,"rgba(150,190,255,0)");ctx.fillStyle=tg;ctx.fillRect(0,0,W,H);}ctx.restore();}
+    else if(m===5){const lx=(100-cam)*3,lg=ctx.createRadialGradient(lx,230,6,lx,230,230);lg.addColorStop(0,"rgba(255,170,210,"+(k.sp>=1?.1:.22)+")");lg.addColorStop(1,"rgba(255,170,210,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();
+      if(k.sp>=1&&k.sp<4&&!k.hid){const mx3=(k.cr.mx-cam)*3,g3=ctx.createRadialGradient(mx3,200,10,mx3,200,200);g3.addColorStop(0,"rgba(120,160,255,.16)");g3.addColorStop(1,"rgba(120,160,255,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=g3;ctx.fillRect(0,0,W,H);ctx.restore();}}
     else{const lx=(122-cam)*3,lg=ctx.createRadialGradient(lx,270,6,lx,270,200);lg.addColorStop(0,"rgba(255,170,80,.16)");lg.addColorStop(1,"rgba(255,170,80,0)");ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();
       if(k.p>=3&&k.p!==6){ctx.fillStyle="rgba(120,0,0,"+(.1+.06*Math.sin(t*.4))+")";ctx.fillRect(0,0,W,H);}}
     if(fl>0){ctx.fillStyle="rgba(170,190,255,"+.14*fl+")";ctx.fillRect(0,0,W,H);}
@@ -1655,13 +2113,19 @@ const hzOverlays=(ctx,h)=>{
       else if(m===2&&!k.kn){if(k.nr===1){ctx.fillStyle=pulse;ctx.fillText("SPACE: knock",px,py);}else if(k.nr===2){ctx.fillStyle=pulse;ctx.fillText("ENTER",px,py);}}
       else if(m===1&&!k.yell){const nm=k.nr===1?"ENTER: take the glass":k.nr===2?"ENTER: pour water":k.nr===3?"ENTER":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}}
       else if(m===3&&k.p===1&&k.pu>40){ctx.fillStyle=pulse;ctx.fillText("SPACE: speak",px,py);}
+      else if(m===4&&!k.hf){const nm=(k.s===1&&k.nr===1)?"ENTER: push the drawer":(k.s===4&&k.nr===7)?"ENTER: take the candle":(k.s===5&&k.nr===2)?"ENTER":(k.nr===3)?"ENTER: open the door":(k.s===6&&k.nr===5)?"ENTER: try the door":(k.s===6&&k.nr===8)?"ENTER: go downstairs":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}
+        if(k.s===2){ctx.fillStyle="rgba(255,255,255,.18)";ctx.fillRect(W/2-60,H-34,120,5);ctx.fillStyle="rgba(230,200,150,.9)";ctx.fillRect(W/2-60,H-34,Math.round(120*Math.min(1,k.pp/240)),5);}}
+      else if(m===7&&k.wf!==1){const nm=k.nr===2?"ENTER: reach into the blood":k.nr===3?"ENTER: look in the mirror":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,px,py);}}
+      else if(m===5&&!k.cf){const nm=(k.sp===1&&k.nr===2)?"ENTER: hide under the bed":(k.sp===4)?"ENTER: get out":"";if(nm){ctx.fillStyle=pulse;ctx.fillText(nm,k.hid?(k.x-cam)*3:px,py);}}
       if(m===0&&k.u>80&&k.u<1300){ctx.font="11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(200,190,170,"+Math.min(.6,(1300-k.u)/80)+")";ctx.fillText("arrows walk  -  ENTER to use  -  SPACE to knock",W/2,H-14);}}
     ctx.textAlign="left";
     let blk=0;
-    if(k.fi>0)blk=Math.max(blk,k.fi/(k.m===0?50:36));
+    if(k.fi>0)blk=Math.max(blk,k.fi/(k.m===0?50:k.m===4?40:36));
     if(k.go)blk=Math.max(blk,Math.min(1,k.go.t/36));
     if(m===2&&k.kn&&k.ku>=200)blk=Math.max(blk,Math.min(1,(k.ku-200)/30));
     if(m===3&&k.p===5)blk=Math.max(blk,Math.min(1,k.pu/90));
+    if(m===4&&k.hf>75){ctx.fillStyle="rgba(150,0,0,"+Math.max(0,.6-(k.hf-75)/40)+")";ctx.fillRect(0,0,W,H);blk=Math.max(blk,Math.min(1,(k.hf-130)/60));}
+    if(m===5&&k.cf>1){ctx.fillStyle="rgba(150,0,0,"+Math.max(0,.6-k.cf/40)+")";ctx.fillRect(0,0,W,H);blk=Math.max(blk,Math.min(1,(k.cf-110)/50));}
     if(m===3&&k.p===6){ctx.fillStyle="rgba(150,0,0,"+Math.max(0,.6-k.cu/40)+")";ctx.fillRect(0,0,W,H);blk=Math.max(blk,Math.min(1,k.cu/50));}
     if(blk>0){ctx.fillStyle="rgba(0,0,0,"+blk+")";ctx.fillRect(0,0,W,H);}
     if(m===3&&k.p===6&&k.cu>40){ctx.textAlign="center";ctx.font="11px Cinzel,Georgia,serif";ctx.fillStyle="rgba(230,200,150,"+Math.min(.9,(k.cu-40)/20)+")";hzWrapTxt(ctx,k.msg,W/2,H/2,13,W-20);ctx.textAlign="left";}};
@@ -1739,13 +2203,13 @@ const hzOverlays=(ctx,h)=>{
       if(enter&&Math.abs(R.x-60)<14&&!x.lock&&x.lk<3){x.lk++;
         if(x.lk===1){hzSay(h,"Your reflection is smiling. You are not.",170);whisper(0,.25);}
         else if(x.lk===2){hzSay(h,"Your reflection is not yours. It is hers.",170);heartbeat(1);whisper(0,.35);}
-        else{x.lock=300;h.face=14;noiseHit();h.nflash=6;hzSay(h,"Hands. So many hands.",200);}}
+        else{x.lock=300;if(hzApFree(h)){h.face=14;noiseHit();h.nflash=6;}hzSay(h,"Hands. So many hands.",200);}}
       else if(enter&&R.x<30){if(x.lock)hzSay(h,"The door will not open.",90);else{hzLeave(h);return true;}}
     }else if(R.i===9){   /* THE ALTAR: three candles open the sealed door */
       if(!x.i){x.i=1;hzSay(h,h.sig?"The altar is already lit.":"Three cold stands. Each wants a flame. Press C beside one.",200);hzAmbLevel(0);}
       if(h.pl&&!h.sig){const k=[34,62,90].findIndex((sx,j)=>!h.alt[j]&&Math.abs(R.x-sx)<12);
         if(k>=0&&h.cn>0){h.alt[k]=1;windClick();seedChime();whisper(0,.22+.15*h.alt.filter(Boolean).length);
-          if(h.alt.every(Boolean)){h.sig=1;thunder(.9,0);h.face=14;noiseHit();h.nflash=6;hzSayQ(h,[["The flames bend toward you. The last door unseals.",200],["A name in the ash: his own. He signed his sin here.",210]]);}}
+          if(h.alt.every(Boolean)){h.sig=1;thunder(.9,0);if(hzApFree(h)){h.face=14;noiseHit();h.nflash=6;}hzSayQ(h,[["The flames bend toward you. The last door unseals.",200],["A name in the ash: his own. He signed his sin here.",210]]);}}
         else if(k>=0)hzSay(h,"You have no wax. Search the halls.",120);}
       if(enter&&R.x<30){hzLeave(h);return true;}
     }else if(R.i===10){   /* THE CANDLE CRYPT: watch the stands wake, then light them in the same order */
@@ -1793,8 +2257,8 @@ const hzOverlays=(ctx,h)=>{
     return false;};
   const hzRoomStep=(h,dx,enter)=>{const R=h.inRoom,G=R.gl;R.t++;
     if(R.i===5&&R.q&&R.q.fz)dx=0;   /* NEW: the cellar creature freezes you in place while it crawls out */
-    if(h.gf>0)h.gf--;if(h.face>0)h.face--;if(h.skull>0)h.skull--;if(h.nflash>0)h.nflash--;
-    if(R.bk>0){R.bk--;if(R.bk===50){h.face=14;noiseHit();}}   /* the candle goes out for a moment */
+    hzApTick(h);if(h.gf>0)h.gf--;if(h.face>0)h.face--;if(h.skull>0)h.skull--;if(h.nflash>0)h.nflash--;
+    if(R.bk>0){R.bk--;if(R.bk===50&&hzApFree(h)){h.face=14;noiseHit();}}   /* the candle goes out for a moment */
     if(dx){R.dir=dx;R.x=hzCl(R.x+dx*HZ.SPEED,16,104);R.walk+=.25;R.sa+=HZ.SPEED;if(R.sa>=HZ.STRIDE){R.sa-=HZ.STRIDE;R.foot^=1;plop();}}else R.walk=0;
     if(hzRoomMore(h,R,enter))return;
     if(hzMimic(h,R,enter))return;
@@ -1806,7 +2270,7 @@ const hzOverlays=(ctx,h)=>{
         if(U.w>=12){U.st=1;U.t=0;lullaby();hzAmbLevel(0);}}
       else if(U.st>=1&&U.st<=3){U.t++;
         if(U.st===1&&U.t>=500){U.st=2;U.t=0;}
-        else if(U.st===2&&U.t>=110){U.st=3;U.t=0;h.face=16;h.nflash=6;scream();}   /* the music stops. Silence. Then the crib. */
+        else if(U.st===2&&U.t>=110){U.st=3;U.t=0;if(hzApFree(h)){h.face=16;h.nflash=6;scream();}}   /* the music stops. Silence. Then the crib. */
         else if(U.st===3&&U.t>=60){U.st=4;U.t=0;hzSay(h,"Something small fell to the floor.",170);hzAmbLevel(.02);}}
       else if(U.st===4&&!h.key&&Math.abs(R.x-70)<6){h.key=2;U.st=5;seedChime();hzSay(h,"A small silver key. It is still warm.",210);}}
     if(R.i<4&&!h.got[R.i]&&Math.abs(R.x-h.pp[R.i])<6){h.got[R.i]=1;h.seeds++;seedChime();hzSpawn();h.spx=h.x;h.spn=h.seeds;h.spg=h.got.slice();if(h.seeds<=3)h.q=[["A flame is left burning here. If you fall, you wake at this spot.",230]];   /* CHANGED: every seed is now a checkpoint */
@@ -1953,8 +2417,8 @@ const hzOverlays=(ctx,h)=>{
     /* fake scare (1:45): the candle goes out, whisper and heartbeat, nothing there */
     if(h.fkT>0&&--h.fkT===0)heartbeat(.8);
     /* real jumpscare (after 2 pomegranates, 2:20+): total silence, then a face slams into the light (no danger) */
-    if(!h.slamDone&&!h.slam&&h.seeds>=2&&sec>=420&&!safeP&&near>45){h.slam={t:0};h.silent=1;hzAmbLevel(0);}
-    if(h.slam){const s=h.slam;s.t++;if(s.t===100){noiseHit();hzFV++;}if(s.t>=118){h.slam=null;h.silent=0;h.slamDone=1;hzAmbLevel(.05);}}
+    if(!h.slamDone&&!h.slam&&h.seeds>=2&&sec>=420&&!safeP&&near>45&&!h.ap&&!(h.apcd>0)){h.slam={t:0};h.silent=1;hzAmbLevel(0);}
+    if(h.slam){const s=h.slam;s.t++;if(s.t===100){noiseHit();hzFV++;hzApStart(h,"slam");}if(s.t>=118){h.slam=null;h.silent=0;h.slamDone=1;hzAmbLevel(.05);}}
     /* sound: heartbeat speeds up near ghosts, whispers come from the side of the nearest ghost */
     if(h.souls.length&&!h.silent&&near<420){
       if(--h.hbT<=0){h.hbT=Math.round(hzCl(20+(near-20)*.7,20,76));heartbeat(safeP?.25:hzCl(.22+(90-near)/200,.22,.6));}
@@ -1969,7 +2433,7 @@ const hzOverlays=(ctx,h)=>{
       c.fillStyle="#ff5a14";c.fillRect(Math.round(x+i*1.5-1),Math.round(y-1-hg),2,Math.round(hg));
       c.fillStyle="#ffc94a";c.fillRect(Math.round(x+i*1.5-.5),Math.round(y-1-hg*.6),1,Math.round(hg*.6));}};
   /* the player in side view, holding a candle out in front. px = centre, py = feet */
-  const hzPerson=(c,px,py,walk,foot,dir,t,on)=>{px=Math.round(px);const s1=walk?(foot?1:-1):0;
+  const hzPerson=(c,px,py,walk,foot,dir,t,on,nc)=>{   /* CHANGED: nc = no candle in the hand (the house scenes before you find the candle) */px=Math.round(px);const s1=walk?(foot?1:-1):0;
     c.fillStyle="#1a1a22";c.fillRect(px-3+s1,py-2,3,2);c.fillRect(px-s1,py-2,3,2);
     c.fillStyle="#232a45";c.fillRect(px-3+s1,py-7,3,5);c.fillRect(px-s1,py-7,3,5);
     c.fillStyle="#2b3f6e";c.fillRect(px-3,py-14,6,8);
@@ -1977,7 +2441,7 @@ const hzOverlays=(ctx,h)=>{
     c.fillStyle="#3a2a1a";c.fillRect(px-2,py-19,5,2);c.fillRect(dir>0?px-2:px+1,py-19,2,4);
     c.fillStyle="#000";c.fillRect(px+(dir>0?1:-1),py-16,1,1);
     c.fillStyle="#cfa77a";c.fillRect(px+(dir>0?3:-4),py-12,2,2);
-    const cx=px+dir*5;c.fillStyle="#e9e2c8";c.fillRect(cx-1,py-12,2,5);
+    const cx=px+dir*5;if(nc)return;c.fillStyle="#e9e2c8";c.fillRect(cx-1,py-12,2,5);
     if(on){c.fillStyle=(t>>2)%2?"#ffd05a":"#ffb347";c.fillRect(cx-1,py-15,2,3);c.fillStyle="#fff3b0";c.fillRect(cx-1,py-14,1,1);}};
   /* ---- new figures (low-res pixel buffer) ---- */
   /* NEW: the ceiling hangers and the falling body. Same grey-skin, blood-red style as the other creatures: ripped open, one arm torn off, a leg torn at the knee, dripping onto the floor. y0 = neck height, bl = blinded by the candle (eye shut) */
