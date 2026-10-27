@@ -1501,7 +1501,7 @@ const hzOverlays=(ctx,h)=>{
   /* NEW: the restroom, the room that needs the key, the living room downstairs, and the respawn at the candle */
   const hlWcStart=k=>{k.m=7;k.u=0;k.x=26;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.wf=k.wf||0;k.wt=0;k.sh=0;k.fi=36;k.tb=0;k.tbt=0;k.ms=null;};
   const hlStoreStart=k=>{k.m=8;k.u=0;k.x=26;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.sh=0;k.fi=36;};
-  const hlLivStart=k=>{k.m=6;k.u=0;k.x=24;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.gc=0;k.tv=0;k.tu=0;k.wm=0;k.gx=-999;k.said={};k.sh=0;k.fi=60;};
+  const hlLivStart=k=>{k.m=6;k.u=0;k.gw=0;k.gl=0;k.x=24;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.gc=0;k.tv=0;k.tu=0;k.wm=0;k.gx=-999;k.said={};k.sh=0;k.fi=60;};
   const hlRespawn=k=>{k.m=4;k.u=0;k.x=HL.pd+26;k.dir=1;k.walk=0;k.foot=0;k.sa=0;k.msg="";k.mt=0;k.nr=0;k.said={};k.s=6;k.back=1;k.cd=1;k.lo=1;k.dX=HL.pd;k.hf=0;k.go=null;k.lc=320;k.lt=0;k.sh=0;k.fi=50;};
   /* NEW: the backyard, the shed, the dog house notes and the "mash ENTER" fights. */
   const HLDR=1150,HLDH=270,HLSX=372;
@@ -1672,7 +1672,7 @@ const hzOverlays=(ctx,h)=>{
       if(k.u===50&&!k.yw){k.yw=1;say("It's so quiet out here.",190);}
       mv(HZ.SPEED);k.x=hzCl(k.x,14,386);
       k.nr=k.x<42?1:Math.abs(k.x-DH)<26?2:Math.abs(k.x-SX)<18?3:0;
-      if(enter&&k.nr===1){doorCreak();hlGo(k,6,q=>{q.x=HLDR-10;q.dir=-1;q.walk=0;q.foot=0;q.sa=0;q.nr=0;q.msg="";q.mt=0;q.sh=0;q.tv=3;q.wm=0;q.gx=-999;q.u=9999;q.nt=null;});}
+      if(enter&&k.nr===1){doorCreak();hlGo(k,6,q=>{q.x=HLDR-10;q.dir=-1;q.walk=0;q.foot=0;q.sa=0;q.nr=0;q.msg="";q.mt=0;q.sh=0;q.tv=3;q.wm=0;q.gx=-999;q.u=9999;q.nt=null;q.gw=0;q.gl=0;});}
       else if(enter&&k.nr===2){if(k.ycode){k.nt={w:"dad",t:0};windClick();}else{k.yd=1;k.yt=0;k.ys=k.x<DH?-1:1;k.walk=0;}}
       else if(enter&&k.nr===3){if(k.yopen){doorCreak();hlGo(k,10,hlShedStart);}else{k.lk={d:[0,0,0,0],i:0,t:0,bad:0,a0:[false,false,false,false]};lockRattle();}}
       return;}
@@ -1716,9 +1716,17 @@ const hzOverlays=(ctx,h)=>{
     if(m===6){   /* ---- NEW: downstairs, the living room ---- */
       const G0=620,G1=684,TV=930,EN=1150;
       if(k.sh>0)k.sh--;
-      if(k.u===70)say("It's so dark down here...",210);
+      if(k.u===70&&!k.gl)say("It's so dark down here...",210);   /* not over the little girl's "please stop" */
       if(k.u===500&&!k.said.a)say("There is a light on ahead.",190);
-      if(k.tv===0||k.tv===3){mv(HZ.SPEED);k.x=hzCl(k.x,14,EN);}else k.walk=0;
+      /* NEW: walking back in once you HAVE THE KEY: a little girl with a teddy bear appears right in front of you and begs "please stop". 4.5 seconds later she is gone. */
+      k.gw=(k.gw||0)+1;
+      if(k.key&&!k.gdone&&!k.gl&&k.tv!==1&&k.gw>=45){k.gl=1;k.glt=0;k.gdone=1;k.gdir=k.dir<0?-1:1;k.glx=hzCl(k.x+k.dir*34,30,EN-6);k.gdir=k.glx>=k.x?-1:1;k.walk=0;heartbeat(1);thunder(.8,0);k.sh=12;k.lt=14;}
+      if(k.gl){const u=++k.glt;k.walk=0;
+        if(u===12){girlPlease(.9);say("Please stop...",150);}
+        if(u===150)girlPlease(.7);
+        if(u===90||u===200)whisper(0,.25);
+        if(u>=270){k.gl=0;k.lt=0;}}
+      if(!k.gl&&(k.tv===0||k.tv===3)){mv(HZ.SPEED);k.x=hzCl(k.x,14,EN);}else k.walk=0;
       /* the ghost in the lit opening. 3.5 s in view (it stops in the middle and twists its head), 3.5 s off screen to the side, then back the other way */
       k.gc=(k.gc+1)%840;
       const ph=Math.floor(k.gc/210),lt=k.gc%210;let gx=-999;k.gtw=0;
@@ -1729,16 +1737,16 @@ const hzOverlays=(ctx,h)=>{
       /* CHANGED: it only sees you when it faces you. Walking, it faces the way it moves: if you are BEHIND it (its back is turned) it walks past and you are safe.
         When it stops and twists its head all the way round, the head looks backwards too (twist frames 26 to 44), so then it does see you behind it. */
       const gFront=(k.x-gx)*(k.gd||1)>=-2,gLook=k.gtw>=26&&k.gtw<=44;
-      if(k.tv<1&&gx>G0-3&&gx<G1+3&&k.x>G0-5&&k.x<G1+5&&(gFront||gLook)){hzKill(h,"ghost");h.hlDie=1;return;}   /* it saw you */
+      if(k.tv<1&&!k.gl&&gx>G0-3&&gx<G1+3&&k.x>G0-5&&k.x<G1+5&&(gFront||gLook)){hzKill(h,"ghost");h.hlDie=1;return;}   /* it saw you */
       /* the little tv area */
-      if(k.tv===0&&k.x>=TV){k.tv=1;k.tu=0;k.walk=0;k.x=TV;heartbeat(.7);}
+      if(k.tv===0&&!k.gl&&k.x>=TV){k.tv=1;k.tu=0;k.walk=0;k.x=TV;heartbeat(.7);}
       if(k.tv===1){const u=++k.tu;
         if(u===60){whisper(0,.3);k.lt=8;}
         if(u===120){k.wm=1;girlShriek(1,.9);thunder(.9,0);k.sh=14;k.lt=14;say("DON'T KILL ME!",100);}
         if(u===150||u===185)girlShriek(1,.7);
         if(u===222){k.wm=0;k.lt=0;}   /* gone, instantly */
         if(u>=330){k.tv=3;say("...",60);}}
-      k.nr=((k.tv===0||k.tv===3)&&Math.abs(k.x-HLDR)<16)?1:((k.tv===0||k.tv===3)&&k.x<44)?2:0;   /* CHANGED: nr 2 = the stairs back up */
+      k.nr=k.gl?0:((k.tv===0||k.tv===3)&&Math.abs(k.x-HLDR)<16)?1:((k.tv===0||k.tv===3)&&k.x<44)?2:0;   /* CHANGED: nr 2 = the stairs back up */
       if(enter&&k.nr===1){doorCreak();hlGo(k,9,hlYardStart);}
       if(enter&&k.nr===2){plop();doorCreak();hlGo(k,4,q=>{hlRespawn(q);q.x=HL.stx-22;q.dir=-1;});}   /* NEW: go back up the stairs to the hallway */   /* NEW: the back door to the yard */
       return;}
@@ -2135,6 +2143,25 @@ const hzOverlays=(ctx,h)=>{
     if(fw>=3){r(fx,hy+2,2,2,"#000");r(fx+fw-2,hy+2,2,3,"#000");r(fx,hy+4,1,1,"#000");   /* eyes: pure black holes (the right one bigger), a black tear */
       r(fx+1,hy+4,3,2,"#000");r(fx+2,hy+6,2,1,"#000");r(fx+fw-1,hy+5,1,2,"#000");                           /* mouth: crooked, torn open, jaw hanging off to one side */
       r(fx+1,hy+4,1,1,"#e8e2d6");r(fx+3,hy+4,1,1,"#e8e2d6");}};
+  /* NEW: the little girl with the teddy bear. Same style as the woman: she faces the way f points. mo = mouth open (shaking) */
+  const hlGirl=(c,x,fy,t,mo,f)=>{x=Math.round(x);const Y=Math.round(fy)-1,sh=(t>>2)&1;
+    const r=(ox,oy,w,h,col)=>{c.fillStyle=col;c.fillRect(x+ox*f-(f<0?w-1:0),Y+oy,w,h);};
+    const SKN="#bdb7ac",SKS="#8f897f",HRR="#120c0a",GN="#cfc8bc",GN2="#a8a094",BL="#6a0808",B2="#a01010",BR="#7a4a2a",BR2="#5a3218",BN="#d8d2c0";
+    r(-2,-7,2,7,SKN);r(1,-7,2,7,SKN);r(-3,-1,3,1,SKS);r(1,-1,3,1,SKS);                       /* thin bare legs, bare feet */
+    r(-4,-19,9,13,GN);r(-5,-9,11,3,GN);r(-5,-7,2,1,GN2);r(2,-7,3,1,GN2);r(-3,-17,2,1,GN2);   /* torn little nightdress */
+    r(-2,-15,2,7,BL);r(1,-12,2,6,B2);r(3,-9,2,2,BL);r(-4,-10,1,4,BL);                        /* blood */
+    r(-4,-17,3,6,SKN);r(-1,-15,3,4,SKN);r(1,-14,3,3,SKN);                                      /* thin arms wrapped around it */
+    /* the teddy bear held tight against her chest, one eye missing, stuffing hanging out */
+    r(1,-16,8,8,BR);r(8,-16,1,8,BR2);r(2,-20,3,3,BR);r(6,-20,3,3,BR);r(3,-19,5,5,BR);r(3,-18,1,1,BR2);r(6,-18,1,1,BR2);r(4,-16,3,1,BR2);
+    r(3,-11,1,3,BN);r(5,-10,1,2,BN);r(2,-8,2,1,BN);r(5,-8,2,1,B2);
+    r(0,-14,3,3,SKN);r(-1,-12,3,2,SKN);
+    /* head: long dark hair, grey face, huge black eyes, mouth trembling */
+    r(-4,-30,9,2,HRR);r(-5,-29,2,16,HRR);r(4,-29,2,15,HRR);r(-3,-29,7,3,HRR);
+    r(-3,-27,7,9,SKN);r(-3,-20,7,1,SKS);
+    r(-4,-26,5,6,"#2a2420");r(1,-26,5,6,"#2a2420");r(-3,-25,3,4,"#f4f4ee");r(1,-25,3,4,"#f4f4ee");  /* fully white eyes in dark sunken rings */
+    r(-2,-21,1,5,B2);r(2,-21,1,4,B2);                                                          /* tears of blood */
+    const mh=1+mo*2;r(-1,-19,3,mh,"#150404");r(-1,-19,3,1,"#e8e2d6");
+    };
   /* NEW: the woman who screams "don't kill me" (faces left, towards you) */
   const hlWoman=(c,x,fy,t,mo)=>{x=Math.round(x);const Y=Math.round(fy)-1;
     const r=(ox,oy,w,h,col)=>{c.fillStyle=col;c.fillRect(x+ox,Y+oy,w,h);};
@@ -2250,6 +2277,7 @@ const hzOverlays=(ctx,h)=>{
     r("#2a1a10",1134,32,32,76);r("#5a3a1e",1137,35,26,73);r("#4a2c18",1140,38,20,22);r("#0e1a30",1142,40,16,18);r("#c8d4f0",1144,42,2,2);r("#4a2c18",1140,64,20,40);r("#c9a24a",1141,84,3,3);r("#4a2a2a",1136,118,28,4);
     /* the woman */
     if(k.wm)hlWoman(c,966-cam,FY,t,(k.tu>>3)&1);
+    if(k.gl)hlGirl(c,k.glx-cam,FY,t,(k.glt>>3)&1,k.gdir);
     hzPerson(c,k.x-cam,FY,k.walk,k.foot,k.dir,t,1,0);};
   const hlKit=(c,r,k,cam,t,fl,txt)=>{const V=HZ.VW,FY=HZ.FY;
     for(let x=0;x<200;x+=8){r((x/8)%2?"#a09062":"#98885c",x,0,8,106);}
@@ -4260,6 +4288,15 @@ function girlShriek(d,v){
     const m=ac.createGain();m.gain.value=v;m.connect(ws);ws.connect(ac.destination);
     voiceSyn(m,n,d,720,1050,[1000,1700,3000],[880,1550,2900],1,.45,0,.3,.03);
     voiceSyn(m,n+.01,d,730*1.012,1060*1.012,[1000,1700,3000],[880,1550,2900],.6,.2,0,.3,.03);
+  }catch(e){}
+}
+/* NEW: the little girl with the teddy bear: a small, trembling voice saying "please... stop" */
+function girlPlease(v){
+  if(!ac) return;
+  try{const n=ac.currentTime+.02,out=voiceOut(0,v||.9);
+    voiceSyn(out,n,.42,470,430,[330,2700,3400],[300,2600,3300],.8,.5,.25,.3,.05);          /* pleeease */
+    voiceSyn(out,n+.9,.22,440,360,[800,1400,3000],[700,1300,2900],.8,.5,.3,.3,.04);         /* sto- */
+    voiceSyn(out,n+1.14,.34,360,250,[520,1100,2600],[420,1000,2500],.7,.6,.35,.3,.05);      /* -op */
   }catch(e){}
 }
 /* the girl kills you: very loud */
